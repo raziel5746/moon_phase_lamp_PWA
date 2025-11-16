@@ -33,7 +33,7 @@ class MoonLamp {
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             // Add a version query to force browsers (especially Android) to fetch the new SW
-            const swVersion = 'v3.1';
+            const swVersion = 'v3.2';
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);

@@ -19,7 +19,6 @@ class MoonLamp {
         
         // Track a continuous motor dial angle for smooth wrap-around
         this.motorAngle = 0; // can go beyond 0–360 for animation purposes
-        this.handleDisconnection = this.handleDisconnection.bind(this);
         
         this.init();
     }
@@ -33,7 +32,7 @@ class MoonLamp {
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             // Add a version query to force browsers (especially Android) to fetch the new SW
-            const swVersion = 'v3.3';
+            const swVersion = 'v3.5';
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
@@ -179,10 +178,14 @@ class MoonLamp {
             const color = document.getElementById('colorPicker').value;
             const brightness = parseInt(document.getElementById('customBrightness').value);
             
+            console.log(`Applying color ${color} at ${brightness}% to LEDs:`, Array.from(this.selectedLeds));
+            
             // Apply to all selected LEDs
             for (const ledIndex of this.selectedLeds) {
                 await this.setIndividualLED(ledIndex, color, brightness);
             }
+            
+            console.log('All LEDs updated successfully');
         });
         
         // Motor control
@@ -466,71 +469,126 @@ class MoonLamp {
     
     // Bluetooth Methods
     async connect() {
-        const pendingDisconnect = this.device
-            ? this.disconnect({ silent: true })
-            : Promise.resolve();
-
+        const statusText = document.getElementById('statusText');
+        const connectBtn = document.getElementById('connectBtn');
+        
         try {
+            // Show selecting feedback
+            statusText.textContent = 'Selecting device...';
+            connectBtn.disabled = true;
+            
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
-                filters: [{ services: [LAMP_SERVICE_UUID] }],
+                filters: [{ name: 'MoonLamp' }],
                 optionalServices: [LAMP_SERVICE_UUID]
             });
-            this.device.addEventListener('gattserverdisconnected', this.handleDisconnection);
-
-            await pendingDisconnect;
             
-            console.log('Connecting to GATT Server...');
-            this.server = await this.device.gatt.connect();
-            
-            console.log('Getting Service...');
-            this.service = await this.server.getPrimaryService(LAMP_SERVICE_UUID);
-            
-            console.log('Getting Characteristics...');
-            this.characteristics.ledState = await this.service.getCharacteristic(LED_STATE_CHAR_UUID);
-            this.characteristics.colorPreset = await this.service.getCharacteristic(COLOR_PRESET_CHAR_UUID);
-            this.characteristics.brightness = await this.service.getCharacteristic(BRIGHTNESS_CHAR_UUID);
-            this.characteristics.ledCustom = await this.service.getCharacteristic(LED_CUSTOM_CHAR_UUID);
-            this.characteristics.motorPosition = await this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID);
-            
-            // Subscribe to LED state notifications
-            await this.characteristics.ledState.startNotifications();
-            this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
-                this.handleLEDStateUpdate(e.target.value);
+            // Add disconnect handler
+            this.device.addEventListener('gattserverdisconnected', () => {
+                console.log('Device disconnected');
+                this.handleDisconnect();
             });
             
-            this.updateConnectionStatus(true);
-            console.log('Connected successfully!');
+            // Show connecting feedback
+            statusText.textContent = 'Connecting...';
             
-            // Read initial state
-            await this.readLEDState();
-            
+            await this.connectToDevice();
         } catch (error) {
             console.error('Connection failed:', error);
-            await this.disconnect({ silent: true });
+            statusText.textContent = 'Connection failed';
+            connectBtn.disabled = false;
             alert('Failed to connect: ' + error.message);
         }
     }
     
-    async disconnect({ silent = false } = {}) {
-        if (this.device) {
+    async connectToDevice() {
+        // Retry the ENTIRE connection process up to 3 times
+        let lastError;
+        for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-                this.device.removeEventListener('gattserverdisconnected', this.handleDisconnection);
-            } catch (err) {
-                console.warn('Failed to remove disconnect listener', err);
-            }
-
-            if (this.device.gatt && this.device.gatt.connected) {
-                this.device.gatt.disconnect();
-            }
-
-            if (!silent) {
-                console.log('Disconnected');
+                console.log(`Connection attempt ${attempt}...`);
+                document.getElementById('statusText').textContent = `Connecting (attempt ${attempt}/3)...`;
+                
+                // Step 1: Connect to GATT server
+                console.log('Connecting to GATT Server...');
+                const connectPromise = this.device.gatt.connect();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Connection timeout')), 10000)
+                );
+                
+                this.server = await Promise.race([connectPromise, timeoutPromise]);
+                
+                // Step 2: Immediately try to get service (no delay - ESP32 disconnects during waits)
+                console.log('Getting Service...');
+                this.service = await this.server.getPrimaryService(LAMP_SERVICE_UUID);
+                
+                // Step 5: Verify still connected
+                if (!this.server || !this.server.connected) {
+                    throw new Error('GATT server disconnected while getting service');
+                }
+                
+                // Step 6: Get all characteristics in parallel
+                console.log('Getting Characteristics...');
+                const [ledState, colorPreset, brightness, ledCustom, motorPosition] = await Promise.all([
+                    this.service.getCharacteristic(LED_STATE_CHAR_UUID),
+                    this.service.getCharacteristic(COLOR_PRESET_CHAR_UUID),
+                    this.service.getCharacteristic(BRIGHTNESS_CHAR_UUID),
+                    this.service.getCharacteristic(LED_CUSTOM_CHAR_UUID),
+                    this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID)
+                ]);
+                
+                this.characteristics.ledState = ledState;
+                this.characteristics.colorPreset = colorPreset;
+                this.characteristics.brightness = brightness;
+                this.characteristics.ledCustom = ledCustom;
+                this.characteristics.motorPosition = motorPosition;
+                
+                // Step 7: Subscribe to notifications
+                await this.characteristics.ledState.startNotifications();
+                this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
+                    this.handleLEDStateUpdate(e.target.value);
+                });
+                
+                // Step 8: Success!
+                this.updateConnectionStatus(true);
+                console.log('Connected successfully!');
+                
+                // Read initial state
+                await this.readLEDState();
+                
+                return; // Success, exit function
+                
+            } catch (error) {
+                lastError = error;
+                console.log(`Attempt ${attempt} failed:`, error.message);
+                
+                if (attempt < 3) {
+                    const delay = attempt * 1000; // 1s, 2s
+                    console.log(`Retrying in ${delay}ms...`);
+                    document.getElementById('statusText').textContent = `Attempt ${attempt} failed, retrying in ${delay/1000}s...`;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    // All attempts failed
+                    throw lastError;
+                }
             }
         }
-        this.device = null;
-        this.cleanupConnectionState();
+    }
+    
+    handleDisconnect() {
+        this.characteristics = {};
+        this.server = null;
+        this.service = null;
         this.updateConnectionStatus(false);
+    }
+    
+    async disconnect() {
+        if (this.device && this.device.gatt.connected) {
+            this.device.gatt.disconnect();
+            this.updateConnectionStatus(false);
+            document.getElementById('connectBtn').disabled = false;
+            console.log('Disconnected');
+        }
     }
     
     async readLEDState() {
@@ -544,6 +602,12 @@ class MoonLamp {
     
     handleLEDStateUpdate(dataView) {
         // Parse LED state data (8 LEDs * 4 bytes each: R, G, B, Brightness)
+        // Check if we have enough data
+        if (dataView.byteLength < 32) {
+            console.warn('LED state data incomplete, expected 32 bytes, got', dataView.byteLength);
+            return;
+        }
+        
         for (let i = 0; i < 8; i++) {
             const offset = i * 4;
             this.ledStates[i] = {

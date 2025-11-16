@@ -19,6 +19,7 @@ class MoonLamp {
         
         // Track a continuous motor dial angle for smooth wrap-around
         this.motorAngle = 0; // can go beyond 0–360 for animation purposes
+        this.handleDisconnection = this.handleDisconnection.bind(this);
         
         this.init();
     }
@@ -466,11 +467,15 @@ class MoonLamp {
     // Bluetooth Methods
     async connect() {
         try {
+            // Ensure any previous session is cleaned up before requesting again
+            await this.disconnect({ silent: true });
+
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: 'MoonLamp' }],
+                filters: [{ services: [LAMP_SERVICE_UUID] }],
                 optionalServices: [LAMP_SERVICE_UUID]
             });
+            this.device.addEventListener('gattserverdisconnected', this.handleDisconnection);
             
             console.log('Connecting to GATT Server...');
             this.server = await this.device.gatt.connect();
@@ -499,16 +504,30 @@ class MoonLamp {
             
         } catch (error) {
             console.error('Connection failed:', error);
+            await this.disconnect({ silent: true });
             alert('Failed to connect: ' + error.message);
         }
     }
     
-    async disconnect() {
-        if (this.device && this.device.gatt.connected) {
-            this.device.gatt.disconnect();
-            this.updateConnectionStatus(false);
-            console.log('Disconnected');
+    async disconnect({ silent = false } = {}) {
+        if (this.device) {
+            try {
+                this.device.removeEventListener('gattserverdisconnected', this.handleDisconnection);
+            } catch (err) {
+                console.warn('Failed to remove disconnect listener', err);
+            }
+
+            if (this.device.gatt && this.device.gatt.connected) {
+                this.device.gatt.disconnect();
+            }
+
+            if (!silent) {
+                console.log('Disconnected');
+            }
         }
+        this.device = null;
+        this.cleanupConnectionState();
+        this.updateConnectionStatus(false);
     }
     
     async readLEDState() {

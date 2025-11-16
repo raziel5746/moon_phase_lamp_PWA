@@ -15,6 +15,7 @@ class MoonLamp {
         this.characteristics = {};
         this.ledStates = Array(8).fill({ r: 255, g: 220, b: 150, brightness: 75 });
         this.selectedLeds = new Set(); // Track multiple selected LEDs
+        this.ledElements = [];
         
         // Track a continuous motor dial angle for smooth wrap-around
         this.motorAngle = 0; // can go beyond 0–360 for animation purposes
@@ -255,24 +256,46 @@ class MoonLamp {
     
     createLEDRing() {
         const ring = document.getElementById('ledRing');
-        const radius = 100;
-        const centerX = 125;
-        const centerY = 125;
+        this.ledElements = [];
         
         for (let i = 0; i < 8; i++) {
-            const angle = (i * 45 - 90) * Math.PI / 180;
-            const x = centerX + radius * Math.cos(angle) - 10;
-            const y = centerY + radius * Math.sin(angle) - 10;
-            
             const led = document.createElement('div');
             led.className = 'led';
-            led.style.left = x + 'px';
-            led.style.top = y + 'px';
             led.dataset.index = i;
             led.addEventListener('click', () => this.selectLED(i));
-            
             ring.appendChild(led);
+            this.ledElements.push(led);
         }
+        
+        // Position LEDs now and on future resizes
+        this.updateLEDLayout();
+        window.addEventListener('resize', () => this.updateLEDLayout());
+    }
+
+    updateLEDLayout() {
+        const ring = document.getElementById('ledRing');
+        if (!ring || !this.ledElements.length) return;
+        
+        const width = ring.clientWidth;
+        const height = ring.clientHeight;
+
+        // If the tab is hidden, width/height may be zero. Recalculate later.
+        if (width === 0 || height === 0) {
+            return;
+        }
+        const diameter = Math.min(width, height);
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const ledSize = this.ledElements[0].offsetWidth || 20;
+        const radius = (diameter / 2) - (ledSize / 2) - 4;
+        
+        this.ledElements.forEach((led, i) => {
+            const angle = (i * 45 - 90) * Math.PI / 180;
+            const x = centerX + radius * Math.cos(angle) - ledSize / 2;
+            const y = centerY + radius * Math.sin(angle) - ledSize / 2;
+            led.style.left = `${x}px`;
+            led.style.top = `${y}px`;
+        });
     }
     
     createMotorDial() {
@@ -409,6 +432,11 @@ class MoonLamp {
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.id === tabName);
         });
+
+        if (tabName === 'custom') {
+            // Ensure LED positions update once the tab becomes visible
+            requestAnimationFrame(() => this.updateLEDLayout());
+        }
     }
     
     updateConnectionStatus(connected) {

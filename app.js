@@ -466,16 +466,19 @@ class MoonLamp {
     
     // Bluetooth Methods
     async connect() {
-        try {
-            // Ensure any previous session is cleaned up before requesting again
-            await this.disconnect({ silent: true });
+        const pendingDisconnect = this.device
+            ? this.disconnect({ silent: true })
+            : Promise.resolve();
 
+        try {
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: [LAMP_SERVICE_UUID] }],
                 optionalServices: [LAMP_SERVICE_UUID]
             });
             this.device.addEventListener('gattserverdisconnected', this.handleDisconnection);
+
+            await pendingDisconnect;
             
             console.log('Connecting to GATT Server...');
             this.server = await this.device.gatt.connect();

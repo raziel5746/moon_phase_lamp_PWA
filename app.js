@@ -14,7 +14,7 @@ class MoonLamp {
         this.service = null;
         this.characteristics = {};
         this.ledStates = Array(8).fill({ r: 255, g: 220, b: 150, brightness: 75 });
-        this.selectedLed = null;
+        this.selectedLeds = new Set(); // Track multiple selected LEDs
         
         // Track a continuous motor dial angle for smooth wrap-around
         this.motorAngle = 0; // can go beyond 0–360 for animation purposes
@@ -31,7 +31,7 @@ class MoonLamp {
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             // Add a version query to force browsers (especially Android) to fetch the new SW
-            const swVersion = 'v2';
+            const swVersion = 'v3';
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
@@ -102,28 +102,85 @@ class MoonLamp {
             this.setBrightness(parseInt(e.target.value));
         });
         
-        // Custom color
-        document.getElementById('applyCustomBtn').addEventListener('click', () => {
-            const color = document.getElementById('colorPicker').value;
-            const brightness = parseInt(document.getElementById('customBrightness').value);
-            this.setCustomColor(color, brightness);
+        // LED selection controls
+        const selectMultipleToggle = document.getElementById('selectMultipleToggle');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const selectedLedCount = document.getElementById('selectedLedCount');
+        const applyCustomBtn = document.getElementById('applyCustomBtn');
+
+        const updateSelectionUI = () => {
+            const count = this.selectedLeds.size;
+            
+            // Update count display
+            if (count === 0) {
+                selectedLedCount.textContent = '0 LEDs';
+                applyCustomBtn.textContent = 'Select LEDs first';
+                applyCustomBtn.disabled = true;
+            } else if (count === 8) {
+                selectedLedCount.textContent = 'ALL LEDs';
+                applyCustomBtn.textContent = 'Apply to ALL';
+                applyCustomBtn.disabled = false;
+            } else if (count === 1) {
+                const ledNum = Array.from(this.selectedLeds)[0];
+                selectedLedCount.textContent = `LED ${ledNum}`;
+                applyCustomBtn.textContent = `Apply to LED ${ledNum}`;
+                applyCustomBtn.disabled = false;
+            } else {
+                selectedLedCount.textContent = `${count} LEDs`;
+                applyCustomBtn.textContent = `Apply to ${count} LEDs`;
+                applyCustomBtn.disabled = false;
+            }
+            
+            // Update center button state
+            selectAllBtn.classList.toggle('active', count === 8);
+            
+            // Update LED visual states
+            document.querySelectorAll('.led').forEach((led, i) => {
+                led.classList.toggle('selected', this.selectedLeds.has(i));
+            });
+        };
+
+        // Center button: select/deselect all
+        selectAllBtn.addEventListener('click', () => {
+            if (this.selectedLeds.size === 8) {
+                this.selectedLeds.clear();
+            } else {
+                this.selectedLeds = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
+            }
+            updateSelectionUI();
         });
-        
+
+        // Select multiple toggle changes selection behavior
+        selectMultipleToggle.addEventListener('change', () => {
+            // When switching to single-select mode, keep only the first selected LED
+            if (!selectMultipleToggle.checked && this.selectedLeds.size > 1) {
+                const firstLed = Array.from(this.selectedLeds)[0];
+                this.selectedLeds.clear();
+                this.selectedLeds.add(firstLed);
+                updateSelectionUI();
+            }
+        });
+
+        // Initialize UI
+        updateSelectionUI();
+
         document.getElementById('customBrightness').addEventListener('input', (e) => {
             document.getElementById('customBrightnessValue').textContent = e.target.value + '%';
         });
-        
-        // Individual LED control
-        document.getElementById('applyLedBtn').addEventListener('click', () => {
-            if (this.selectedLed !== null) {
-                const color = document.getElementById('ledColorPicker').value;
-                const brightness = parseInt(document.getElementById('ledBrightness').value);
-                this.setIndividualLED(this.selectedLed, color, brightness);
+
+        applyCustomBtn.addEventListener('click', async () => {
+            if (this.selectedLeds.size === 0) {
+                alert('Select at least one LED first');
+                return;
             }
-        });
-        
-        document.getElementById('ledBrightness').addEventListener('input', (e) => {
-            document.getElementById('ledBrightnessValue').textContent = e.target.value + '%';
+            
+            const color = document.getElementById('colorPicker').value;
+            const brightness = parseInt(document.getElementById('customBrightness').value);
+            
+            // Apply to all selected LEDs
+            for (const ledIndex of this.selectedLeds) {
+                await this.setIndividualLED(ledIndex, color, brightness);
+            }
         });
         
         // Motor control
@@ -276,23 +333,61 @@ class MoonLamp {
     }
     
     selectLED(index) {
-        this.selectedLed = index;
+        const selectMultipleToggle = document.getElementById('selectMultipleToggle');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const selectedLedCount = document.getElementById('selectedLedCount');
+        const applyCustomBtn = document.getElementById('applyCustomBtn');
         
-        // Update visual selection
+        if (selectMultipleToggle.checked) {
+            // Multi-select mode: toggle the LED
+            if (this.selectedLeds.has(index)) {
+                this.selectedLeds.delete(index);
+            } else {
+                this.selectedLeds.add(index);
+            }
+        } else {
+            // Single-select mode: select only this LED
+            this.selectedLeds.clear();
+            this.selectedLeds.add(index);
+        }
+        
+        // Update UI
+        const count = this.selectedLeds.size;
+        
+        if (count === 0) {
+            selectedLedCount.textContent = '0 LEDs';
+            applyCustomBtn.textContent = 'Select LEDs first';
+            applyCustomBtn.disabled = true;
+        } else if (count === 8) {
+            selectedLedCount.textContent = 'ALL LEDs';
+            applyCustomBtn.textContent = 'Apply to ALL';
+            applyCustomBtn.disabled = false;
+        } else if (count === 1) {
+            const ledNum = Array.from(this.selectedLeds)[0];
+            selectedLedCount.textContent = `LED ${ledNum}`;
+            applyCustomBtn.textContent = `Apply to LED ${ledNum}`;
+            applyCustomBtn.disabled = false;
+        } else {
+            selectedLedCount.textContent = `${count} LEDs`;
+            applyCustomBtn.textContent = `Apply to ${count} LEDs`;
+            applyCustomBtn.disabled = false;
+        }
+        
+        selectAllBtn.classList.toggle('active', count === 8);
+        
         document.querySelectorAll('.led').forEach((led, i) => {
-            led.classList.toggle('selected', i === index);
+            led.classList.toggle('selected', this.selectedLeds.has(i));
         });
         
-        // Show LED editor
-        document.getElementById('ledEditor').style.display = 'block';
-        document.getElementById('selectedLedNum').textContent = index;
-        
-        // Set current values
-        const state = this.ledStates[index];
-        const hex = this.rgbToHex(state.r, state.g, state.b);
-        document.getElementById('ledColorPicker').value = hex;
-        document.getElementById('ledBrightness').value = state.brightness;
-        document.getElementById('ledBrightnessValue').textContent = state.brightness + '%';
+        // Update picker values from the last selected LED's state
+        if (this.selectedLeds.size > 0) {
+            const lastSelected = Array.from(this.selectedLeds)[this.selectedLeds.size - 1];
+            const state = this.ledStates[lastSelected];
+            const hex = this.rgbToHex(state.r, state.g, state.b);
+            document.getElementById('colorPicker').value = hex;
+            document.getElementById('customBrightness').value = state.brightness;
+            document.getElementById('customBrightnessValue').textContent = state.brightness + '%';
+        }
     }
     
     updateLEDRing() {

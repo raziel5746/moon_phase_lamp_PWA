@@ -1,13 +1,13 @@
 // Service Worker for Moon Lamp PWA
 const CACHE_NAME = 'moon-lamp-v1';
 const urlsToCache = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  '/moon_phase_lamp_PWA/',
+  '/moon_phase_lamp_PWA/index.html',
+  '/moon_phase_lamp_PWA/styles.css',
+  '/moon_phase_lamp_PWA/app.js',
+  '/moon_phase_lamp_PWA/manifest.json',
+  '/moon_phase_lamp_PWA/icon-192.png',
+  '/moon_phase_lamp_PWA/icon-512.png'
 ];
 
 // Install event - cache files

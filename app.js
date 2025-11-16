@@ -491,7 +491,20 @@ class MoonLamp {
     }
     
     async setMotorZero() {
-        await this.setMotorPosition(0);
+        if (!this.characteristics.motorPosition) {
+            alert('Not connected to lamp');
+            return;
+        }
+        try {
+            // Use a special out-of-range value (>360) as a "set zero" command
+            const ZERO_COMMAND = 65535; // 0xFFFF
+            const data = new Uint16Array([ZERO_COMMAND]);
+            await this.characteristics.motorPosition.writeValue(data);
+            console.log('Motor zero set command sent');
+        } catch (error) {
+            console.error('Failed to set motor zero:', error);
+            alert('Failed to set motor zero');
+        }
     }
     
     // Utility methods

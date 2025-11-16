@@ -16,18 +16,53 @@ class MoonLamp {
         this.ledStates = Array(8).fill({ r: 255, g: 220, b: 150, brightness: 75 });
         this.selectedLed = null;
         
+        // Track a continuous motor dial angle for smooth wrap-around
+        this.motorAngle = 0; // can go beyond 0–360 for animation purposes
+        
         this.init();
     }
     
     init() {
         this.setupEventListeners();
         this.createLEDRing();
+        this.createMotorDial();
         this.updateUI();
         
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker registered', reg))
+            // Add a version query to force browsers (especially Android) to fetch the new SW
+            const swVersion = 'v2';
+            navigator.serviceWorker.register(`./sw.js?${swVersion}`)
+                .then(reg => {
+                    console.log('Service Worker registered', reg);
+
+                    const showUpdatePrompt = (worker) => {
+                        const shouldUpdate = confirm('A new version of Moon Lamp is available. Reload now?');
+                        if (shouldUpdate) {
+                            if (worker) {
+                                worker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        }
+                    };
+
+                    if (reg.waiting) {
+                        showUpdatePrompt(reg.waiting);
+                    }
+
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdatePrompt(newWorker);
+                            }
+                        });
+                    });
+
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        window.location.reload();
+                    });
+                })
                 .catch(err => console.error('Service Worker registration failed', err));
         }
     }
@@ -92,8 +127,63 @@ class MoonLamp {
         });
         
         // Motor control
-        document.getElementById('motorSlider').addEventListener('input', (e) => {
-            document.getElementById('motorValue').textContent = e.target.value + '°';
+        const motorSlider = document.getElementById('motorSlider');
+        const motorDial = document.getElementById('motorDial');
+        
+        motorSlider.addEventListener('input', (e) => {
+            const angle = parseInt(e.target.value);
+            this.updateMotorPointer(angle);
+            document.getElementById('motorValue').textContent = angle + '°';
+        });
+        
+        // Dial interaction
+        let isDragging = false;
+        
+        const handleMotorDrag = (e) => {
+            e.preventDefault();
+            const rect = motorDial.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const dx = clientX - centerX;
+            const dy = clientY - centerY;
+            
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            angle = Math.round(angle);
+            
+            motorSlider.value = angle;
+            this.updateMotorPointer(angle);
+            document.getElementById('motorValue').textContent = angle + '°';
+        };
+        
+        motorDial.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            handleMotorDrag(e);
+        });
+        
+        motorDial.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            handleMotorDrag(e);
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) handleMotorDrag(e);
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) handleMotorDrag(e);
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        document.addEventListener('touchend', () => {
+            isDragging = false;
         });
         
         document.getElementById('setMotorBtn').addEventListener('click', () => {
@@ -126,6 +216,63 @@ class MoonLamp {
             
             ring.appendChild(led);
         }
+    }
+    
+    createMotorDial() {
+        const markersGroup = document.getElementById('degreeMarkers');
+        
+        // Add degree markers every 30 degrees
+        for (let i = 0; i < 12; i++) {
+            const angle = i * 30;
+            const rad = (angle - 90) * Math.PI / 180;
+            const x1 = 125 + 90 * Math.cos(rad);
+            const y1 = 125 + 90 * Math.sin(rad);
+            const x2 = 125 + 100 * Math.cos(rad);
+            const y2 = 125 + 100 * Math.sin(rad);
+            
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('stroke', '#666');
+            line.setAttribute('stroke-width', '2');
+            markersGroup.appendChild(line);
+            
+            // Add text labels
+            const textRad = (angle - 90) * Math.PI / 180;
+            const textX = 125 + 75 * Math.cos(textRad);
+            const textY = 125 + 75 * Math.sin(textRad);
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', textX);
+            text.setAttribute('y', textY);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('fill', '#888');
+            text.setAttribute('font-size', '12');
+            text.textContent = angle + '°';
+            markersGroup.appendChild(text);
+        }
+    }
+    
+    updateMotorPointer(targetAngle) {
+        const pointer = document.getElementById('motorPointer');
+        
+        // Current visual angle (may be outside 0–360 range)
+        let current = this.motorAngle;
+        
+        // Normalize current to [0, 360) for delta computation
+        let currentNorm = ((current % 360) + 360) % 360;
+        let delta = targetAngle - currentNorm;
+        
+        // Wrap delta into the shortest path [-180, 180]
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        
+        // Update continuous angle and apply transform
+        this.motorAngle = current + delta;
+        pointer.style.transform = `rotate(${this.motorAngle}deg)`;
     }
     
     selectLED(index) {

@@ -1,5 +1,5 @@
 // Service Worker for Moon Lamp PWA
-const CACHE_NAME = 'moon-lamp-v1';
+const CACHE_NAME = 'moon-lamp-v2';
 const urlsToCache = [
   '/moon_phase_lamp_PWA/',
   '/moon_phase_lamp_PWA/index.html',
@@ -23,6 +23,9 @@ self.addEventListener('install', (event) => {
         console.error('Cache failed:', error);
       })
   );
+
+  // Allow this SW to move to the "installed" state immediately
+  self.skipWaiting();
 });
 
 // Fetch event - serve from cache, fallback to network
@@ -73,6 +76,18 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Ensure the new SW takes control of already-open clients
+      return self.clients.claim();
     })
   );
+});
+
+// Listen for messages from the client to trigger skipWaiting explicitly
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
+    console.log('Service Worker: SKIP_WAITING received');
+    self.skipWaiting();
+  }
 });

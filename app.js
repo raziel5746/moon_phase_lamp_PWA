@@ -28,7 +28,36 @@ class MoonLamp {
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker registered', reg))
+                .then(reg => {
+                    console.log('Service Worker registered', reg);
+
+                    const showUpdatePrompt = (worker) => {
+                        const shouldUpdate = confirm('A new version of Moon Lamp is available. Reload now?');
+                        if (shouldUpdate) {
+                            if (worker) {
+                                worker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        }
+                    };
+
+                    if (reg.waiting) {
+                        showUpdatePrompt(reg.waiting);
+                    }
+
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdatePrompt(newWorker);
+                            }
+                        });
+                    });
+
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        window.location.reload();
+                    });
+                })
                 .catch(err => console.error('Service Worker registration failed', err));
         }
     }

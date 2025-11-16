@@ -16,6 +16,9 @@ class MoonLamp {
         this.ledStates = Array(8).fill({ r: 255, g: 220, b: 150, brightness: 75 });
         this.selectedLed = null;
         
+        // Track a continuous motor dial angle for smooth wrap-around
+        this.motorAngle = 0; // can go beyond 0–360 for animation purposes
+        
         this.init();
     }
     
@@ -251,9 +254,23 @@ class MoonLamp {
         }
     }
     
-    updateMotorPointer(angle) {
+    updateMotorPointer(targetAngle) {
         const pointer = document.getElementById('motorPointer');
-        pointer.style.transform = `rotate(${angle}deg)`;
+        
+        // Current visual angle (may be outside 0–360 range)
+        let current = this.motorAngle;
+        
+        // Normalize current to [0, 360) for delta computation
+        let currentNorm = ((current % 360) + 360) % 360;
+        let delta = targetAngle - currentNorm;
+        
+        // Wrap delta into the shortest path [-180, 180]
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        
+        // Update continuous angle and apply transform
+        this.motorAngle = current + delta;
+        pointer.style.transform = `rotate(${this.motorAngle}deg)`;
     }
     
     selectLED(index) {

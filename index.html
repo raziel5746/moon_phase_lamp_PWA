@@ -125,10 +125,23 @@
         <div class="tab-content" id="motor">
             <div class="card">
                 <h2>🔄 Motor Control</h2>
+                <div class="motor-dial-container">
+                    <svg id="motorDial" width="250" height="250" viewBox="0 0 250 250">
+                        <!-- Outer circle -->
+                        <circle cx="125" cy="125" r="100" fill="none" stroke="#444" stroke-width="2"/>
+                        <!-- Degree markers -->
+                        <g id="degreeMarkers"></g>
+                        <!-- Pointer -->
+                        <line id="motorPointer" x1="125" y1="125" x2="125" y2="40" stroke="#4CAF50" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="125" cy="125" r="10" fill="#4CAF50"/>
+                    </svg>
+                    <div class="motor-value">
+                        <span id="motorValue">0°</span>
+                    </div>
+                </div>
                 <div class="motor-control">
-                    <label>Position:</label>
-                    <input type="range" id="motorSlider" min="0" max="360" value="0">
-                    <span id="motorValue">0°</span>
+                    <label>Fine Adjust:</label>
+                    <input type="range" id="motorSlider" min="0" max="360" value="0" step="1">
                 </div>
                 <button class="btn btn-primary" id="setMotorBtn">Set Position</button>
                 <button class="btn btn-secondary" id="zeroMotorBtn">Set Zero</button>

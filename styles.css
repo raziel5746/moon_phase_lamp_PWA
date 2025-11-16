@@ -299,11 +299,43 @@ h3 {
 }
 
 /* Motor Control */
+.motor-dial-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+#motorDial {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+#motorDial circle {
+    transition: stroke 0.3s ease;
+}
+
+#motorPointer {
+    transition: transform 0.3s ease;
+    transform-origin: 125px 125px;
+}
+
+.motor-value {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary);
+}
+
 .motor-control {
     display: flex;
     align-items: center;
     gap: 15px;
     margin-bottom: 15px;
+    width: 100%;
 }
 
 .motor-control label {

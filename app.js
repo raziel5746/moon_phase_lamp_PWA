@@ -565,7 +565,7 @@ class MoonLamp {
                 if (attempt < 3) {
                     const delay = attempt * 1000; // 1s, 2s
                     console.log(`Retrying in ${delay}ms...`);
-                    document.getElementById('statusText').textContent = `Attempt ${attempt} failed, retrying in ${delay/1000}s...`;
+                    document.getElementById('statusText').textContent = `Attempt ${attempt} failed, retrying in ${delay / 1000}s...`;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 } else {
                     // All attempts failed
@@ -610,11 +610,15 @@ class MoonLamp {
         
         for (let i = 0; i < 8; i++) {
             const offset = i * 4;
+            // Map brightness from 0-255 (firmware) to 0-100 (UI)
+            const rawBrightness = dataView.getUint8(offset + 3);
+            const uiBrightness = Math.round(rawBrightness * 100 / 255);
+
             this.ledStates[i] = {
                 r: dataView.getUint8(offset),
                 g: dataView.getUint8(offset + 1),
                 b: dataView.getUint8(offset + 2),
-                brightness: dataView.getUint8(offset + 3)
+                brightness: uiBrightness
             };
         }
         this.updateLEDRing();
@@ -669,11 +673,14 @@ class MoonLamp {
         
         try {
             const rgb = this.hexToRgb(hexColor);
-            const data = new Uint8Array([index, rgb.r, rgb.g, rgb.b, brightness]);
+            // Map brightness from 0-100 (UI) to 0-255 (firmware)
+            const mappedBrightness = Math.round(brightness * 255 / 100);
+
+            const data = new Uint8Array([index, rgb.r, rgb.g, rgb.b, mappedBrightness]);
             await this.characteristics.ledCustom.writeValue(data);
-            console.log(`LED ${index} set:`, rgb, brightness);
+            console.log(`LED ${index} set:`, rgb, mappedBrightness);
             
-            // Update local state
+            // Update local state (keep UI brightness 0-100)
             this.ledStates[index] = { ...rgb, brightness };
             this.updateLEDRing();
         } catch (error) {

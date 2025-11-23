@@ -1,5 +1,6 @@
 // Service Worker for Moon Lamp PWA
-const CACHE_NAME = 'moon-lamp-v3.7';
+const CACHE_NAME = 'moon-lamp-v__VERSION__';
+
 const urlsToCache = [
   '/moon_phase_lamp_PWA/',
   '/moon_phase_lamp_PWA/index.html',

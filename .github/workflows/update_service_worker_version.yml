@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]  # Change to whatever branch you want to trigger deployment
+    branches: [main] # Change to whatever branch you want to trigger deployment
   workflow_dispatch:
 
 # Required permissions for GitHub Pages
@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
 
@@ -23,7 +23,7 @@ jobs:
         id: version
         run: |
           CURRENT_VERSION=$(jq -r '.version' version.json)
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 0.1; print}')
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{printf "%d.%d", $1, $2+1}')
           echo "{\"version\": \"$NEW_VERSION\"}" > version.json
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
@@ -38,7 +38,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: "."
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4

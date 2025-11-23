@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]  # Change to whatever branch you want to trigger deployment
+  workflow_dispatch:
+
+# Required permissions for GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      # Increment version
+      - name: Increment version
+        id: version
+        run: |
+          CURRENT_VERSION=$(jq -r '.version' version.json)
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 0.1; print}')
+          echo "{\"version\": \"$NEW_VERSION\"}" > version.json
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      # Replace version placeholders in files
+      - name: Update version in files
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          sed -i "s/__VERSION__/$VERSION/g" sw.js
+          sed -i "s/__VERSION__/$VERSION/g" app.js
+
+      # Upload to GitHub Pages (doesn't commit back to repo)
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2

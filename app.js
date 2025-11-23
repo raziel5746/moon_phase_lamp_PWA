@@ -14,7 +14,8 @@ class MoonLamp {
         this.service = null;
         this.characteristics = {};
         this.ledStates = Array(8).fill({ r: 255, g: 220, b: 150, brightness: 75 });
-        this.selectedLed = null;
+        this.selectedLeds = new Set(); // Track multiple selected LEDs
+        this.ledElements = [];
         
         // Track a continuous motor dial angle for smooth wrap-around
         this.motorAngle = 0; // can go beyond 0–360 for animation purposes
@@ -31,7 +32,7 @@ class MoonLamp {
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             // Add a version query to force browsers (especially Android) to fetch the new SW
-            const swVersion = 'v2';
+            const swVersion = 'v3.6';
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
@@ -102,28 +103,89 @@ class MoonLamp {
             this.setBrightness(parseInt(e.target.value));
         });
         
-        // Custom color
-        document.getElementById('applyCustomBtn').addEventListener('click', () => {
-            const color = document.getElementById('colorPicker').value;
-            const brightness = parseInt(document.getElementById('customBrightness').value);
-            this.setCustomColor(color, brightness);
+        // LED selection controls
+        const selectMultipleToggle = document.getElementById('selectMultipleToggle');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const selectedLedCount = document.getElementById('selectedLedCount');
+        const applyCustomBtn = document.getElementById('applyCustomBtn');
+
+        const updateSelectionUI = () => {
+            const count = this.selectedLeds.size;
+            
+            // Update count display
+            if (count === 0) {
+                selectedLedCount.textContent = '0 LEDs';
+                applyCustomBtn.textContent = 'Select LEDs first';
+                applyCustomBtn.disabled = true;
+            } else if (count === 8) {
+                selectedLedCount.textContent = 'ALL LEDs';
+                applyCustomBtn.textContent = 'Apply to ALL';
+                applyCustomBtn.disabled = false;
+            } else if (count === 1) {
+                const ledNum = Array.from(this.selectedLeds)[0];
+                selectedLedCount.textContent = `LED ${ledNum}`;
+                applyCustomBtn.textContent = `Apply to LED ${ledNum}`;
+                applyCustomBtn.disabled = false;
+            } else {
+                selectedLedCount.textContent = `${count} LEDs`;
+                applyCustomBtn.textContent = `Apply to ${count} LEDs`;
+                applyCustomBtn.disabled = false;
+            }
+            
+            // Update center button state
+            selectAllBtn.classList.toggle('active', count === 8);
+            
+            // Update LED visual states
+            document.querySelectorAll('.led').forEach((led, i) => {
+                led.classList.toggle('selected', this.selectedLeds.has(i));
+            });
+        };
+
+        // Center button: select/deselect all
+        selectAllBtn.addEventListener('click', () => {
+            if (this.selectedLeds.size === 8) {
+                this.selectedLeds.clear();
+            } else {
+                this.selectedLeds = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
+            }
+            updateSelectionUI();
         });
-        
+
+        // Select multiple toggle changes selection behavior
+        selectMultipleToggle.addEventListener('change', () => {
+            // When switching to single-select mode, keep only the first selected LED
+            if (!selectMultipleToggle.checked && this.selectedLeds.size > 1) {
+                const firstLed = Array.from(this.selectedLeds)[0];
+                this.selectedLeds.clear();
+                this.selectedLeds.add(firstLed);
+                updateSelectionUI();
+            }
+        });
+
+        // Initialize UI
+        updateSelectionUI();
+
         document.getElementById('customBrightness').addEventListener('input', (e) => {
             document.getElementById('customBrightnessValue').textContent = e.target.value + '%';
         });
-        
-        // Individual LED control
-        document.getElementById('applyLedBtn').addEventListener('click', () => {
-            if (this.selectedLed !== null) {
-                const color = document.getElementById('ledColorPicker').value;
-                const brightness = parseInt(document.getElementById('ledBrightness').value);
-                this.setIndividualLED(this.selectedLed, color, brightness);
+
+        applyCustomBtn.addEventListener('click', async () => {
+            if (this.selectedLeds.size === 0) {
+                alert('Select at least one LED first');
+                return;
             }
-        });
-        
-        document.getElementById('ledBrightness').addEventListener('input', (e) => {
-            document.getElementById('ledBrightnessValue').textContent = e.target.value + '%';
+            
+            const color = document.getElementById('colorPicker').value;
+            const brightness = parseInt(document.getElementById('customBrightness').value);
+            
+            console.log(`Applying color ${color} at ${brightness}% to LEDs:`, Array.from(this.selectedLeds));
+            
+            // Apply to all selected LEDs
+            for (const ledIndex of this.selectedLeds) {
+                await this.setIndividualLED(ledIndex, color, brightness);
+            }
+            
+            console.log('All LEDs updated successfully');
         });
         
         // Motor control
@@ -198,24 +260,46 @@ class MoonLamp {
     
     createLEDRing() {
         const ring = document.getElementById('ledRing');
-        const radius = 100;
-        const centerX = 125;
-        const centerY = 125;
+        this.ledElements = [];
         
         for (let i = 0; i < 8; i++) {
-            const angle = (i * 45 - 90) * Math.PI / 180;
-            const x = centerX + radius * Math.cos(angle) - 10;
-            const y = centerY + radius * Math.sin(angle) - 10;
-            
             const led = document.createElement('div');
             led.className = 'led';
-            led.style.left = x + 'px';
-            led.style.top = y + 'px';
             led.dataset.index = i;
             led.addEventListener('click', () => this.selectLED(i));
-            
             ring.appendChild(led);
+            this.ledElements.push(led);
         }
+        
+        // Position LEDs now and on future resizes
+        this.updateLEDLayout();
+        window.addEventListener('resize', () => this.updateLEDLayout());
+    }
+
+    updateLEDLayout() {
+        const ring = document.getElementById('ledRing');
+        if (!ring || !this.ledElements.length) return;
+        
+        const width = ring.clientWidth;
+        const height = ring.clientHeight;
+
+        // If the tab is hidden, width/height may be zero. Recalculate later.
+        if (width === 0 || height === 0) {
+            return;
+        }
+        const diameter = Math.min(width, height);
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const ledSize = this.ledElements[0].offsetWidth || 20;
+        const radius = (diameter / 2) - (ledSize / 2) - 4;
+        
+        this.ledElements.forEach((led, i) => {
+            const angle = (i * 45 - 90) * Math.PI / 180;
+            const x = centerX + radius * Math.cos(angle) - ledSize / 2;
+            const y = centerY + radius * Math.sin(angle) - ledSize / 2;
+            led.style.left = `${x}px`;
+            led.style.top = `${y}px`;
+        });
     }
     
     createMotorDial() {
@@ -276,23 +360,61 @@ class MoonLamp {
     }
     
     selectLED(index) {
-        this.selectedLed = index;
+        const selectMultipleToggle = document.getElementById('selectMultipleToggle');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const selectedLedCount = document.getElementById('selectedLedCount');
+        const applyCustomBtn = document.getElementById('applyCustomBtn');
         
-        // Update visual selection
+        if (selectMultipleToggle.checked) {
+            // Multi-select mode: toggle the LED
+            if (this.selectedLeds.has(index)) {
+                this.selectedLeds.delete(index);
+            } else {
+                this.selectedLeds.add(index);
+            }
+        } else {
+            // Single-select mode: select only this LED
+            this.selectedLeds.clear();
+            this.selectedLeds.add(index);
+        }
+        
+        // Update UI
+        const count = this.selectedLeds.size;
+        
+        if (count === 0) {
+            selectedLedCount.textContent = '0 LEDs';
+            applyCustomBtn.textContent = 'Select LEDs first';
+            applyCustomBtn.disabled = true;
+        } else if (count === 8) {
+            selectedLedCount.textContent = 'ALL LEDs';
+            applyCustomBtn.textContent = 'Apply to ALL';
+            applyCustomBtn.disabled = false;
+        } else if (count === 1) {
+            const ledNum = Array.from(this.selectedLeds)[0];
+            selectedLedCount.textContent = `LED ${ledNum}`;
+            applyCustomBtn.textContent = `Apply to LED ${ledNum}`;
+            applyCustomBtn.disabled = false;
+        } else {
+            selectedLedCount.textContent = `${count} LEDs`;
+            applyCustomBtn.textContent = `Apply to ${count} LEDs`;
+            applyCustomBtn.disabled = false;
+        }
+        
+        selectAllBtn.classList.toggle('active', count === 8);
+        
         document.querySelectorAll('.led').forEach((led, i) => {
-            led.classList.toggle('selected', i === index);
+            led.classList.toggle('selected', this.selectedLeds.has(i));
         });
         
-        // Show LED editor
-        document.getElementById('ledEditor').style.display = 'block';
-        document.getElementById('selectedLedNum').textContent = index;
-        
-        // Set current values
-        const state = this.ledStates[index];
-        const hex = this.rgbToHex(state.r, state.g, state.b);
-        document.getElementById('ledColorPicker').value = hex;
-        document.getElementById('ledBrightness').value = state.brightness;
-        document.getElementById('ledBrightnessValue').textContent = state.brightness + '%';
+        // Update picker values from the last selected LED's state
+        if (this.selectedLeds.size > 0) {
+            const lastSelected = Array.from(this.selectedLeds)[this.selectedLeds.size - 1];
+            const state = this.ledStates[lastSelected];
+            const hex = this.rgbToHex(state.r, state.g, state.b);
+            document.getElementById('colorPicker').value = hex;
+            document.getElementById('customBrightness').value = state.brightness;
+            document.getElementById('customBrightnessValue').textContent = state.brightness + '%';
+        }
     }
     
     updateLEDRing() {
@@ -314,6 +436,11 @@ class MoonLamp {
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.id === tabName);
         });
+
+        if (tabName === 'custom') {
+            // Ensure LED positions update once the tab becomes visible
+            requestAnimationFrame(() => this.updateLEDLayout());
+        }
     }
     
     updateConnectionStatus(connected) {
@@ -342,48 +469,124 @@ class MoonLamp {
     
     // Bluetooth Methods
     async connect() {
+        const statusText = document.getElementById('statusText');
+        const connectBtn = document.getElementById('connectBtn');
+        
         try {
+            // Show selecting feedback
+            statusText.textContent = 'Selecting device...';
+            connectBtn.disabled = true;
+            
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'MoonLamp' }],
                 optionalServices: [LAMP_SERVICE_UUID]
             });
             
-            console.log('Connecting to GATT Server...');
-            this.server = await this.device.gatt.connect();
-            
-            console.log('Getting Service...');
-            this.service = await this.server.getPrimaryService(LAMP_SERVICE_UUID);
-            
-            console.log('Getting Characteristics...');
-            this.characteristics.ledState = await this.service.getCharacteristic(LED_STATE_CHAR_UUID);
-            this.characteristics.colorPreset = await this.service.getCharacteristic(COLOR_PRESET_CHAR_UUID);
-            this.characteristics.brightness = await this.service.getCharacteristic(BRIGHTNESS_CHAR_UUID);
-            this.characteristics.ledCustom = await this.service.getCharacteristic(LED_CUSTOM_CHAR_UUID);
-            this.characteristics.motorPosition = await this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID);
-            
-            // Subscribe to LED state notifications
-            await this.characteristics.ledState.startNotifications();
-            this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
-                this.handleLEDStateUpdate(e.target.value);
+            // Add disconnect handler
+            this.device.addEventListener('gattserverdisconnected', () => {
+                console.log('Device disconnected');
+                this.handleDisconnect();
             });
             
-            this.updateConnectionStatus(true);
-            console.log('Connected successfully!');
+            // Show connecting feedback
+            statusText.textContent = 'Connecting...';
             
-            // Read initial state
-            await this.readLEDState();
-            
+            await this.connectToDevice();
         } catch (error) {
             console.error('Connection failed:', error);
+            statusText.textContent = 'Connection failed';
+            connectBtn.disabled = false;
             alert('Failed to connect: ' + error.message);
         }
+    }
+    
+    async connectToDevice() {
+        // Retry the ENTIRE connection process up to 3 times
+        let lastError;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`Connection attempt ${attempt}...`);
+                document.getElementById('statusText').textContent = `Connecting (attempt ${attempt}/3)...`;
+                
+                // Step 1: Connect to GATT server
+                console.log('Connecting to GATT Server...');
+                const connectPromise = this.device.gatt.connect();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Connection timeout')), 10000)
+                );
+                
+                this.server = await Promise.race([connectPromise, timeoutPromise]);
+                
+                // Step 2: Immediately try to get service (no delay - ESP32 disconnects during waits)
+                console.log('Getting Service...');
+                this.service = await this.server.getPrimaryService(LAMP_SERVICE_UUID);
+                
+                // Step 5: Verify still connected
+                if (!this.server || !this.server.connected) {
+                    throw new Error('GATT server disconnected while getting service');
+                }
+                
+                // Step 6: Get all characteristics in parallel
+                console.log('Getting Characteristics...');
+                const [ledState, colorPreset, brightness, ledCustom, motorPosition] = await Promise.all([
+                    this.service.getCharacteristic(LED_STATE_CHAR_UUID),
+                    this.service.getCharacteristic(COLOR_PRESET_CHAR_UUID),
+                    this.service.getCharacteristic(BRIGHTNESS_CHAR_UUID),
+                    this.service.getCharacteristic(LED_CUSTOM_CHAR_UUID),
+                    this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID)
+                ]);
+                
+                this.characteristics.ledState = ledState;
+                this.characteristics.colorPreset = colorPreset;
+                this.characteristics.brightness = brightness;
+                this.characteristics.ledCustom = ledCustom;
+                this.characteristics.motorPosition = motorPosition;
+                
+                // Step 7: Subscribe to notifications
+                await this.characteristics.ledState.startNotifications();
+                this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
+                    this.handleLEDStateUpdate(e.target.value);
+                });
+                
+                // Step 8: Success!
+                this.updateConnectionStatus(true);
+                console.log('Connected successfully!');
+                
+                // Read initial state
+                await this.readLEDState();
+                
+                return; // Success, exit function
+                
+            } catch (error) {
+                lastError = error;
+                console.log(`Attempt ${attempt} failed:`, error.message);
+                
+                if (attempt < 3) {
+                    const delay = attempt * 1000; // 1s, 2s
+                    console.log(`Retrying in ${delay}ms...`);
+                    document.getElementById('statusText').textContent = `Attempt ${attempt} failed, retrying in ${delay/1000}s...`;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    // All attempts failed
+                    throw lastError;
+                }
+            }
+        }
+    }
+    
+    handleDisconnect() {
+        this.characteristics = {};
+        this.server = null;
+        this.service = null;
+        this.updateConnectionStatus(false);
     }
     
     async disconnect() {
         if (this.device && this.device.gatt.connected) {
             this.device.gatt.disconnect();
             this.updateConnectionStatus(false);
+            document.getElementById('connectBtn').disabled = false;
             console.log('Disconnected');
         }
     }
@@ -399,6 +602,12 @@ class MoonLamp {
     
     handleLEDStateUpdate(dataView) {
         // Parse LED state data (8 LEDs * 4 bytes each: R, G, B, Brightness)
+        // Check if we have enough data
+        if (dataView.byteLength < 32) {
+            console.warn('LED state data incomplete, expected 32 bytes, got', dataView.byteLength);
+            return;
+        }
+        
         for (let i = 0; i < 8; i++) {
             const offset = i * 4;
             this.ledStates[i] = {
@@ -491,7 +700,20 @@ class MoonLamp {
     }
     
     async setMotorZero() {
-        await this.setMotorPosition(0);
+        if (!this.characteristics.motorPosition) {
+            alert('Not connected to lamp');
+            return;
+        }
+        try {
+            // Use a special out-of-range value (>360) as a "set zero" command
+            const ZERO_COMMAND = 65535; // 0xFFFF
+            const data = new Uint16Array([ZERO_COMMAND]);
+            await this.characteristics.motorPosition.writeValue(data);
+            console.log('Motor zero set command sent');
+        } catch (error) {
+            console.error('Failed to set motor zero:', error);
+            alert('Failed to set motor zero');
+        }
     }
     
     // Utility methods

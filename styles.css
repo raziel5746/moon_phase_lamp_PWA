@@ -132,11 +132,67 @@ h3 {
 }
 
 /* LED Ring */
+.led-ring-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.led-ring-header h2 {
+    margin-bottom: 0;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"] {
+    cursor: pointer;
+}
+
 .led-ring {
     position: relative;
     width: 250px;
     height: 250px;
     margin: 20px auto;
+}
+
+.led-center-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 3px solid #555;
+    color: var(--text);
+    font-weight: bold;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.led-center-btn:hover {
+    border-color: var(--primary);
+    background: #2a2a3e;
+}
+
+.led-center-btn.active {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 0 20px rgba(74, 144, 226, 0.5);
 }
 
 .led {

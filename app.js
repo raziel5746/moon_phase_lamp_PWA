@@ -94,15 +94,6 @@ class MoonLamp {
             });
         });
 
-        // Brightness slider
-        const brightnessSlider = document.getElementById('brightnessSlider');
-        brightnessSlider.addEventListener('input', (e) => {
-            document.getElementById('brightnessValue').textContent = e.target.value + '%';
-        });
-        brightnessSlider.addEventListener('change', (e) => {
-            this.setBrightness(parseInt(e.target.value));
-        });
-
         // LED selection controls
         const selectMultipleToggle = document.getElementById('selectMultipleToggle');
         const selectAllBtn = document.getElementById('selectAllBtn');

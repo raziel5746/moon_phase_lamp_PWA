@@ -354,6 +354,109 @@ class MoonLamp {
             text.textContent = angle + '°';
             markersGroup.appendChild(text);
         }
+
+        // Add moon position marker
+        const moonPhase = this.calculateMoonPhase();
+        const moonAngle = Math.round(moonPhase * 360);
+        this.moonPositionAngle = moonAngle; // Store for later use
+
+        const moonRad = (moonAngle - 90) * Math.PI / 180;
+        const moonX1 = 125 + 85 * Math.cos(moonRad);
+        const moonY1 = 125 + 85 * Math.sin(moonRad);
+        const moonX2 = 125 + 100 * Math.cos(moonRad);
+        const moonY2 = 125 + 100 * Math.sin(moonRad);
+
+        const moonMarker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        moonMarker.setAttribute('x1', moonX1);
+        moonMarker.setAttribute('y1', moonY1);
+        moonMarker.setAttribute('x2', moonX2);
+        moonMarker.setAttribute('y2', moonY2);
+        moonMarker.setAttribute('stroke', '#ffd700');
+        moonMarker.setAttribute('stroke-width', '4');
+        moonMarker.setAttribute('stroke-linecap', 'round');
+        moonMarker.setAttribute('id', 'moonMarker');
+        moonMarker.style.cursor = 'pointer';
+        moonMarker.style.filter = 'drop-shadow(0 0 3px #ffd700)';
+        markersGroup.appendChild(moonMarker);
+
+        // Add moon icon at the marker
+        const moonIcon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        moonIcon.setAttribute('x', moonX2 + 10 * Math.cos(moonRad));
+        moonIcon.setAttribute('y', moonY2 + 10 * Math.sin(moonRad));
+        moonIcon.setAttribute('text-anchor', 'middle');
+        moonIcon.setAttribute('dominant-baseline', 'middle');
+        moonIcon.setAttribute('fill', '#ffd700');
+        moonIcon.setAttribute('font-size', '16');
+        moonIcon.setAttribute('id', 'moonIcon');
+        moonIcon.textContent = '🌙';
+        moonIcon.style.cursor = 'pointer';
+        markersGroup.appendChild(moonIcon);
+
+        // Create tooltip
+        this.createMoonTooltip(moonAngle);
+
+        // Add click events for both marker and icon
+        const toggleTooltip = (e) => {
+            e.stopPropagation();
+            const tooltip = document.getElementById('moonTooltip');
+            const isVisible = tooltip.style.display === 'block';
+
+            if (isVisible) {
+                tooltip.style.display = 'none';
+            } else {
+                // Position tooltip relative to the motor dial
+                const motorDial = document.getElementById('motorDial');
+                const dialRect = motorDial.getBoundingClientRect();
+
+                // Calculate position based on moon angle
+                const tooltipAngle = (moonAngle - 90) * Math.PI / 180;
+                const dialCenterX = dialRect.left + dialRect.width / 2;
+                const dialCenterY = dialRect.top + dialRect.height / 2;
+                const tooltipDistance = 140; // Distance from center
+
+                const tooltipX = dialCenterX + tooltipDistance * Math.cos(tooltipAngle) * 2;
+                const tooltipY = dialCenterY + tooltipDistance * Math.sin(tooltipAngle);
+
+                tooltip.style.left = tooltipX + 'px';
+                tooltip.style.top = tooltipY + 'px';
+                tooltip.style.transform = 'translate(-50%, -50%)';
+                tooltip.style.display = 'block';
+            }
+        };
+
+        moonMarker.addEventListener('click', toggleTooltip);
+        moonIcon.addEventListener('click', toggleTooltip);
+
+        // Close tooltip when clicking outside
+        document.addEventListener('click', (e) => {
+            const tooltip = document.getElementById('moonTooltip');
+            if (tooltip && !tooltip.contains(e.target) &&
+                e.target.id !== 'moonMarker' && e.target.id !== 'moonIcon') {
+                tooltip.style.display = 'none';
+            }
+        });
+    }
+
+    createMoonTooltip(angle) {
+        const tooltip = document.createElement('div');
+        tooltip.id = 'moonTooltip';
+        tooltip.className = 'moon-tooltip';
+        tooltip.innerHTML = `
+            <div class="moon-tooltip-content">
+                <strong>Real Moon Position</strong>
+                <div style="margin: 8px 0;">${angle}°</div>
+                <button class="btn btn-primary" id="setToMoonBtn" style="margin: 0; padding: 8px 16px; font-size: 0.9em;">Set</button>
+            </div>
+        `;
+        tooltip.style.position = 'fixed';
+        document.body.appendChild(tooltip);
+
+        // Add click handler for Set button
+        document.getElementById('setToMoonBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.setRealMoonPosition();
+            tooltip.style.display = 'none';
+        });
     }
 
     updateMotorPointer(targetAngle) {

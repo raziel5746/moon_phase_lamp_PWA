@@ -1,5 +1,5 @@
 // Service Worker for Moon Lamp PWA
-const CACHE_NAME = 'moon-lamp-v3.6';
+const CACHE_NAME = 'moon-lamp-v3.7';
 const urlsToCache = [
   '/moon_phase_lamp_PWA/',
   '/moon_phase_lamp_PWA/index.html',
@@ -37,24 +37,24 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
-        
+
         // Clone the request
         const fetchRequest = event.request.clone();
-        
+
         return fetch(fetchRequest).then((response) => {
           // Check if valid response
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-          
+
           // Clone the response
           const responseToCache = response.clone();
-          
+
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
             });
-          
+
           return response;
         });
       })
@@ -65,7 +65,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
   const cacheWhitelist = [CACHE_NAME];
-  
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(

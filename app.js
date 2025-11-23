@@ -671,6 +671,53 @@ class MoonLamp {
             };
         }
         this.updateLEDRing();
+        this.updatePresetFeedback();
+    }
+
+    updatePresetFeedback() {
+        // Check if all LEDs have the same color and brightness
+        const firstLed = this.ledStates[0];
+        const allSame = this.ledStates.every(led =>
+            led.r === firstLed.r &&
+            led.g === firstLed.g &&
+            led.b === firstLed.b &&
+            led.brightness === firstLed.brightness
+        );
+
+        // Reset all active states
+        document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.brightness-btn').forEach(btn => btn.classList.remove('active'));
+
+        if (!allSame) return;
+
+        const r = firstLed.r;
+        const g = firstLed.g;
+        const b = firstLed.b;
+
+        // Helper to check if color matches within small tolerance
+        const matches = (tr, tg, tb) => {
+            return Math.abs(r - tr) < 5 && Math.abs(g - tg) < 5 && Math.abs(b - tb) < 5;
+        };
+
+        let activePreset = -1;
+
+        if (matches(255, 220, 150)) activePreset = 0; // Warm White
+        else if (matches(255, 100, 0)) activePreset = 1; // Sunset
+        else if (matches(0, 100, 255)) activePreset = 2; // Ocean Blue
+        else if (matches(255, 0, 100)) activePreset = 3; // Pink Dream
+        else if (matches(100, 255, 100)) activePreset = 4; // Forest Green
+
+        if (activePreset !== -1) {
+            const btn = document.querySelector(`.preset-btn[data-preset="${activePreset}"]`);
+            if (btn) btn.classList.add('active');
+        }
+
+        // Check Brightness Presets
+        const brightness = firstLed.brightness;
+        const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${brightness}"]`);
+        if (brightnessBtn) {
+            brightnessBtn.classList.add('active');
+        }
     }
 
     async setColorPreset(preset) {

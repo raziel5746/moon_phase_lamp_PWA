@@ -277,6 +277,13 @@ h3 {
     transform: translateY(-2px);
 }
 
+.preset-btn.active, .brightness-btn.active {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+}
+
 .preset-color {
     width: 40px;
     height: 40px;

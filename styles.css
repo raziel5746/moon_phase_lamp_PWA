@@ -65,8 +65,15 @@ h1 {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .card {
@@ -258,7 +265,8 @@ h3 {
     gap: 10px;
 }
 
-.preset-btn, .brightness-btn {
+.preset-btn,
+.brightness-btn {
     padding: 15px;
     background: #2a2a3e;
     border: 2px solid transparent;
@@ -272,12 +280,14 @@ h3 {
     color: var(--text);
 }
 
-.preset-btn:hover, .brightness-btn:hover {
+.preset-btn:hover,
+.brightness-btn:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
 }
 
-.preset-btn.active, .brightness-btn.active {
+.preset-btn.active,
+.brightness-btn.active {
     border-color: var(--accent);
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     color: white;
@@ -289,55 +299,6 @@ h3 {
     height: 40px;
     border-radius: 50%;
     border: 2px solid #555;
-}
-
-/* Brightness Control */
-.brightness-control {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.brightness-control label {
-    font-weight: 600;
-    min-width: 80px;
-}
-
-.brightness-control input[type="range"] {
-    flex: 1;
-    height: 8px;
-    border-radius: 4px;
-    background: #2a2a3e;
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.brightness-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    cursor: pointer;
-}
-
-.brightness-control input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    cursor: pointer;
-    border: none;
-}
-
-.brightness-control span {
-    font-weight: 600;
-    min-width: 50px;
-    text-align: right;
-    color: var(--accent);
 }
 
 /* Color Picker */
@@ -415,16 +376,16 @@ h3 {
     body {
         padding: 10px;
     }
-    
+
     h1 {
         font-size: 2em;
     }
-    
+
     .led-ring {
         width: 200px;
         height: 200px;
     }
-    
+
     .led {
         width: 16px;
         height: 16px;

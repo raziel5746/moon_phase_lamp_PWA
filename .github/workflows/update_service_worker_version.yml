@@ -27,14 +27,23 @@ jobs:
           echo "{\"version\": \"$NEW_VERSION\"}" > version.json
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      # Replace version placeholders in files
+      # Commit version.json back to repo
+      - name: Commit version update
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add version.json
+          git diff --staged --quiet || git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
+          git push
+
+      # Replace version placeholders in files (for deployment only, not committed)
       - name: Update version in files
         run: |
           VERSION=${{ steps.version.outputs.version }}
           sed -i "s/__VERSION__/$VERSION/g" sw.js
           sed -i "s/__VERSION__/$VERSION/g" app.js
 
-      # Upload to GitHub Pages (doesn't commit back to repo)
+      # Upload to GitHub Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

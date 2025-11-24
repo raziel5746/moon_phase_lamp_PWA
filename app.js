@@ -6,6 +6,7 @@ const COLOR_PRESET_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef2';
 const BRIGHTNESS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef3';
 const LED_CUSTOM_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef4';
 const MOTOR_POSITION_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef5';
+const TIME_SYNC_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef6';
 
 class MoonLamp {
     constructor() {
@@ -653,7 +654,7 @@ class MoonLamp {
                     throw new Error('GATT server disconnected while getting service');
                 }
 
-                // Step 6: Get all characteristics in parallel
+                // Step 6: Get required characteristics in parallel
                 console.log('Getting Characteristics...');
                 const [ledState, colorPreset, brightness, ledCustom, motorPosition] = await Promise.all([
                     this.service.getCharacteristic(LED_STATE_CHAR_UUID),
@@ -669,6 +670,15 @@ class MoonLamp {
                 this.characteristics.ledCustom = ledCustom;
                 this.characteristics.motorPosition = motorPosition;
 
+                // Try to get optional time sync characteristic (may not exist on older firmware)
+                try {
+                    this.characteristics.timeSync = await this.service.getCharacteristic(TIME_SYNC_CHAR_UUID);
+                    console.log('Time sync characteristic found');
+                } catch (e) {
+                    console.log('Time sync characteristic not available (older firmware)');
+                    this.characteristics.timeSync = null;
+                }
+
                 // Step 7: Subscribe to notifications
                 await this.characteristics.ledState.startNotifications();
                 this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
@@ -678,6 +688,11 @@ class MoonLamp {
                 // Step 8: Success!
                 this.updateConnectionStatus(true);
                 console.log('Connected successfully!');
+
+                // Sync time immediately on connection (if supported)
+                if (this.characteristics.timeSync) {
+                    await this.syncTime();
+                }
 
                 // Read initial state
                 await this.readLEDState();
@@ -715,6 +730,30 @@ class MoonLamp {
             this.updateConnectionStatus(false);
             document.getElementById('connectBtn').disabled = false;
             console.log('Disconnected');
+        }
+    }
+
+    async syncTime() {
+        if (!this.characteristics.timeSync) {
+            console.warn('Time sync characteristic not available');
+            return;
+        }
+
+        try {
+            // Get current Unix timestamp in seconds
+            const timestamp = Math.floor(Date.now() / 1000);
+            
+            // Send as 4-byte little-endian uint32
+            const data = new Uint8Array(4);
+            data[0] = timestamp & 0xFF;
+            data[1] = (timestamp >> 8) & 0xFF;
+            data[2] = (timestamp >> 16) & 0xFF;
+            data[3] = (timestamp >> 24) & 0xFF;
+            
+            await this.characteristics.timeSync.writeValue(data);
+            console.log('Time synced to device:', new Date(timestamp * 1000).toISOString());
+        } catch (error) {
+            console.error('Failed to sync time:', error);
         }
     }
 

@@ -25,14 +25,6 @@
             </div>
         </header>
 
-        <!-- Bluetooth Connection -->
-        <div class="card" id="bluetoothCard">
-            <h2>📡 Connection</h2>
-            <button class="btn btn-primary" id="connectBtn">Connect Bluetooth</button>
-            <button class="btn btn-secondary" id="disconnectBtn" style="display:none;">Disconnect</button>
-            <p class="info-text">Connect to your Moon Lamp via Bluetooth to control it</p>
-        </div>
-
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="presets">Presets</button>
@@ -123,8 +115,11 @@
 
         <!-- Motor Tab -->
         <div class="tab-content" id="motor">
-            <div class="card">
-                <h2>🔄 Motor Control</h2>
+            <div class="card motor-card">
+                <div class="motor-header">
+                    <h2>🔄 Motor Control</h2>
+                    <button class="moon-btn" id="realMoonBtn" title="Set to Real Moon Position">🌕</button>
+                </div>
                 <div class="motor-dial-container">
                     <svg id="motorDial" width="250" height="250" viewBox="0 0 250 250">
                         <!-- Outer circle -->
@@ -132,25 +127,28 @@
                         <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4 4" />
                         <!-- Degree markers -->
                         <g id="degreeMarkers"></g>
-                        <!-- Pointer -->
+                        <!-- Current position marker (blue) -->
+                        <line id="currentPosMarker" x1="125" y1="125" x2="125" y2="35" stroke="#3b82f6" stroke-width="4"
+                            stroke-linecap="round" opacity="0.7" />
+                        <!-- Target pointer (green) -->
                         <line id="motorPointer" x1="125" y1="125" x2="125" y2="35" stroke="#22c55e" stroke-width="5"
                             stroke-linecap="round" />
                         <circle cx="125" cy="125" r="14" fill="#22c55e" />
                         <circle cx="125" cy="125" r="7" fill="#0f0f1a" />
                     </svg>
-                    <div class="motor-value">
-                        <span id="motorValue">0°</span>
+                    <div class="motor-values">
+                        <div class="current-pos-value">
+                            <span id="currentPosition">0°</span>
+                        </div>
+                        <div class="motor-value">
+                            <span id="motorValue">0°</span>
+                        </div>
+                        <button class="btn btn-secondary zero-btn" id="zeroMotorBtn">Set Zero</button>
+                    </div>
+                    <div class="moon-angle-display">
+                        <span id="moonAngle">--°</span>
                     </div>
                 </div>
-                <div class="motor-control">
-                    <label>Fine Adjust:</label>
-                    <input type="range" id="motorSlider" min="0" max="360" value="0" step="1">
-                </div>
-                <button class="btn btn-primary" id="setMotorBtn">Set Position</button>
-                <button class="btn btn-secondary" id="zeroMotorBtn">Set Zero</button>
-                <button class="btn btn-primary" id="realMoonBtn"
-                    style="margin-top: 10px; background-color: #6c5ce7;">Real Moon Position</button>
-                <p class="info-text">Current position: <span id="currentPosition">0°</span></p>
             </div>
         </div>
     </div>

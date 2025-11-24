@@ -150,15 +150,6 @@ h1 {
         0 0 40px var(--card-glow),
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 60px var(--card-glow),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 h2 {
@@ -610,33 +601,52 @@ h3 {
 .motor-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    /* margin-bottom: 20px; */
+    align-items: flex-start;
 }
 
 .motor-header h2 {
     margin-bottom: 0;
 }
 
-.moon-btn {
+.moon-btn-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.square-btn {
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: 12px;
     background: var(--glass-bg);
-    border: 2px solid var(--accent);
-    font-size: 2em;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.square-btn:hover {
+    transform: scale(1.05);
+}
+
+.moon-btn {
+    border: 2px solid var(--accent);
+    font-size: 1.8em;
+    line-height: 1;
     box-shadow: 0 4px 15px var(--accent-glow);
 }
 
 .moon-btn:hover {
-    transform: scale(1.1);
     box-shadow: 0 6px 25px var(--accent-glow);
     background: rgba(251, 191, 36, 0.1);
+}
+
+.moon-angle-label {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--accent);
 }
 
 .motor-dial-container {
@@ -651,14 +661,17 @@ h3 {
 .motor-dial-container::before {
     content: '';
     position: absolute;
-    width: 220px;
-    height: 220px;
+    width: 85%;
+    aspect-ratio: 1;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
     pointer-events: none;
 }
 
 #motorDial {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -704,21 +717,29 @@ h3 {
     color: #22c55e;
 }
 
-.zero-btn {
+.zero-btn-container {
     position: absolute;
     right: 0;
-    padding: 10px 20px;
-    width: auto;
-    margin: 0;
-    font-size: 0.85em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.moon-angle-display {
-    margin-top: 10px;
+.zero-btn {
+    border: 2px solid var(--glass-border);
     font-size: 1.3em;
-    font-weight: 600;
-    color: var(--accent);
-    text-align: center;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.zero-btn:hover {
+    border-color: var(--primary);
+    color: var(--text);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.zero-btn-text {
+    font-size: 32px;
 }
 
 /* Responsive */

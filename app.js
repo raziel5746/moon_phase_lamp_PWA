@@ -204,10 +204,23 @@ class MoonLamp {
 
             const dx = clientX - centerX;
             const dy = clientY - centerY;
+            
+            // Calculate distance from center (normalized to dial radius)
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const dialRadius = rect.width / 2;
+            const normalizedDistance = distance / dialRadius;
 
             let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
-            angle = Math.round(angle);
+            
+            // Inner zone (< 60% of radius): snap to 30° increments
+            // Outer zone (>= 60% of radius): fine 1° control
+            if (normalizedDistance < 0.6) {
+                angle = Math.round(angle / 30) * 30;
+                if (angle === 360) angle = 0;
+            } else {
+                angle = Math.round(angle);
+            }
 
             this.updateMotorPointer(angle);
             document.getElementById('motorValue').textContent = angle + '°';
@@ -217,11 +230,15 @@ class MoonLamp {
         };
 
         motorDial.addEventListener('mousedown', (e) => {
+            // Don't start dragging if clicking on moon marker or icon
+            if (e.target.id === 'moonMarker' || e.target.id === 'moonIcon') return;
             isDragging = true;
             handleMotorDrag(e);
         });
 
         motorDial.addEventListener('touchstart', (e) => {
+            // Don't start dragging if touching moon marker or icon
+            if (e.target.id === 'moonMarker' || e.target.id === 'moonIcon') return;
             isDragging = true;
             handleMotorDrag(e);
         });
@@ -252,6 +269,12 @@ class MoonLamp {
 
         document.getElementById('zeroMotorBtn').addEventListener('click', () => {
             this.setMotorZero();
+            // Update UI to show 0 position
+            this.motorAngle = 0;
+            this.updateMotorPointer(0);
+            this.updateCurrentPosMarker(0);
+            document.getElementById('motorValue').textContent = '0°';
+            document.getElementById('currentPosition').textContent = '0°';
         });
 
         document.getElementById('realMoonBtn').addEventListener('click', () => {
@@ -365,6 +388,9 @@ class MoonLamp {
         const moonPhase = this.calculateMoonPhase();
         const moonAngle = Math.round(moonPhase * 360);
         this.moonPositionAngle = moonAngle; // Store for later use
+        
+        // Display moon angle at initial load
+        document.getElementById('moonAngle').textContent = moonAngle + '°';
 
         const moonRad = (moonAngle - 90) * Math.PI / 180;
         const moonX1 = 125 + 85 * Math.cos(moonRad);
@@ -575,19 +601,13 @@ class MoonLamp {
     updateConnectionStatus(connected) {
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
 
         if (connected) {
             statusDot.classList.add('connected');
             statusText.textContent = 'Connected';
-            connectBtn.style.display = 'none';
-            disconnectBtn.style.display = 'block';
         } else {
             statusDot.classList.remove('connected');
             statusText.textContent = 'Not Connected';
-            connectBtn.style.display = 'block';
-            disconnectBtn.style.display = 'none';
         }
     }
 
@@ -599,12 +619,10 @@ class MoonLamp {
     // Bluetooth Methods
     async connect() {
         const statusText = document.getElementById('statusText');
-        const connectBtn = document.getElementById('connectBtn');
 
         try {
             // Show selecting feedback
             statusText.textContent = 'Selecting device...';
-            connectBtn.disabled = true;
 
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
@@ -625,11 +643,11 @@ class MoonLamp {
         } catch (error) {
             console.error('Connection failed:', error);
             statusText.textContent = 'Connection failed';
-            connectBtn.disabled = false;
 
             // Ignore "User cancelled" error
             if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
                 console.log('User cancelled selection');
+                this.updateConnectionStatus(false);
                 return;
             }
 
@@ -737,7 +755,6 @@ class MoonLamp {
         if (this.device && this.device.gatt.connected) {
             this.device.gatt.disconnect();
             this.updateConnectionStatus(false);
-            document.getElementById('connectBtn').disabled = false;
             console.log('Disconnected');
         }
     }
@@ -945,6 +962,7 @@ class MoonLamp {
             await this.characteristics.motorPosition.writeValue(data);
             console.log('Motor position set:', position);
             document.getElementById('currentPosition').textContent = position + '°';
+            this.updateCurrentPosMarker(position);
         } catch (error) {
             console.error('Failed to set motor position:', error);
             alert('Failed to set motor position');

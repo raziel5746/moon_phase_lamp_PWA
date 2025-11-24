@@ -118,10 +118,13 @@
             <div class="card motor-card">
                 <div class="motor-header">
                     <h2>🔄 Motor Control</h2>
-                    <button class="moon-btn" id="realMoonBtn" title="Set to Real Moon Position">🌕</button>
+                    <div class="moon-btn-container">
+                        <button class="square-btn moon-btn" id="realMoonBtn" title="Set to Real Moon Position">🌙</button>
+                        <span class="moon-angle-label" id="moonAngle">--°</span>
+                    </div>
                 </div>
                 <div class="motor-dial-container">
-                    <svg id="motorDial" width="250" height="250" viewBox="0 0 250 250">
+                    <svg id="motorDial" viewBox="0 0 250 250">
                         <!-- Outer circle -->
                         <circle cx="125" cy="125" r="100" fill="none" stroke="rgba(99,102,241,0.4)" stroke-width="3" />
                         <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4 4" />
@@ -143,10 +146,9 @@
                         <div class="motor-value">
                             <span id="motorValue">0°</span>
                         </div>
-                        <button class="btn btn-secondary zero-btn" id="zeroMotorBtn">Set Zero</button>
-                    </div>
-                    <div class="moon-angle-display">
-                        <span id="moonAngle">--°</span>
+                        <div class="zero-btn-container">
+                            <button class="square-btn zero-btn" id="zeroMotorBtn" title="Set current position as zero"><span class="zero-btn-text">0°</span></button>
+                        </div>
                     </div>
                 </div>
             </div>

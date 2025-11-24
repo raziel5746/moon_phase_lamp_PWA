@@ -654,15 +654,14 @@ class MoonLamp {
                     throw new Error('GATT server disconnected while getting service');
                 }
 
-                // Step 6: Get all characteristics in parallel
+                // Step 6: Get required characteristics in parallel
                 console.log('Getting Characteristics...');
-                const [ledState, colorPreset, brightness, ledCustom, motorPosition, timeSync] = await Promise.all([
+                const [ledState, colorPreset, brightness, ledCustom, motorPosition] = await Promise.all([
                     this.service.getCharacteristic(LED_STATE_CHAR_UUID),
                     this.service.getCharacteristic(COLOR_PRESET_CHAR_UUID),
                     this.service.getCharacteristic(BRIGHTNESS_CHAR_UUID),
                     this.service.getCharacteristic(LED_CUSTOM_CHAR_UUID),
-                    this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID),
-                    this.service.getCharacteristic(TIME_SYNC_CHAR_UUID)
+                    this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID)
                 ]);
 
                 this.characteristics.ledState = ledState;
@@ -670,7 +669,15 @@ class MoonLamp {
                 this.characteristics.brightness = brightness;
                 this.characteristics.ledCustom = ledCustom;
                 this.characteristics.motorPosition = motorPosition;
-                this.characteristics.timeSync = timeSync;
+
+                // Try to get optional time sync characteristic (may not exist on older firmware)
+                try {
+                    this.characteristics.timeSync = await this.service.getCharacteristic(TIME_SYNC_CHAR_UUID);
+                    console.log('Time sync characteristic found');
+                } catch (e) {
+                    console.log('Time sync characteristic not available (older firmware)');
+                    this.characteristics.timeSync = null;
+                }
 
                 // Step 7: Subscribe to notifications
                 await this.characteristics.ledState.startNotifications();
@@ -682,8 +689,10 @@ class MoonLamp {
                 this.updateConnectionStatus(true);
                 console.log('Connected successfully!');
 
-                // Sync time immediately on connection
-                await this.syncTime();
+                // Sync time immediately on connection (if supported)
+                if (this.characteristics.timeSync) {
+                    await this.syncTime();
+                }
 
                 // Read initial state
                 await this.readLEDState();

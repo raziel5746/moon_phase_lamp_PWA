@@ -70,9 +70,18 @@ class MoonLamp {
     }
 
     setupEventListeners() {
-        // Bluetooth connection
-        document.getElementById('connectBtn').addEventListener('click', () => this.connect());
-        document.getElementById('disconnectBtn').addEventListener('click', () => this.disconnect());
+        // Bluetooth connection via status badge
+        document.getElementById('connectionStatus').addEventListener('click', () => {
+            if (this.device && this.device.gatt.connected) {
+                // Already connected - ask to disconnect
+                if (confirm('Disconnect from Moon Lamp?')) {
+                    this.disconnect();
+                }
+            } else {
+                // Not connected - initiate connection
+                this.connect();
+            }
+        });
 
         // Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -180,17 +189,8 @@ class MoonLamp {
             console.log('All LEDs updated successfully');
         });
 
-        // Motor control
-        const motorSlider = document.getElementById('motorSlider');
+        // Motor control - dial interaction only (no slider)
         const motorDial = document.getElementById('motorDial');
-
-        motorSlider.addEventListener('input', (e) => {
-            const angle = parseInt(e.target.value);
-            this.updateMotorPointer(angle);
-            document.getElementById('motorValue').textContent = angle + '°';
-        });
-
-        // Dial interaction
         let isDragging = false;
 
         const handleMotorDrag = (e) => {
@@ -204,22 +204,41 @@ class MoonLamp {
 
             const dx = clientX - centerX;
             const dy = clientY - centerY;
+            
+            // Calculate distance from center (normalized to dial radius)
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const dialRadius = rect.width / 2;
+            const normalizedDistance = distance / dialRadius;
 
             let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
-            angle = Math.round(angle);
+            
+            // Inner zone (< 60% of radius): snap to 30° increments
+            // Outer zone (>= 60% of radius): fine 1° control
+            if (normalizedDistance < 0.6) {
+                angle = Math.round(angle / 30) * 30;
+                if (angle === 360) angle = 0;
+            } else {
+                angle = Math.round(angle);
+            }
 
-            motorSlider.value = angle;
             this.updateMotorPointer(angle);
             document.getElementById('motorValue').textContent = angle + '°';
+            
+            // Auto-send position when dragging stops
+            this.pendingMotorAngle = angle;
         };
 
         motorDial.addEventListener('mousedown', (e) => {
+            // Don't start dragging if clicking on moon marker or icon
+            if (e.target.id === 'moonMarker' || e.target.id === 'moonIcon') return;
             isDragging = true;
             handleMotorDrag(e);
         });
 
         motorDial.addEventListener('touchstart', (e) => {
+            // Don't start dragging if touching moon marker or icon
+            if (e.target.id === 'moonMarker' || e.target.id === 'moonIcon') return;
             isDragging = true;
             handleMotorDrag(e);
         });
@@ -233,20 +252,29 @@ class MoonLamp {
         });
 
         document.addEventListener('mouseup', () => {
+            if (isDragging && this.pendingMotorAngle !== undefined) {
+                this.setMotorPosition(this.pendingMotorAngle);
+                this.pendingMotorAngle = undefined;
+            }
             isDragging = false;
         });
 
         document.addEventListener('touchend', () => {
+            if (isDragging && this.pendingMotorAngle !== undefined) {
+                this.setMotorPosition(this.pendingMotorAngle);
+                this.pendingMotorAngle = undefined;
+            }
             isDragging = false;
-        });
-
-        document.getElementById('setMotorBtn').addEventListener('click', () => {
-            const position = parseInt(document.getElementById('motorSlider').value);
-            this.setMotorPosition(position);
         });
 
         document.getElementById('zeroMotorBtn').addEventListener('click', () => {
             this.setMotorZero();
+            // Update UI to show 0 position
+            this.motorAngle = 0;
+            this.updateMotorPointer(0);
+            this.updateCurrentPosMarker(0);
+            document.getElementById('motorValue').textContent = '0°';
+            document.getElementById('currentPosition').textContent = '0°';
         });
 
         document.getElementById('realMoonBtn').addEventListener('click', () => {
@@ -260,9 +288,9 @@ class MoonLamp {
         console.log(`Calculated Moon Phase: ${phase.toFixed(4)}, Target Degrees: ${degrees}`);
 
         // Update UI immediately
-        document.getElementById('motorSlider').value = degrees;
         this.updateMotorPointer(degrees);
         document.getElementById('motorValue').textContent = degrees + '°';
+        document.getElementById('moonAngle').textContent = degrees + '°';
 
         // Send to lamp
         this.setMotorPosition(degrees);
@@ -360,6 +388,9 @@ class MoonLamp {
         const moonPhase = this.calculateMoonPhase();
         const moonAngle = Math.round(moonPhase * 360);
         this.moonPositionAngle = moonAngle; // Store for later use
+        
+        // Display moon angle at initial load
+        document.getElementById('moonAngle').textContent = moonAngle + '°';
 
         const moonRad = (moonAngle - 90) * Math.PI / 180;
         const moonX1 = 125 + 85 * Math.cos(moonRad);
@@ -396,9 +427,10 @@ class MoonLamp {
         // Create tooltip
         this.createMoonTooltip(moonAngle);
 
-        // Add click events for both marker and icon
+        // Add click/touch events for both marker and icon
         const toggleTooltip = (e) => {
             e.stopPropagation();
+            e.preventDefault(); // Prevent default touch behavior
             const tooltip = document.getElementById('moonTooltip');
             const isVisible = tooltip.style.display === 'block';
 
@@ -425,8 +457,11 @@ class MoonLamp {
             }
         };
 
+        // Add both click and touch events for mobile support
         moonMarker.addEventListener('click', toggleTooltip);
+        moonMarker.addEventListener('touchend', toggleTooltip);
         moonIcon.addEventListener('click', toggleTooltip);
+        moonIcon.addEventListener('touchend', toggleTooltip);
 
         // Close tooltip when clicking outside
         document.addEventListener('click', (e) => {
@@ -566,19 +601,13 @@ class MoonLamp {
     updateConnectionStatus(connected) {
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
 
         if (connected) {
             statusDot.classList.add('connected');
             statusText.textContent = 'Connected';
-            connectBtn.style.display = 'none';
-            disconnectBtn.style.display = 'block';
         } else {
             statusDot.classList.remove('connected');
             statusText.textContent = 'Not Connected';
-            connectBtn.style.display = 'block';
-            disconnectBtn.style.display = 'none';
         }
     }
 
@@ -590,12 +619,10 @@ class MoonLamp {
     // Bluetooth Methods
     async connect() {
         const statusText = document.getElementById('statusText');
-        const connectBtn = document.getElementById('connectBtn');
 
         try {
             // Show selecting feedback
             statusText.textContent = 'Selecting device...';
-            connectBtn.disabled = true;
 
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
@@ -616,11 +643,11 @@ class MoonLamp {
         } catch (error) {
             console.error('Connection failed:', error);
             statusText.textContent = 'Connection failed';
-            connectBtn.disabled = false;
 
             // Ignore "User cancelled" error
             if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
                 console.log('User cancelled selection');
+                this.updateConnectionStatus(false);
                 return;
             }
 
@@ -728,7 +755,6 @@ class MoonLamp {
         if (this.device && this.device.gatt.connected) {
             this.device.gatt.disconnect();
             this.updateConnectionStatus(false);
-            document.getElementById('connectBtn').disabled = false;
             console.log('Disconnected');
         }
     }
@@ -772,13 +798,20 @@ class MoonLamp {
             const degrees = value.getUint16(0, true); // Little-endian
             console.log('Initial motor position:', degrees);
 
-            // Update UI
-            document.getElementById('motorSlider').value = degrees;
+            // Update UI - set both target and current position
             this.updateMotorPointer(degrees);
+            this.updateCurrentPosMarker(degrees);
             document.getElementById('motorValue').textContent = degrees + '°';
             document.getElementById('currentPosition').textContent = degrees + '°';
         } catch (error) {
             console.error('Failed to read motor position:', error);
+        }
+    }
+
+    updateCurrentPosMarker(angle) {
+        const marker = document.getElementById('currentPosMarker');
+        if (marker) {
+            marker.style.transform = `rotate(${angle}deg)`;
         }
     }
 
@@ -929,6 +962,7 @@ class MoonLamp {
             await this.characteristics.motorPosition.writeValue(data);
             console.log('Motor position set:', position);
             document.getElementById('currentPosition').textContent = position + '°';
+            this.updateCurrentPosMarker(position);
         } catch (error) {
             console.error('Failed to set motor position:', error);
             alert('Failed to set motor position');

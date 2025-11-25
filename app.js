@@ -873,18 +873,22 @@ class MoonLamp {
         }
 
         try {
-            // Get current Unix timestamp in seconds
-            const timestamp = Math.floor(Date.now() / 1000);
+            // Get current Unix timestamp in seconds, adjusted for local timezone
+            // This makes the ESP32 use local time, so schedules work correctly
+            const now = new Date();
+            const utcTimestamp = Math.floor(now.getTime() / 1000);
+            const timezoneOffsetSeconds = now.getTimezoneOffset() * -60; // getTimezoneOffset returns minutes, negative for ahead of UTC
+            const localTimestamp = utcTimestamp + timezoneOffsetSeconds;
             
             // Send as 4-byte little-endian uint32
             const data = new Uint8Array(4);
-            data[0] = timestamp & 0xFF;
-            data[1] = (timestamp >> 8) & 0xFF;
-            data[2] = (timestamp >> 16) & 0xFF;
-            data[3] = (timestamp >> 24) & 0xFF;
+            data[0] = localTimestamp & 0xFF;
+            data[1] = (localTimestamp >> 8) & 0xFF;
+            data[2] = (localTimestamp >> 16) & 0xFF;
+            data[3] = (localTimestamp >> 24) & 0xFF;
             
             await this.characteristics.timeSync.writeValue(data);
-            console.log('Time synced to device:', new Date(timestamp * 1000).toISOString());
+            console.log('Time synced to device (local):', now.toLocaleString());
         } catch (error) {
             console.error('Failed to sync time:', error);
         }
@@ -1075,6 +1079,100 @@ class MoonLamp {
         }
     }
 
+    showEditAutomationDialog(index) {
+        const auto = this.automations[index];
+        if (!auto) return;
+
+        const timeStr = `${auto.hour.toString().padStart(2, '0')}:${auto.minute.toString().padStart(2, '0')}`;
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Edit Schedule</h3>
+                <div class="form-row">
+                    <label>Time:</label>
+                    <input type="time" id="editAutomationTime" value="${timeStr}">
+                </div>
+                <div class="form-row">
+                    <label>Preset:</label>
+                    <select id="editAutomationPreset">
+                        ${this.presets.map((p, i) => 
+                            `<option value="${i}" ${i === auto.presetId ? 'selected' : ''}>${p.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Brightness:</label>
+                    <input type="range" id="editAutomationBrightness" min="0" max="100" value="${auto.brightness}">
+                    <span id="editBrightnessValue">${auto.brightness}%</span>
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelEditBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveEditBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        // Brightness slider update
+        const brightnessInput = document.getElementById('editAutomationBrightness');
+        const brightnessValue = document.getElementById('editBrightnessValue');
+        brightnessInput.addEventListener('input', () => {
+            brightnessValue.textContent = `${brightnessInput.value}%`;
+        });
+
+        document.getElementById('cancelEditBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('saveEditBtn').addEventListener('click', async () => {
+            const time = document.getElementById('editAutomationTime').value;
+            const preset = parseInt(document.getElementById('editAutomationPreset').value);
+            const brightness = parseInt(document.getElementById('editAutomationBrightness').value);
+            
+            if (time) {
+                const [hour, minute] = time.split(':').map(Number);
+                await this.updateAutomation(index, hour, minute, preset, brightness);
+                dialog.remove();
+            }
+        });
+
+        // Close on backdrop click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+    }
+
+    async updateAutomation(index, hour, minute, presetId, brightness) {
+        if (!this.characteristics.automations) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            // Command 0x03 = Update automation
+            const data = new Uint8Array(9);
+            data[0] = 0x03; // Update command
+            data[1] = index;
+            data[2] = hour;
+            data[3] = minute;
+            data[4] = presetId;
+            data[5] = brightness;
+            data[6] = 0; // r (not used for preset)
+            data[7] = 0; // g
+            data[8] = 0; // b
+
+            await this.characteristics.automations.writeValue(data);
+            console.log('Automation updated:', index);
+            
+            // Re-read automations to update UI
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to update automation:', error);
+        }
+    }
+
     renderAutomations() {
         const container = document.getElementById('automationsList');
         if (!container) return;
@@ -1088,15 +1186,17 @@ class MoonLamp {
         
         container.innerHTML = this.automations.map((auto, index) => {
             const timeStr = `${auto.hour.toString().padStart(2, '0')}:${auto.minute.toString().padStart(2, '0')}`;
-            const presetName = auto.presetId < presetNames.length ? presetNames[auto.presetId] : 'Custom';
+            const presetName = this.presets && this.presets[auto.presetId] 
+                ? this.presets[auto.presetId].name 
+                : (auto.presetId < presetNames.length ? presetNames[auto.presetId] : 'Custom');
             
             return `
-                <div class="automation-item ${auto.enabled ? '' : 'disabled'}">
+                <div class="automation-item ${auto.enabled ? '' : 'disabled'}" onclick="moonLamp.showEditAutomationDialog(${index})">
                     <div class="automation-info">
                         <span class="automation-time">${timeStr}</span>
                         <span class="automation-preset">${presetName} @ ${auto.brightness}%</span>
                     </div>
-                    <div class="automation-actions">
+                    <div class="automation-actions" onclick="event.stopPropagation()">
                         <label class="toggle-label small">
                             <input type="checkbox" ${auto.enabled ? 'checked' : ''} 
                                    onchange="moonLamp.toggleAutomation(${index}, this.checked)">
@@ -1139,6 +1239,7 @@ class MoonLamp {
             }
 
             this.renderPresets();
+            this.updateAutomationPresetDropdown();
         } catch (error) {
             console.error('Failed to read custom presets:', error);
         }
@@ -1243,6 +1344,23 @@ class MoonLamp {
         if (addBtn) {
             addBtn.addEventListener('click', () => this.showAddPresetDialog());
         }
+
+        // Restore selected state if we have one
+        if (this.selectedPreset !== undefined) {
+            const selectedBtn = container.querySelector(`.preset-btn[data-preset="${this.selectedPreset}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+        }
+    }
+
+    updateAutomationPresetDropdown() {
+        const select = document.getElementById('automationPreset');
+        if (!select || !this.presets) return;
+
+        select.innerHTML = this.presets.map((preset, index) => 
+            `<option value="${index}">${preset.name}</option>`
+        ).join('');
     }
 
     showAddPresetDialog() {
@@ -1350,15 +1468,31 @@ class MoonLamp {
 
         let activePreset = -1;
 
-        if (matches(255, 220, 150)) activePreset = 0; // Warm White
-        else if (matches(255, 100, 0)) activePreset = 1; // Sunset
-        else if (matches(0, 100, 255)) activePreset = 2; // Ocean Blue
-        else if (matches(255, 0, 100)) activePreset = 3; // Pink Dream
-        else if (matches(100, 255, 100)) activePreset = 4; // Forest Green
+        // Check all presets (including custom)
+        if (this.presets) {
+            for (let i = 0; i < this.presets.length; i++) {
+                if (matches(this.presets[i].r, this.presets[i].g, this.presets[i].b)) {
+                    activePreset = i;
+                    break;
+                }
+            }
+        } else {
+            // Fallback to hardcoded defaults if presets not loaded
+            if (matches(255, 220, 150)) activePreset = 0;
+            else if (matches(255, 100, 0)) activePreset = 1;
+            else if (matches(0, 100, 255)) activePreset = 2;
+            else if (matches(255, 0, 100)) activePreset = 3;
+            else if (matches(100, 255, 100)) activePreset = 4;
+        }
 
+        // Store and display selected preset
+        this.selectedPreset = activePreset;
+        document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+            btn.classList.remove('selected', 'active');
+        });
         if (activePreset !== -1) {
             const btn = document.querySelector(`.preset-btn[data-preset="${activePreset}"]`);
-            if (btn) btn.classList.add('active');
+            if (btn) btn.classList.add('selected');
         }
 
         // Check Brightness Presets

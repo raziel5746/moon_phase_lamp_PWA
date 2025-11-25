@@ -842,6 +842,30 @@ h3 {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.btn-icon.delete-btn {
+    color: var(--text-secondary);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-icon.delete-btn:hover {
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.btn-icon.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.btn-icon.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .toggle-label.small {
     font-size: 0.85em;
 }

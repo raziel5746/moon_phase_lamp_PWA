@@ -1240,6 +1240,11 @@ class MoonLamp {
 
             this.renderPresets();
             this.updateAutomationPresetDropdown();
+            
+            // Re-detect active preset now that we have all presets loaded
+            if (this.ledStates && this.ledStates.length > 0) {
+                this.updatePresetFeedback();
+            }
         } catch (error) {
             console.error('Failed to read custom presets:', error);
         }
@@ -1460,6 +1465,8 @@ class MoonLamp {
         const r = firstLed.r;
         const g = firstLed.g;
         const b = firstLed.b;
+        const brightness = firstLed.brightness;
+        
 
         // Helper to check if color matches within small tolerance
         const matches = (tr, tg, tb) => {
@@ -1471,7 +1478,8 @@ class MoonLamp {
         // Check all presets (including custom)
         if (this.presets) {
             for (let i = 0; i < this.presets.length; i++) {
-                if (matches(this.presets[i].r, this.presets[i].g, this.presets[i].b)) {
+                const p = this.presets[i];
+                if (matches(p.r, p.g, p.b)) {
                     activePreset = i;
                     break;
                 }
@@ -1496,7 +1504,6 @@ class MoonLamp {
         }
 
         // Check Brightness Presets
-        const brightness = firstLed.brightness;
         const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${brightness}"]`);
         if (brightnessBtn) {
             brightnessBtn.classList.add('active');

@@ -1,12 +1,15 @@
 // Moon Lamp PWA - Web Bluetooth Control
 // BLE Service and Characteristics UUIDs (must match ESP32)
-const LAMP_SERVICE_UUID = '12345678-1234-5678-1234-56789abcdef0';
+const LAMP_SERVICE_UUID = 'a1b2c3d4-1234-5678-1234-56789abcdef0';
 const LED_STATE_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef1';
 const COLOR_PRESET_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef2';
 const BRIGHTNESS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef3';
 const LED_CUSTOM_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef4';
 const MOTOR_POSITION_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef5';
 const TIME_SYNC_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef6';
+const AUTO_TRACKING_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef7';
+const AUTOMATIONS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef8';
+const CUSTOM_PRESETS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef9';
 
 class MoonLamp {
     constructor() {
@@ -21,6 +24,15 @@ class MoonLamp {
         // Track a continuous motor dial angle for smooth wrap-around
         this.motorAngle = 0; // can go beyond 0–360 for animation purposes
 
+        // Default presets (shown even when disconnected)
+        this.presets = [
+            { r: 255, g: 220, b: 150, name: 'Warm White', isCustom: false },
+            { r: 255, g: 100, b: 0, name: 'Sunset', isCustom: false },
+            { r: 0, g: 100, b: 255, name: 'Ocean Blue', isCustom: false },
+            { r: 255, g: 0, b: 100, name: 'Pink Dream', isCustom: false },
+            { r: 100, g: 255, b: 100, name: 'Forest Green', isCustom: false }
+        ];
+
         this.init();
     }
 
@@ -29,6 +41,7 @@ class MoonLamp {
         this.createLEDRing();
         this.createMotorDial();
         this.updateUI();
+        this.renderPresets(); // Render default presets on load
 
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
@@ -280,6 +293,53 @@ class MoonLamp {
         document.getElementById('realMoonBtn').addEventListener('click', () => {
             this.setRealMoonPosition();
         });
+
+        // Auto tracking controls
+        const autoTrackingToggle = document.getElementById('autoTrackingToggle');
+        const trackingInterval = document.getElementById('trackingInterval');
+        
+        if (autoTrackingToggle) {
+            autoTrackingToggle.addEventListener('change', () => {
+                const enabled = autoTrackingToggle.checked;
+                const interval = parseInt(trackingInterval?.value || '60');
+                this.setAutoTracking(enabled, interval);
+            });
+        }
+        
+        if (trackingInterval) {
+            trackingInterval.addEventListener('change', () => {
+                const enabled = autoTrackingToggle?.checked || false;
+                const interval = parseInt(trackingInterval.value);
+                this.setAutoTracking(enabled, interval);
+            });
+        }
+
+        // Automations form
+        const automationBrightness = document.getElementById('automationBrightness');
+        const automationBrightnessValue = document.getElementById('automationBrightnessValue');
+        
+        if (automationBrightness && automationBrightnessValue) {
+            automationBrightness.addEventListener('input', () => {
+                automationBrightnessValue.textContent = automationBrightness.value + '%';
+            });
+        }
+
+        const addAutomationBtn = document.getElementById('addAutomationBtn');
+        if (addAutomationBtn) {
+            addAutomationBtn.addEventListener('click', () => {
+                const timeInput = document.getElementById('automationTime');
+                const presetSelect = document.getElementById('automationPreset');
+                const brightnessInput = document.getElementById('automationBrightness');
+                
+                if (timeInput && presetSelect && brightnessInput) {
+                    const [hour, minute] = timeInput.value.split(':').map(Number);
+                    const presetId = parseInt(presetSelect.value);
+                    const brightness = parseInt(brightnessInput.value);
+                    
+                    this.addAutomation(hour, minute, presetId, brightness);
+                }
+            });
+        }
     }
 
     setRealMoonPosition() {
@@ -672,9 +732,16 @@ class MoonLamp {
 
                 this.server = await Promise.race([connectPromise, timeoutPromise]);
 
-                // Step 2: Immediately try to get service (no delay - ESP32 disconnects during waits)
+                // Small delay to let BLE stabilize
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Step 2: Get service with timeout
                 console.log('Getting Service...');
-                this.service = await this.server.getPrimaryService(LAMP_SERVICE_UUID);
+                const servicePromise = this.server.getPrimaryService(LAMP_SERVICE_UUID);
+                const serviceTimeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Service discovery timeout')), 10000)
+                );
+                this.service = await Promise.race([servicePromise, serviceTimeout]);
 
                 // Step 5: Verify still connected
                 if (!this.server || !this.server.connected) {
@@ -706,6 +773,43 @@ class MoonLamp {
                     this.characteristics.timeSync = null;
                 }
 
+                // Debug: List all characteristics in the service
+                try {
+                    const allChars = await this.service.getCharacteristics();
+                    console.log('All characteristics found:', allChars.length);
+                    allChars.forEach(c => console.log('  - UUID:', c.uuid));
+                } catch (e) {
+                    console.log('Could not list characteristics:', e.message);
+                }
+
+                // Try to get optional auto-tracking characteristic
+                try {
+                    this.characteristics.autoTracking = await this.service.getCharacteristic(AUTO_TRACKING_CHAR_UUID);
+                    console.log('Auto tracking characteristic found');
+                } catch (e) {
+                    console.log('Auto tracking characteristic not available (older firmware)');
+                    this.characteristics.autoTracking = null;
+                }
+
+                // Try to get optional automations characteristic
+                try {
+                    this.characteristics.automations = await this.service.getCharacteristic(AUTOMATIONS_CHAR_UUID);
+                    console.log('Automations characteristic found');
+                } catch (e) {
+                    console.log('Automations characteristic not available (older firmware)');
+                    this.characteristics.automations = null;
+                }
+
+                // Try to get optional custom presets characteristic
+                try {
+                    console.log('Looking for custom presets characteristic:', CUSTOM_PRESETS_CHAR_UUID);
+                    this.characteristics.customPresets = await this.service.getCharacteristic(CUSTOM_PRESETS_CHAR_UUID);
+                    console.log('Custom presets characteristic found:', this.characteristics.customPresets);
+                } catch (e) {
+                    console.log('Custom presets characteristic not available (older firmware):', e.message);
+                    this.characteristics.customPresets = null;
+                }
+
                 // Step 7: Subscribe to notifications
                 await this.characteristics.ledState.startNotifications();
                 this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
@@ -724,6 +828,9 @@ class MoonLamp {
                 // Read initial state
                 await this.readLEDState();
                 await this.readMotorPosition();
+                await this.readAutoTracking();
+                await this.readAutomations();
+                await this.readCustomPresets();
 
                 return; // Success, exit function
 
@@ -766,18 +873,22 @@ class MoonLamp {
         }
 
         try {
-            // Get current Unix timestamp in seconds
-            const timestamp = Math.floor(Date.now() / 1000);
+            // Get current Unix timestamp in seconds, adjusted for local timezone
+            // This makes the ESP32 use local time, so schedules work correctly
+            const now = new Date();
+            const utcTimestamp = Math.floor(now.getTime() / 1000);
+            const timezoneOffsetSeconds = now.getTimezoneOffset() * -60; // getTimezoneOffset returns minutes, negative for ahead of UTC
+            const localTimestamp = utcTimestamp + timezoneOffsetSeconds;
             
             // Send as 4-byte little-endian uint32
             const data = new Uint8Array(4);
-            data[0] = timestamp & 0xFF;
-            data[1] = (timestamp >> 8) & 0xFF;
-            data[2] = (timestamp >> 16) & 0xFF;
-            data[3] = (timestamp >> 24) & 0xFF;
+            data[0] = localTimestamp & 0xFF;
+            data[1] = (localTimestamp >> 8) & 0xFF;
+            data[2] = (localTimestamp >> 16) & 0xFF;
+            data[3] = (localTimestamp >> 24) & 0xFF;
             
             await this.characteristics.timeSync.writeValue(data);
-            console.log('Time synced to device:', new Date(timestamp * 1000).toISOString());
+            console.log('Time synced to device (local):', now.toLocaleString());
         } catch (error) {
             console.error('Failed to sync time:', error);
         }
@@ -806,6 +917,501 @@ class MoonLamp {
         } catch (error) {
             console.error('Failed to read motor position:', error);
         }
+    }
+
+    async readAutoTracking() {
+        if (!this.characteristics.autoTracking) {
+            console.log('Auto tracking characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.characteristics.autoTracking.readValue();
+            const enabled = value.getUint8(0) !== 0;
+            const intervalMinutes = value.getUint16(1, true); // Little-endian
+            console.log('Auto tracking:', enabled ? 'ON' : 'OFF', 'interval:', intervalMinutes, 'min');
+
+            // Update UI
+            const toggle = document.getElementById('autoTrackingToggle');
+            const select = document.getElementById('trackingInterval');
+            if (toggle) toggle.checked = enabled;
+            if (select) select.value = intervalMinutes.toString();
+        } catch (error) {
+            console.error('Failed to read auto tracking:', error);
+        }
+    }
+
+    async setAutoTracking(enabled, intervalMinutes) {
+        if (!this.characteristics.autoTracking) {
+            console.warn('Auto tracking characteristic not available');
+            return;
+        }
+
+        try {
+            // Byte 0: enabled (0 or 1)
+            // Bytes 1-2: interval in minutes (little-endian uint16)
+            const data = new Uint8Array(3);
+            data[0] = enabled ? 1 : 0;
+            data[1] = intervalMinutes & 0xFF;
+            data[2] = (intervalMinutes >> 8) & 0xFF;
+
+            await this.characteristics.autoTracking.writeValue(data);
+            console.log('Auto tracking set:', enabled ? 'ON' : 'OFF', 'interval:', intervalMinutes, 'min');
+        } catch (error) {
+            console.error('Failed to set auto tracking:', error);
+        }
+    }
+
+    async readAutomations() {
+        if (!this.characteristics.automations) {
+            console.log('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.characteristics.automations.readValue();
+            const count = value.getUint8(0);
+            console.log('Automations count:', count);
+
+            this.automations = [];
+            for (let i = 0; i < count; i++) {
+                const offset = 1 + i * 8;
+                this.automations.push({
+                    enabled: value.getUint8(offset) !== 0,
+                    hour: value.getUint8(offset + 1),
+                    minute: value.getUint8(offset + 2),
+                    presetId: value.getUint8(offset + 3),
+                    brightness: value.getUint8(offset + 4),
+                    r: value.getUint8(offset + 5),
+                    g: value.getUint8(offset + 6),
+                    b: value.getUint8(offset + 7)
+                });
+            }
+
+            this.renderAutomations();
+        } catch (error) {
+            console.error('Failed to read automations:', error);
+        }
+    }
+
+    async addAutomation(hour, minute, presetId, brightness, r = 0, g = 0, b = 0) {
+        if (!this.characteristics.automations) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            // Command 0x01 = Add automation
+            const data = new Uint8Array(8);
+            data[0] = 0x01; // Add command
+            data[1] = hour;
+            data[2] = minute;
+            data[3] = presetId;
+            data[4] = brightness;
+            data[5] = r;
+            data[6] = g;
+            data[7] = b;
+
+            await this.characteristics.automations.writeValue(data);
+            console.log('Automation added:', hour + ':' + minute);
+            
+            // Re-read automations to update UI
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to add automation:', error);
+        }
+    }
+
+    async removeAutomation(index) {
+        if (!this.characteristics.automations) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        // Show loading state on the button
+        const btn = document.querySelector(`.automation-item:nth-child(${index + 1}) .btn-icon`);
+        if (btn) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+        }
+
+        try {
+            // Command 0x02 = Remove automation
+            const data = new Uint8Array(2);
+            data[0] = 0x02; // Remove command
+            data[1] = index;
+
+            await this.characteristics.automations.writeValue(data);
+            console.log('Automation removed:', index);
+            
+            // Re-read automations to update UI
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to remove automation:', error);
+            // Restore button on error
+            if (btn) {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+    }
+
+    async toggleAutomation(index, enabled) {
+        if (!this.characteristics.automations) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            // Command 0x04 = Enable/disable automation
+            const data = new Uint8Array(3);
+            data[0] = 0x04; // Enable/disable command
+            data[1] = index;
+            data[2] = enabled ? 1 : 0;
+
+            await this.characteristics.automations.writeValue(data);
+            console.log('Automation', index, enabled ? 'enabled' : 'disabled');
+            
+            // Re-read automations to update UI
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to toggle automation:', error);
+        }
+    }
+
+    showEditAutomationDialog(index) {
+        const auto = this.automations[index];
+        if (!auto) return;
+
+        const timeStr = `${auto.hour.toString().padStart(2, '0')}:${auto.minute.toString().padStart(2, '0')}`;
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Edit Schedule</h3>
+                <div class="form-row">
+                    <label>Time:</label>
+                    <input type="time" id="editAutomationTime" value="${timeStr}">
+                </div>
+                <div class="form-row">
+                    <label>Preset:</label>
+                    <select id="editAutomationPreset">
+                        ${this.presets.map((p, i) => 
+                            `<option value="${i}" ${i === auto.presetId ? 'selected' : ''}>${p.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Brightness:</label>
+                    <input type="range" id="editAutomationBrightness" min="0" max="100" value="${auto.brightness}">
+                    <span id="editBrightnessValue">${auto.brightness}%</span>
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelEditBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveEditBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        // Brightness slider update
+        const brightnessInput = document.getElementById('editAutomationBrightness');
+        const brightnessValue = document.getElementById('editBrightnessValue');
+        brightnessInput.addEventListener('input', () => {
+            brightnessValue.textContent = `${brightnessInput.value}%`;
+        });
+
+        document.getElementById('cancelEditBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('saveEditBtn').addEventListener('click', async () => {
+            const time = document.getElementById('editAutomationTime').value;
+            const preset = parseInt(document.getElementById('editAutomationPreset').value);
+            const brightness = parseInt(document.getElementById('editAutomationBrightness').value);
+            
+            if (time) {
+                const [hour, minute] = time.split(':').map(Number);
+                await this.updateAutomation(index, hour, minute, preset, brightness);
+                dialog.remove();
+            }
+        });
+
+        // Close on backdrop click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+    }
+
+    async updateAutomation(index, hour, minute, presetId, brightness) {
+        if (!this.characteristics.automations) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            // Command 0x03 = Update automation
+            const data = new Uint8Array(9);
+            data[0] = 0x03; // Update command
+            data[1] = index;
+            data[2] = hour;
+            data[3] = minute;
+            data[4] = presetId;
+            data[5] = brightness;
+            data[6] = 0; // r (not used for preset)
+            data[7] = 0; // g
+            data[8] = 0; // b
+
+            await this.characteristics.automations.writeValue(data);
+            console.log('Automation updated:', index);
+            
+            // Re-read automations to update UI
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to update automation:', error);
+        }
+    }
+
+    renderAutomations() {
+        const container = document.getElementById('automationsList');
+        if (!container) return;
+
+        if (!this.automations || this.automations.length === 0) {
+            container.innerHTML = '<p class="info-text">No automations set. Add one to schedule LED changes.</p>';
+            return;
+        }
+
+        const presetNames = ['Warm White', 'Sunset', 'Ocean Blue', 'Pink Dream', 'Forest Green'];
+        
+        container.innerHTML = this.automations.map((auto, index) => {
+            const timeStr = `${auto.hour.toString().padStart(2, '0')}:${auto.minute.toString().padStart(2, '0')}`;
+            const presetName = this.presets && this.presets[auto.presetId] 
+                ? this.presets[auto.presetId].name 
+                : (auto.presetId < presetNames.length ? presetNames[auto.presetId] : 'Custom');
+            
+            return `
+                <div class="automation-item ${auto.enabled ? '' : 'disabled'}" onclick="moonLamp.showEditAutomationDialog(${index})">
+                    <div class="automation-info">
+                        <span class="automation-time">${timeStr}</span>
+                        <span class="automation-preset">${presetName} @ ${auto.brightness}%</span>
+                    </div>
+                    <div class="automation-actions" onclick="event.stopPropagation()">
+                        <label class="toggle-label small">
+                            <input type="checkbox" ${auto.enabled ? 'checked' : ''} 
+                                   onchange="moonLamp.toggleAutomation(${index}, this.checked)">
+                        </label>
+                        <button class="btn-icon delete-btn" onclick="moonLamp.removeAutomation(${index})">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async readCustomPresets() {
+        if (!this.characteristics.customPresets) {
+            console.log('Custom presets characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.characteristics.customPresets.readValue();
+            const count = value.getUint8(0);
+            console.log('Presets count:', count);
+
+            this.presets = [];
+            let offset = 1;
+            for (let i = 0; i < count; i++) {
+                const r = value.getUint8(offset);
+                const g = value.getUint8(offset + 1);
+                const b = value.getUint8(offset + 2);
+                const nameLen = value.getUint8(offset + 3);
+                let name = '';
+                for (let j = 0; j < nameLen; j++) {
+                    name += String.fromCharCode(value.getUint8(offset + 4 + j));
+                }
+                this.presets.push({ r, g, b, name, isCustom: i >= 5 });
+                offset += 4 + nameLen;
+            }
+
+            this.renderPresets();
+            this.updateAutomationPresetDropdown();
+            
+            // Re-detect active preset now that we have all presets loaded
+            if (this.ledStates && this.ledStates.length > 0) {
+                this.updatePresetFeedback();
+            }
+        } catch (error) {
+            console.error('Failed to read custom presets:', error);
+        }
+    }
+
+    async addCustomPreset(r, g, b, name) {
+        // Check if we have room for more custom presets
+        const customCount = this.presets.filter(p => p.isCustom).length;
+        if (customCount >= 5) {
+            alert('Maximum 5 custom presets allowed');
+            return;
+        }
+
+        if (!this.characteristics.customPresets) {
+            // Not connected - add locally only (won't persist on ESP32)
+            this.presets.push({ r, g, b, name, isCustom: true });
+            this.renderPresets();
+            alert('Preset added locally. Connect to lamp to sync.');
+            return;
+        }
+
+        try {
+            // Command 0x01 = Add custom preset
+            const nameBytes = new TextEncoder().encode(name.substring(0, 15));
+            const data = new Uint8Array(5 + nameBytes.length);
+            data[0] = 0x01; // Add command
+            data[1] = r;
+            data[2] = g;
+            data[3] = b;
+            data[4] = nameBytes.length;
+            data.set(nameBytes, 5);
+
+            await this.characteristics.customPresets.writeValue(data);
+            console.log('Custom preset added:', name);
+            
+            // Re-read presets to update UI
+            await this.readCustomPresets();
+        } catch (error) {
+            console.error('Failed to add custom preset:', error);
+            alert('Failed to add preset: ' + error.message);
+        }
+    }
+
+    async removeCustomPreset(index) {
+        if (!this.characteristics.customPresets) {
+            console.warn('Custom presets characteristic not available');
+            return;
+        }
+
+        try {
+            // Command 0x02 = Remove custom preset
+            const data = new Uint8Array(2);
+            data[0] = 0x02; // Remove command
+            data[1] = index;
+
+            await this.characteristics.customPresets.writeValue(data);
+            console.log('Custom preset removed:', index);
+            
+            // Re-read presets to update UI
+            await this.readCustomPresets();
+        } catch (error) {
+            console.error('Failed to remove custom preset:', error);
+        }
+    }
+
+    renderPresets() {
+        const container = document.querySelector('.preset-grid');
+        if (!container || !this.presets) return;
+
+        // Render all presets (default + custom)
+        let html = this.presets.map((preset, index) => `
+            <button class="preset-btn" data-preset="${index}">
+                <div class="preset-color" style="background: rgb(${preset.r},${preset.g},${preset.b});"></div>
+                <span>${preset.name}</span>
+                ${preset.isCustom ? `<button class="preset-delete" onclick="event.stopPropagation(); moonLamp.removeCustomPreset(${index})">×</button>` : ''}
+            </button>
+        `).join('');
+
+        // Add the "+" button if we have room for more custom presets
+        const customCount = this.presets.filter(p => p.isCustom).length;
+        if (customCount < 5) {
+            html += `
+                <button class="preset-btn add-preset-btn" id="addPresetBtn">
+                    <div class="preset-color add-preset-color">+</div>
+                    <span>Add Custom</span>
+                </button>
+            `;
+        }
+
+        container.innerHTML = html;
+
+        // Re-attach event listeners
+        container.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = parseInt(btn.dataset.preset);
+                this.setColorPreset(preset);
+            });
+        });
+
+        // Add preset button listener
+        const addBtn = document.getElementById('addPresetBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.showAddPresetDialog());
+        }
+
+        // Restore selected state if we have one
+        if (this.selectedPreset !== undefined) {
+            const selectedBtn = container.querySelector(`.preset-btn[data-preset="${this.selectedPreset}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+        }
+    }
+
+    updateAutomationPresetDropdown() {
+        const select = document.getElementById('automationPreset');
+        if (!select || !this.presets) return;
+
+        select.innerHTML = this.presets.map((preset, index) => 
+            `<option value="${index}">${preset.name}</option>`
+        ).join('');
+    }
+
+    showAddPresetDialog() {
+        // Create a simple color picker dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Add Custom Preset</h3>
+                <div class="form-row">
+                    <label>Color:</label>
+                    <input type="color" id="newPresetColor" value="#ff6600">
+                </div>
+                <div class="form-row">
+                    <label>Name:</label>
+                    <input type="text" id="newPresetName" placeholder="My Color" maxlength="15">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelPresetBtn">Cancel</button>
+                    <button class="btn btn-primary" id="savePresetBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        document.getElementById('cancelPresetBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('savePresetBtn').addEventListener('click', () => {
+            const color = document.getElementById('newPresetColor').value;
+            const name = document.getElementById('newPresetName').value || 'Custom';
+            
+            // Convert hex to RGB
+            const r = parseInt(color.substr(1, 2), 16);
+            const g = parseInt(color.substr(3, 2), 16);
+            const b = parseInt(color.substr(5, 2), 16);
+            
+            this.addCustomPreset(r, g, b, name);
+            dialog.remove();
+        });
+
+        // Close on backdrop click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
     }
 
     updateCurrentPosMarker(angle) {
@@ -859,6 +1465,8 @@ class MoonLamp {
         const r = firstLed.r;
         const g = firstLed.g;
         const b = firstLed.b;
+        const brightness = firstLed.brightness;
+        
 
         // Helper to check if color matches within small tolerance
         const matches = (tr, tg, tb) => {
@@ -867,19 +1475,35 @@ class MoonLamp {
 
         let activePreset = -1;
 
-        if (matches(255, 220, 150)) activePreset = 0; // Warm White
-        else if (matches(255, 100, 0)) activePreset = 1; // Sunset
-        else if (matches(0, 100, 255)) activePreset = 2; // Ocean Blue
-        else if (matches(255, 0, 100)) activePreset = 3; // Pink Dream
-        else if (matches(100, 255, 100)) activePreset = 4; // Forest Green
+        // Check all presets (including custom)
+        if (this.presets) {
+            for (let i = 0; i < this.presets.length; i++) {
+                const p = this.presets[i];
+                if (matches(p.r, p.g, p.b)) {
+                    activePreset = i;
+                    break;
+                }
+            }
+        } else {
+            // Fallback to hardcoded defaults if presets not loaded
+            if (matches(255, 220, 150)) activePreset = 0;
+            else if (matches(255, 100, 0)) activePreset = 1;
+            else if (matches(0, 100, 255)) activePreset = 2;
+            else if (matches(255, 0, 100)) activePreset = 3;
+            else if (matches(100, 255, 100)) activePreset = 4;
+        }
 
+        // Store and display selected preset
+        this.selectedPreset = activePreset;
+        document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+            btn.classList.remove('selected', 'active');
+        });
         if (activePreset !== -1) {
             const btn = document.querySelector(`.preset-btn[data-preset="${activePreset}"]`);
-            if (btn) btn.classList.add('active');
+            if (btn) btn.classList.add('selected');
         }
 
         // Check Brightness Presets
-        const brightness = firstLed.brightness;
         const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${brightness}"]`);
         if (brightnessBtn) {
             brightnessBtn.classList.add('active');
@@ -896,6 +1520,13 @@ class MoonLamp {
             const data = new Uint8Array([preset]);
             await this.characteristics.colorPreset.writeValue(data);
             console.log('Color preset set:', preset);
+            
+            // Update selected state in UI
+            this.selectedPreset = preset;
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                const btnPreset = parseInt(btn.dataset.preset);
+                btn.classList.toggle('selected', btnPreset === preset);
+            });
         } catch (error) {
             console.error('Failed to set color preset:', error);
             alert('Failed to set color preset');
@@ -1005,4 +1636,4 @@ class MoonLamp {
 }
 
 // Initialize app
-const lamp = new MoonLamp();
+const moonLamp = new MoonLamp();

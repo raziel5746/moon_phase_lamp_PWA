@@ -30,6 +30,7 @@
             <button class="tab-btn active" data-tab="presets">Presets</button>
             <button class="tab-btn" data-tab="custom">Custom</button>
             <button class="tab-btn" data-tab="motor">Motor</button>
+            <button class="tab-btn" data-tab="automations">Schedule</button>
         </div>
 
         <!-- Presets Tab -->
@@ -150,6 +151,66 @@
                             <button class="square-btn zero-btn" id="zeroMotorBtn" title="Set current position as zero"><span class="zero-btn-text">0°</span></button>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Auto Tracking Settings -->
+                <div class="auto-tracking-section">
+                    <div class="auto-tracking-header">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="autoTrackingToggle" checked>
+                            <span>Auto Moon Tracking</span>
+                        </label>
+                    </div>
+                    <div class="tracking-interval">
+                        <label for="trackingInterval">Update every:</label>
+                        <select id="trackingInterval">
+                            <option value="5">5 minutes</option>
+                            <option value="15">15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="120">2 hours</option>
+                            <option value="360">6 hours</option>
+                            <option value="720">12 hours</option>
+                            <option value="1440">24 hours</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automations Tab -->
+        <div class="tab-content" id="automations">
+            <div class="card">
+                <h2>⏰ Scheduled Lighting</h2>
+                <p class="info-text">Set times for automatic LED changes. Runs on the lamp even without phone connection.</p>
+                
+                <div id="automationsList">
+                    <p class="info-text">Connect to lamp to view automations.</p>
+                </div>
+                
+                <!-- Add Automation Form -->
+                <div class="add-automation-form">
+                    <h3>Add New Schedule</h3>
+                    <div class="form-row">
+                        <label>Time:</label>
+                        <input type="time" id="automationTime" value="07:00">
+                    </div>
+                    <div class="form-row">
+                        <label>Preset:</label>
+                        <select id="automationPreset">
+                            <option value="0">Warm White</option>
+                            <option value="1">Sunset</option>
+                            <option value="2">Ocean Blue</option>
+                            <option value="3">Pink Dream</option>
+                            <option value="4">Forest Green</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Brightness:</label>
+                        <input type="range" id="automationBrightness" min="0" max="100" value="75">
+                        <span id="automationBrightnessValue">75%</span>
+                    </div>
+                    <button class="btn btn-primary" id="addAutomationBtn">Add Schedule</button>
                 </div>
             </div>
         </div>

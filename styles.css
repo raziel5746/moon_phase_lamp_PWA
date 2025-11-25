@@ -742,6 +742,180 @@ h3 {
     font-size: 32px;
 }
 
+/* Auto Tracking Section */
+.auto-tracking-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--glass-bg);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.auto-tracking-header {
+    margin-bottom: 12px;
+}
+
+.tracking-interval {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tracking-interval label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.tracking-interval select {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.tracking-interval select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.tracking-interval select option {
+    background: var(--card-bg);
+    color: var(--text);
+}
+
+/* Automations Tab */
+.automation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--glass-bg);
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    margin-bottom: 10px;
+    transition: opacity 0.3s ease;
+}
+
+.automation-item.disabled {
+    opacity: 0.5;
+}
+
+.automation-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.automation-time {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--primary-light);
+}
+
+.automation-preset {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.automation-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-label.small {
+    font-size: 0.85em;
+}
+
+.add-automation-form {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--glass-bg);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.add-automation-form h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1em;
+    color: var(--text);
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.form-row label {
+    min-width: 80px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.form-row input[type="time"],
+.form-row select {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+}
+
+.form-row input[type="time"]:focus,
+.form-row select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-row input[type="range"] {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.form-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    cursor: pointer;
+}
+
+.form-row span {
+    min-width: 40px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 0.9em;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
     body {
@@ -862,4 +1036,121 @@ h3 {
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
     border-right: 10px solid var(--accent);
+}
+
+/* Custom Presets */
+.preset-btn {
+    position: relative;
+}
+
+.preset-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.preset-btn:hover .preset-delete {
+    opacity: 1;
+}
+
+.preset-btn.selected {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.add-preset-btn {
+    border: 2px dashed var(--glass-border);
+    background: transparent;
+}
+
+.add-preset-color {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: var(--text-secondary);
+    background: var(--glass-bg) !important;
+    border: 2px dashed var(--glass-border);
+}
+
+.add-preset-btn:hover .add-preset-color {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Preset Dialog */
+.preset-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.preset-dialog-content {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    min-width: 280px;
+    max-width: 90%;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.preset-dialog-content h3 {
+    margin: 0 0 20px 0;
+    color: var(--text);
+    font-size: 1.2em;
+}
+
+.preset-dialog-content .form-row input[type="text"] {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+}
+
+.preset-dialog-content .form-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.preset-dialog-content .form-row input[type="color"] {
+    width: 50px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: flex-end;
 }

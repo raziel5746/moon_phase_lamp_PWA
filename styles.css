@@ -87,7 +87,6 @@ header {
 .app-title {
     display: flex;
     align-items: baseline;
-    gap: 8px;
 }
 
 h1 {
@@ -111,6 +110,7 @@ h1 {
     border-radius: 999px;
     background: rgba(15, 23, 42, 0.4);
     align-self: center;
+    translate: -48px 22px;
 }
 
 .connection-status {

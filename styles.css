@@ -86,7 +86,6 @@ header {
 
 h1 {
     font-size: 1.8em;
-    margin-bottom: 8px;
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 50%, var(--accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -433,7 +432,7 @@ h3 {
 .presets-layout {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 175px);
+    height: calc(100vh - 135px);
     overflow: hidden;
     gap: 20px;
 }

@@ -208,7 +208,11 @@ class MoonLamp {
 
         // Motor control - dial interaction only (no slider)
         const motorDial = document.getElementById('motorDial');
+        const motorPointer = document.getElementById('motorPointer');
+        const motorValueEl = document.getElementById('motorValue');
         let isDragging = false;
+        let rafId = null;
+        let pendingAngle = null;
 
         const handleMotorDrag = (e) => {
             e.preventDefault();
@@ -239,16 +243,42 @@ class MoonLamp {
                 angle = Math.round(angle);
             }
 
-            this.updateMotorPointer(angle);
-            document.getElementById('motorValue').textContent = angle + '°';
-            
-            // Auto-send position when dragging stops
+            // Store pending angle for RAF update
+            pendingAngle = angle;
             this.pendingMotorAngle = angle;
+            
+            // Use requestAnimationFrame for smooth updates
+            if (!rafId) {
+                rafId = requestAnimationFrame(() => {
+                    if (pendingAngle !== null) {
+                        this.updateMotorPointerDirect(motorPointer, pendingAngle);
+                        motorValueEl.textContent = pendingAngle + '°';
+                    }
+                    rafId = null;
+                });
+            }
+        };
+
+        // Helper to check if click/touch is within circular dial area
+        const isWithinDialCircle = (e) => {
+            const rect = motorDial.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dx = clientX - centerX;
+            const dy = clientY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const dialRadius = rect.width / 2;
+            // Allow clicks within 110% of the dial radius (slight margin)
+            return distance <= dialRadius * 0.9;
         };
 
         motorDial.addEventListener('mousedown', (e) => {
             // Don't start dragging if clicking on moon marker or icon
             if (e.target.id === 'moonMarker' || e.target.id === 'moonIcon') return;
+            // Only start if within circular dial area
+            if (!isWithinDialCircle(e)) return;
             isDragging = true;
             handleMotorDrag(e);
         });
@@ -256,6 +286,8 @@ class MoonLamp {
         motorDial.addEventListener('touchstart', (e) => {
             // Don't start dragging if touching moon marker or icon
             if (e.target.id === 'moonMarker' || e.target.id === 'moonIcon') return;
+            // Only start if within circular dial area
+            if (!isWithinDialCircle(e)) return;
             isDragging = true;
             handleMotorDrag(e);
         });
@@ -516,83 +548,16 @@ class MoonLamp {
         moonIcon.setAttribute('font-size', '16');
         moonIcon.setAttribute('id', 'moonIcon');
         moonIcon.textContent = '🌙';
-        moonIcon.style.cursor = 'pointer';
         markersGroup.appendChild(moonIcon);
-
-        // Create tooltip
-        this.createMoonTooltip(moonAngle);
-
-        // Add click/touch events for both marker and icon
-        const toggleTooltip = (e) => {
-            e.stopPropagation();
-            e.preventDefault(); // Prevent default touch behavior
-            const tooltip = document.getElementById('moonTooltip');
-            const isVisible = tooltip.style.display === 'block';
-
-            if (isVisible) {
-                tooltip.style.display = 'none';
-            } else {
-                // Position tooltip relative to the motor dial
-                const motorDial = document.getElementById('motorDial');
-                const dialRect = motorDial.getBoundingClientRect();
-
-                // Calculate position based on moon angle
-                const tooltipAngle = (moonAngle - 90) * Math.PI / 180;
-                const dialCenterX = dialRect.left + dialRect.width / 2;
-                const dialCenterY = dialRect.top + dialRect.height / 2;
-                const tooltipDistance = 140; // Distance from center
-
-                const tooltipX = dialCenterX + tooltipDistance * Math.cos(tooltipAngle) * 2;
-                const tooltipY = dialCenterY + tooltipDistance * Math.sin(tooltipAngle);
-
-                tooltip.style.left = tooltipX + 'px';
-                tooltip.style.top = tooltipY + 'px';
-                tooltip.style.transform = 'translate(-50%, -50%)';
-                tooltip.style.display = 'block';
-            }
-        };
-
-        // Add both click and touch events for mobile support
-        moonMarker.addEventListener('click', toggleTooltip);
-        moonMarker.addEventListener('touchend', toggleTooltip);
-        moonIcon.addEventListener('click', toggleTooltip);
-        moonIcon.addEventListener('touchend', toggleTooltip);
-
-        // Close tooltip when clicking outside
-        document.addEventListener('click', (e) => {
-            const tooltip = document.getElementById('moonTooltip');
-            if (tooltip && !tooltip.contains(e.target) &&
-                e.target.id !== 'moonMarker' && e.target.id !== 'moonIcon') {
-                tooltip.style.display = 'none';
-            }
-        });
-    }
-
-    createMoonTooltip(angle) {
-        const tooltip = document.createElement('div');
-        tooltip.id = 'moonTooltip';
-        tooltip.className = 'moon-tooltip';
-        tooltip.innerHTML = `
-            <div class="moon-tooltip-content">
-                <strong>Real Moon Position</strong>
-                <div style="margin: 8px 0;">${angle}°</div>
-                <button class="btn btn-primary" id="setToMoonBtn" style="margin: 0; padding: 8px 16px; font-size: 0.9em;">Set</button>
-            </div>
-        `;
-        tooltip.style.position = 'fixed';
-        document.body.appendChild(tooltip);
-
-        // Add click handler for Set button
-        document.getElementById('setToMoonBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.setRealMoonPosition();
-            tooltip.style.display = 'none';
-        });
     }
 
     updateMotorPointer(targetAngle) {
         const pointer = document.getElementById('motorPointer');
+        this.updateMotorPointerDirect(pointer, targetAngle);
+    }
 
+    // Optimized version that takes element directly (avoids DOM query during drag)
+    updateMotorPointerDirect(pointer, targetAngle) {
         // Current visual angle (may be outside 0–360 range)
         let current = this.motorAngle;
 

@@ -32,7 +32,7 @@ body {
     background-attachment: fixed;
     color: var(--text);
     min-height: 100vh;
-    padding: 20px 20px 100px 20px;
+    padding: 20px 20px 0px 20px;
     position: relative;
 }
 
@@ -76,13 +76,14 @@ body::before {
 
 header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 10px;
     padding: 10px 0;
+    flex-shrink: 0;
 }
 
 h1 {
-    font-size: 2.5em;
-    margin-bottom: 12px;
+    font-size: 1.8em;
+    margin-bottom: 8px;
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 50%, var(--accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -429,22 +430,22 @@ h3 {
 .presets-layout {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    height: calc(100vh - 280px);
+    height: calc(100vh - 185px);
     overflow: hidden;
     gap: 20px;
 }
 
 .color-presets-card {
-    flex: 0 1 auto;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    max-height: calc(100% - 120px);
+    min-height: 0;
     overflow: hidden;
     margin-bottom: 0;
 }
 
 .preset-grid-scroll {
+    flex: 1;
     overflow-y: auto;
     margin: -4px;
     padding: 4px;
@@ -733,9 +734,13 @@ h3 {
 }
 
 #motorPointer {
-    transition: transform 0.3s ease;
     transform-origin: 125px 125px;
     filter: drop-shadow(0 2px 8px rgba(34, 197, 94, 0.5));
+    will-change: transform;
+}
+
+#motorPointer.animating {
+    transition: transform 0.3s ease;
 }
 
 #currentPosMarker {
@@ -1056,69 +1061,6 @@ h3 {
         width: 38px;
         height: 38px;
     }
-}
-
-/* Moon Position Tooltip */
-.moon-tooltip {
-    display: none;
-    position: fixed;
-    background: var(--card-bg);
-    border: 2px solid var(--accent);
-    border-radius: 16px;
-    padding: 18px;
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.5),
-        0 0 30px var(--accent-glow);
-    z-index: 1000;
-    min-width: 180px;
-    animation: tooltipFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(20px);
-}
-
-@keyframes tooltipFadeIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-}
-
-.moon-tooltip-content {
-    text-align: center;
-    color: var(--text);
-}
-
-.moon-tooltip-content strong {
-    display: block;
-    color: var(--accent);
-    font-size: 0.9em;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-
-.moon-tooltip-content div {
-    font-size: 1.5em;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--primary-light), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.moon-tooltip::before {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0;
-    height: 0;
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-right: 10px solid var(--accent);
 }
 
 /* Custom Presets */

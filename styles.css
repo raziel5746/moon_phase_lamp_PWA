@@ -430,7 +430,7 @@ h3 {
 .presets-layout {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 185px);
+    height: calc(100vh - 210px);
     overflow: hidden;
     gap: 20px;
 }

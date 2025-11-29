@@ -75,6 +75,9 @@ body::before {
 }
 
 header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     text-align: center;
     margin-bottom: 10px;
     padding: 10px 0;
@@ -430,7 +433,7 @@ h3 {
 .presets-layout {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 210px);
+    height: calc(100vh - 175px);
     overflow: hidden;
     gap: 20px;
 }
@@ -1015,7 +1018,7 @@ h3 {
     }
 
     h1 {
-        font-size: 2em;
+        font-size: 1.5em;
     }
 
     .card {

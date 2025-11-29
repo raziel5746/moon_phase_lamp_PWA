@@ -102,7 +102,7 @@ h1 {
 }
 
 .app-version {
-    font-size: 0.6em;
+    font-size: 0.4em;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.1em;

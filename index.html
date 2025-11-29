@@ -35,40 +35,44 @@
 
         <!-- Presets Tab -->
         <div class="tab-content active" id="presets">
-            <div class="card">
-                <h2>🎨 Color Presets</h2>
-                <div class="preset-grid">
-                    <button class="preset-btn" data-preset="0">
-                        <div class="preset-color" style="background: rgb(255,220,150);"></div>
-                        <span>Warm White</span>
-                    </button>
-                    <button class="preset-btn" data-preset="1">
-                        <div class="preset-color" style="background: rgb(255,100,0);"></div>
-                        <span>Sunset</span>
-                    </button>
-                    <button class="preset-btn" data-preset="2">
-                        <div class="preset-color" style="background: rgb(0,100,255);"></div>
-                        <span>Ocean Blue</span>
-                    </button>
-                    <button class="preset-btn" data-preset="3">
-                        <div class="preset-color" style="background: rgb(255,0,100);"></div>
-                        <span>Pink Dream</span>
-                    </button>
-                    <button class="preset-btn" data-preset="4">
-                        <div class="preset-color" style="background: rgb(100,255,100);"></div>
-                        <span>Forest Green</span>
-                    </button>
+            <div class="presets-layout">
+                <div class="card color-presets-card">
+                    <h2>Color Presets</h2>
+                    <div class="preset-grid-scroll">
+                        <div class="preset-grid">
+                            <button class="preset-btn" data-preset="0">
+                                <div class="preset-color" style="background: rgb(255,220,150);"></div>
+                                <span>Warm White</span>
+                            </button>
+                            <button class="preset-btn" data-preset="1">
+                                <div class="preset-color" style="background: rgb(255,100,0);"></div>
+                                <span>Sunset</span>
+                            </button>
+                            <button class="preset-btn" data-preset="2">
+                                <div class="preset-color" style="background: rgb(0,100,255);"></div>
+                                <span>Ocean Blue</span>
+                            </button>
+                            <button class="preset-btn" data-preset="3">
+                                <div class="preset-color" style="background: rgb(255,0,100);"></div>
+                                <span>Pink Dream</span>
+                            </button>
+                            <button class="preset-btn" data-preset="4">
+                                <div class="preset-color" style="background: rgb(100,255,100);"></div>
+                                <span>Forest Green</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h2>🔆 Brightness</h2>
-                <div class="preset-grid">
-                    <button class="brightness-btn" data-brightness="0">0%</button>
-                    <button class="brightness-btn" data-brightness="25">25%</button>
-                    <button class="brightness-btn" data-brightness="50">50%</button>
-                    <button class="brightness-btn" data-brightness="75">75%</button>
-                    <button class="brightness-btn" data-brightness="100">100%</button>
+                <div class="card brightness-card">
+                    <h2>Brightness</h2>
+                    <div class="brightness-grid">
+                        <button class="brightness-btn" data-brightness="0">0%</button>
+                        <button class="brightness-btn" data-brightness="25">25%</button>
+                        <button class="brightness-btn" data-brightness="50">50%</button>
+                        <button class="brightness-btn" data-brightness="75">75%</button>
+                        <button class="brightness-btn" data-brightness="100">100%</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -78,7 +82,7 @@
             <!-- LED Ring Visualization (only visible on Custom tab) -->
             <div class="card">
                 <div class="led-ring-header">
-                    <h2>💡 LED Ring</h2>
+                    <h2>LED Ring</h2>
                     <label class="toggle-label">
                         <input type="checkbox" id="selectMultipleToggle">
                         <span>Select multiple</span>
@@ -94,7 +98,7 @@
 
             <!-- Unified LED Control -->
             <div class="card">
-                <h2>🎨 LED Control</h2>
+                <h2>LED Control</h2>
                 <p class="info-text" id="ledControlInfo">Select LEDs in the ring above, then apply color and brightness.
                 </p>
 
@@ -118,7 +122,7 @@
         <div class="tab-content" id="motor">
             <div class="card motor-card">
                 <div class="motor-header">
-                    <h2>🔄 Motor Control</h2>
+                    <h2>Motor Control</h2>
                     <div class="moon-btn-container">
                         <button class="square-btn moon-btn" id="realMoonBtn" title="Set to Real Moon Position">🌙</button>
                         <span class="moon-angle-label" id="moonAngle">--°</span>
@@ -155,13 +159,8 @@
                 
                 <!-- Auto Tracking Settings -->
                 <div class="auto-tracking-section">
-                    <div class="auto-tracking-header">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="autoTrackingToggle" checked>
-                            <span>Auto Moon Tracking</span>
-                        </label>
-                    </div>
                     <div class="tracking-interval">
+                        <input type="checkbox" id="autoTrackingToggle" class="tracking-checkbox" checked>
                         <label for="trackingInterval">Update every:</label>
                         <select id="trackingInterval">
                             <option value="5">5 minutes</option>
@@ -181,7 +180,7 @@
         <!-- Automations Tab -->
         <div class="tab-content" id="automations">
             <div class="card">
-                <h2>⏰ Scheduled Lighting</h2>
+                <h2>Scheduled Lighting</h2>
                 <p class="info-text">Set times for automatic LED changes. Runs on the lamp even without phone connection.</p>
                 
                 <div id="automationsList">
@@ -205,10 +204,16 @@
                             <option value="4">Forest Green</option>
                         </select>
                     </div>
-                    <div class="form-row">
+                    <div class="form-row brightness-row">
                         <label>Brightness:</label>
-                        <input type="range" id="automationBrightness" min="0" max="100" value="75">
-                        <span id="automationBrightnessValue">75%</span>
+                        <div class="automation-brightness-btns">
+                            <button type="button" class="brightness-select-btn" data-brightness="0">0%</button>
+                            <button type="button" class="brightness-select-btn" data-brightness="25">25%</button>
+                            <button type="button" class="brightness-select-btn" data-brightness="50">50%</button>
+                            <button type="button" class="brightness-select-btn active" data-brightness="75">75%</button>
+                            <button type="button" class="brightness-select-btn" data-brightness="100">100%</button>
+                        </div>
+                        <input type="hidden" id="automationBrightness" value="75">
                     </div>
                     <button class="btn btn-primary" id="addAutomationBtn">Add Schedule</button>
                 </div>

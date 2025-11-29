@@ -33,6 +33,10 @@ class MoonLamp {
             { r: 100, g: 255, b: 100, name: 'Forest Green', isCustom: false }
         ];
 
+        // Delete mode for presets
+        this.presetDeleteMode = false;
+        this.presetHoldTimer = null;
+
         this.init();
     }
 
@@ -314,15 +318,19 @@ class MoonLamp {
             });
         }
 
-        // Automations form
-        const automationBrightness = document.getElementById('automationBrightness');
-        const automationBrightnessValue = document.getElementById('automationBrightnessValue');
-        
-        if (automationBrightness && automationBrightnessValue) {
-            automationBrightness.addEventListener('input', () => {
-                automationBrightnessValue.textContent = automationBrightness.value + '%';
+        // Automations form - brightness buttons
+        document.querySelectorAll('.automation-brightness-btns .brightness-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all buttons in this group
+                document.querySelectorAll('.automation-brightness-btns .brightness-select-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Update hidden input
+                const brightnessInput = document.getElementById('automationBrightness');
+                if (brightnessInput) {
+                    brightnessInput.value = btn.dataset.brightness;
+                }
             });
-        }
+        });
 
         const addAutomationBtn = document.getElementById('addAutomationBtn');
         if (addAutomationBtn) {
@@ -334,7 +342,8 @@ class MoonLamp {
                 if (timeInput && presetSelect && brightnessInput) {
                     const [hour, minute] = timeInput.value.split(':').map(Number);
                     const presetId = parseInt(presetSelect.value);
-                    const brightness = parseInt(brightnessInput.value);
+                    const brightnessPercent = parseInt(brightnessInput.value);
+                    const brightness = Math.round(brightnessPercent * 255 / 100);
                     
                     this.addAutomation(hour, minute, presetId, brightness);
                 }
@@ -347,6 +356,9 @@ class MoonLamp {
         const degrees = Math.round(phase * 360);
         console.log(`Calculated Moon Phase: ${phase.toFixed(4)}, Target Degrees: ${degrees}`);
 
+        // Update moon marker position
+        this.updateMoonMarker(degrees);
+
         // Update UI immediately
         this.updateMotorPointer(degrees);
         document.getElementById('motorValue').textContent = degrees + '°';
@@ -354,6 +366,29 @@ class MoonLamp {
 
         // Send to lamp
         this.setMotorPosition(degrees);
+    }
+
+    updateMoonMarker(degrees) {
+        const moonMarker = document.getElementById('moonMarker');
+        const moonIcon = document.getElementById('moonIcon');
+        if (!moonMarker || !moonIcon) return;
+
+        const moonRad = (degrees - 90) * Math.PI / 180;
+        const moonX1 = 125 + 85 * Math.cos(moonRad);
+        const moonY1 = 125 + 85 * Math.sin(moonRad);
+        const moonX2 = 125 + 100 * Math.cos(moonRad);
+        const moonY2 = 125 + 100 * Math.sin(moonRad);
+
+        moonMarker.setAttribute('x1', moonX1);
+        moonMarker.setAttribute('y1', moonY1);
+        moonMarker.setAttribute('x2', moonX2);
+        moonMarker.setAttribute('y2', moonY2);
+
+        moonIcon.setAttribute('x', moonX2 + 10 * Math.cos(moonRad));
+        moonIcon.setAttribute('y', moonY2 + 10 * Math.sin(moonRad));
+
+        // Update stored angle
+        this.moonPositionAngle = degrees;
     }
 
     calculateMoonPhase() {
@@ -1084,6 +1119,12 @@ class MoonLamp {
         if (!auto) return;
 
         const timeStr = `${auto.hour.toString().padStart(2, '0')}:${auto.minute.toString().padStart(2, '0')}`;
+        const brightnessPercent = Math.round(auto.brightness * 100 / 255);
+        // Find closest brightness level
+        const brightnessLevels = [0, 25, 50, 75, 100];
+        const closestBrightness = brightnessLevels.reduce((prev, curr) => 
+            Math.abs(curr - brightnessPercent) < Math.abs(prev - brightnessPercent) ? curr : prev
+        );
         
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
@@ -1102,10 +1143,16 @@ class MoonLamp {
                         ).join('')}
                     </select>
                 </div>
-                <div class="form-row">
+                <div class="form-row brightness-row">
                     <label>Brightness:</label>
-                    <input type="range" id="editAutomationBrightness" min="0" max="100" value="${auto.brightness}">
-                    <span id="editBrightnessValue">${auto.brightness}%</span>
+                    <div class="automation-brightness-btns">
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 0 ? 'active' : ''}" data-brightness="0">0%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 25 ? 'active' : ''}" data-brightness="25">25%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 50 ? 'active' : ''}" data-brightness="50">50%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 75 ? 'active' : ''}" data-brightness="75">75%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 100 ? 'active' : ''}" data-brightness="100">100%</button>
+                    </div>
+                    <input type="hidden" id="editAutomationBrightness" value="${closestBrightness}">
                 </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelEditBtn">Cancel</button>
@@ -1115,11 +1162,13 @@ class MoonLamp {
         `;
         document.body.appendChild(dialog);
 
-        // Brightness slider update
-        const brightnessInput = document.getElementById('editAutomationBrightness');
-        const brightnessValue = document.getElementById('editBrightnessValue');
-        brightnessInput.addEventListener('input', () => {
-            brightnessValue.textContent = `${brightnessInput.value}%`;
+        // Brightness button handlers
+        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dialog.querySelectorAll('.brightness-select-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('editAutomationBrightness').value = btn.dataset.brightness;
+            });
         });
 
         document.getElementById('cancelEditBtn').addEventListener('click', () => {
@@ -1129,7 +1178,8 @@ class MoonLamp {
         document.getElementById('saveEditBtn').addEventListener('click', async () => {
             const time = document.getElementById('editAutomationTime').value;
             const preset = parseInt(document.getElementById('editAutomationPreset').value);
-            const brightness = parseInt(document.getElementById('editAutomationBrightness').value);
+            const brightnessPercent = parseInt(document.getElementById('editAutomationBrightness').value);
+            const brightness = Math.round(brightnessPercent * 255 / 100);
             
             if (time) {
                 const [hour, minute] = time.split(':').map(Number);
@@ -1194,7 +1244,7 @@ class MoonLamp {
                 <div class="automation-item ${auto.enabled ? '' : 'disabled'}" onclick="moonLamp.showEditAutomationDialog(${index})">
                     <div class="automation-info">
                         <span class="automation-time">${timeStr}</span>
-                        <span class="automation-preset">${presetName} @ ${auto.brightness}%</span>
+                        <span class="automation-preset">${presetName} @ ${Math.round(auto.brightness * 100 / 255)}%</span>
                     </div>
                     <div class="automation-actions" onclick="event.stopPropagation()">
                         <label class="toggle-label small">
@@ -1262,7 +1312,7 @@ class MoonLamp {
             // Not connected - add locally only (won't persist on ESP32)
             this.presets.push({ r, g, b, name, isCustom: true });
             this.renderPresets();
-            alert('Preset added locally. Connect to lamp to sync.');
+            // Preset added locally (not synced to lamp)
             return;
         }
 
@@ -1289,8 +1339,19 @@ class MoonLamp {
     }
 
     async removeCustomPreset(index) {
+        // Validate index - can only remove custom presets
+        if (index < 5 || index >= this.presets.length) {
+            console.warn('Cannot remove: invalid index or default preset');
+            return;
+        }
+
         if (!this.characteristics.customPresets) {
-            console.warn('Custom presets characteristic not available');
+            // Not connected - remove locally only (won't persist on ESP32)
+            this.presets.splice(index, 1);
+            this.renderPresets();
+            this.updateAutomationPresetDropdown();
+            console.log('Custom preset removed locally:', index);
+            // Preset removed locally (not synced to lamp)
             return;
         }
 
@@ -1316,16 +1377,22 @@ class MoonLamp {
 
         // Render all presets (default + custom)
         let html = this.presets.map((preset, index) => `
-            <button class="preset-btn" data-preset="${index}">
+            <button class="preset-btn${this.presetDeleteMode && preset.isCustom ? ' delete-mode' : ''}" data-preset="${index}">
                 <div class="preset-color" style="background: rgb(${preset.r},${preset.g},${preset.b});"></div>
                 <span>${preset.name}</span>
-                ${preset.isCustom ? `<button class="preset-delete" onclick="event.stopPropagation(); moonLamp.removeCustomPreset(${index})">×</button>` : ''}
+                ${this.presetDeleteMode && preset.isCustom ? `
+                    <div class="preset-trash-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+                        </svg>
+                    </div>
+                ` : ''}
             </button>
         `).join('');
 
-        // Add the "+" button if we have room for more custom presets
+        // Add the "+" button if we have room for more custom presets (hide in delete mode)
         const customCount = this.presets.filter(p => p.isCustom).length;
-        if (customCount < 5) {
+        if (customCount < 5 && !this.presetDeleteMode) {
             html += `
                 <button class="preset-btn add-preset-btn" id="addPresetBtn">
                     <div class="preset-color add-preset-color">+</div>
@@ -1336,11 +1403,51 @@ class MoonLamp {
 
         container.innerHTML = html;
 
-        // Re-attach event listeners
+        // Re-attach event listeners with hold-to-delete support
         container.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const preset = parseInt(btn.dataset.preset);
-                this.setColorPreset(preset);
+            const preset = parseInt(btn.dataset.preset);
+            const presetData = this.presets[preset];
+            
+            // Click handler
+            btn.addEventListener('click', (e) => {
+                if (this.presetDeleteMode && presetData.isCustom) {
+                    // In delete mode, clicking a custom preset prompts for deletion
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.confirmDeletePreset(preset);
+                } else if (!this.presetDeleteMode) {
+                    this.setColorPreset(preset);
+                }
+            });
+
+            // Hold to enable delete mode (touch)
+            btn.addEventListener('touchstart', (e) => {
+                this.presetHoldTimer = setTimeout(() => {
+                    this.enablePresetDeleteMode();
+                }, 600);
+            });
+            
+            btn.addEventListener('touchend', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+            
+            btn.addEventListener('touchmove', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+
+            // Hold to enable delete mode (mouse)
+            btn.addEventListener('mousedown', (e) => {
+                this.presetHoldTimer = setTimeout(() => {
+                    this.enablePresetDeleteMode();
+                }, 600);
+            });
+            
+            btn.addEventListener('mouseup', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                clearTimeout(this.presetHoldTimer);
             });
         });
 
@@ -1355,6 +1462,43 @@ class MoonLamp {
             const selectedBtn = container.querySelector(`.preset-btn[data-preset="${this.selectedPreset}"]`);
             if (selectedBtn) {
                 selectedBtn.classList.add('selected');
+            }
+        }
+    }
+
+    enablePresetDeleteMode() {
+        const hasCustomPresets = this.presets.some(p => p.isCustom);
+        if (!hasCustomPresets) return;
+        
+        this.presetDeleteMode = true;
+        this.renderPresets();
+        
+        // Add click listener to exit delete mode when clicking outside
+        const exitHandler = (e) => {
+            const container = document.querySelector('.preset-grid');
+            if (!container.contains(e.target)) {
+                this.exitPresetDeleteMode();
+                document.removeEventListener('click', exitHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', exitHandler), 100);
+    }
+
+    exitPresetDeleteMode() {
+        this.presetDeleteMode = false;
+        this.renderPresets();
+    }
+
+    confirmDeletePreset(index) {
+        const preset = this.presets[index];
+        if (!preset || !preset.isCustom) return;
+        
+        if (confirm(`Delete "${preset.name}" preset?`)) {
+            this.removeCustomPreset(index);
+            // Stay in delete mode - check if there are still custom presets
+            const hasCustomPresets = this.presets.some(p => p.isCustom);
+            if (!hasCustomPresets) {
+                this.exitPresetDeleteMode();
             }
         }
     }

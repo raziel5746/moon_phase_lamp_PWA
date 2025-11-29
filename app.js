@@ -46,9 +46,12 @@ class MoonLamp {
         this.createMotorDial();
         this.updateUI();
         this.renderPresets(); // Render default presets on load
+        this.loadAppVersion();
 
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
+        const isSecureProtocol = window.location.protocol.startsWith('http');
+
+        // Register service worker for PWA (only works over http/https)
+        if ('serviceWorker' in navigator && isSecureProtocol) {
             // Add a version query to force browsers (especially Android) to fetch the new SW
             const swVersion = 'v__VERSION__';
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
@@ -83,6 +86,36 @@ class MoonLamp {
                     });
                 })
                 .catch(err => console.error('Service Worker registration failed', err));
+        } else if (!isSecureProtocol) {
+            console.info('Service worker registration skipped: requires http/https protocol.');
+        }
+    }
+
+    async loadAppVersion() {
+        const versionEl = document.getElementById('appVersion');
+        if (!versionEl) return;
+
+        const setVersion = (label) => {
+            versionEl.textContent = label;
+            versionEl.setAttribute('aria-label', `App version ${label}`);
+        };
+
+        if (!window.location.protocol.startsWith('http')) {
+            setVersion('dev');
+            console.info('App version fetch skipped: requires serving over http/https.');
+            return;
+        }
+
+        try {
+            const response = await fetch('version.json');
+            if (!response.ok) throw new Error('Failed to load version');
+            const data = await response.json();
+            if (data?.version) {
+                setVersion(`v${data.version}`);
+            }
+        } catch (error) {
+            console.warn('Unable to load app version:', error);
+            setVersion('dev');
         }
     }
 

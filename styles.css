@@ -84,6 +84,12 @@ header {
     flex-shrink: 0;
 }
 
+.app-title {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
 h1 {
     font-size: 1.8em;
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 50%, var(--accent) 100%);
@@ -93,6 +99,18 @@ h1 {
     font-weight: 700;
     letter-spacing: -0.02em;
     text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+}
+
+.app-version {
+    font-size: 0.6em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.4);
+    align-self: center;
 }
 
 .connection-status {

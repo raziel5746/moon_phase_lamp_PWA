@@ -850,9 +850,16 @@ h3 {
     font-size: 0.9em;
 }
 
-.tracking-interval select {
+.tracking-interval .select-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+}
+
+.tracking-interval .select-wrapper select {
     flex: 1;
     padding: 10px 14px;
+    padding-right: 40px;
     background: var(--card-bg);
     border: 1px solid var(--glass-border);
     border-radius: 8px;
@@ -860,14 +867,29 @@ h3 {
     font-size: 0.95em;
     cursor: pointer;
     transition: border-color 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
-.tracking-interval select:focus {
+.tracking-interval .select-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: translateY(-65%) rotate(45deg);
+    pointer-events: none;
+}
+
+.tracking-interval .select-wrapper select:focus {
     outline: none;
     border-color: var(--primary);
 }
 
-.tracking-interval select option {
+.tracking-interval .select-wrapper select option {
     background: var(--card-bg);
     color: var(--text);
 }
@@ -987,8 +1009,7 @@ h3 {
     font-size: 0.9em;
 }
 
-.form-row input[type="time"],
-.form-row select {
+.form-row input[type="time"] {
     flex: 1;
     padding: 10px 14px;
     background: var(--card-bg);
@@ -998,6 +1019,40 @@ h3 {
     font-size: 0.95em;
     cursor: pointer;
     transition: border-color 0.3s ease;
+}
+
+.form-row .select-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+}
+
+.form-row .select-wrapper select {
+    flex: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 10px 14px;
+    padding-right: 40px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.form-row .select-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: translateY(-65%) rotate(45deg);
+    pointer-events: none;
 }
 
 .form-row input[type="time"]:focus,

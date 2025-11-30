@@ -1002,17 +1002,22 @@ h3 {
     position: relative;
 }
 
+/* Hide time picker icon visually but keep it clickable over the whole input */
 .form-row input[type="time"]::-webkit-calendar-picker-indicator {
     position: absolute;
-    left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    cursor: pointer;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    color: transparent;
     background: transparent;
-    opacity: 0;
+    cursor: pointer;
+}
+
+.form-row input[type="time"]::-webkit-datetime-edit {
+    cursor: pointer;
 }
 
 .form-row select {

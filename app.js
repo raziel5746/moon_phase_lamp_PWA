@@ -1482,7 +1482,13 @@ class MoonLamp {
         // Add click listener to exit delete mode when clicking outside
         const exitHandler = (e) => {
             const container = document.querySelector('.preset-grid');
-            if (!container.contains(e.target)) {
+            if (!container) {
+                document.removeEventListener('click', exitHandler);
+                return;
+            }
+
+            const clickedPreset = e.target.closest('.preset-btn');
+            if (!container.contains(e.target) || !clickedPreset) {
                 this.exitPresetDeleteMode();
                 document.removeEventListener('click', exitHandler);
             }

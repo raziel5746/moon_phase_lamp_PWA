@@ -132,7 +132,8 @@ h1 {
 .connection-status:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--primary);
-    transform: scale(1.05);
+    transform: scale(1.01);
+    transition: all 0.2s ease;
 }
 
 .status-dot {
@@ -140,8 +141,13 @@ h1 {
     height: 8px;
     border-radius: 50%;
     background: var(--danger);
-    box-shadow: 0 0 10px var(--danger-glow);
-    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--danger-glow);
+}
+
+.status-dot.connecting {
+    background: #3f8afa;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
 .status-dot.connected {

@@ -17,6 +17,7 @@ class MoonLamp {
         this.server = null;
         this.service = null;
         this.characteristics = {};
+        this.isConnecting = false;
         this.ledStates = Array(8).fill({ r: 255, g: 220, b: 150, brightness: 75 });
         this.selectedLeds = new Set(); // Track multiple selected LEDs
         this.ledElements = [];
@@ -691,32 +692,37 @@ class MoonLamp {
         }
     }
 
-    updateConnectionStatus(connected) {
+    updateConnectionStatus(state) {
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
 
-        if (connected) {
-            statusDot.classList.add('connected');
-            statusText.textContent = 'Connected';
-        } else {
-            statusDot.classList.remove('connected');
-            statusText.textContent = 'Not Connected';
+        statusDot.classList.remove('connected', 'connecting');
+
+        switch (state) {
+            case 'connected':
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Connected';
+                break;
+            case 'connecting':
+                statusDot.classList.add('connecting');
+                statusText.textContent = 'Connecting';
+                break;
+            default:
+                statusText.textContent = 'Not Connected';
         }
     }
 
     updateUI() {
         this.updateLEDRing();
-        this.updateConnectionStatus(false);
+        this.updateConnectionStatus('disconnected');
+        this.isConnecting = false;
     }
 
     // Bluetooth Methods
     async connect() {
-        const statusText = document.getElementById('statusText');
-
         try {
-            // Show selecting feedback
-            statusText.textContent = 'Selecting device...';
-
+            this.isConnecting = true;
+            this.updateConnectionStatus('connecting');
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'MoonLamp' }],
@@ -729,18 +735,15 @@ class MoonLamp {
                 this.handleDisconnect();
             });
 
-            // Show connecting feedback
-            statusText.textContent = 'Connecting...';
-
             await this.connectToDevice();
         } catch (error) {
             console.error('Connection failed:', error);
-            statusText.textContent = 'Connection failed';
+            this.isConnecting = false;
+            this.updateConnectionStatus('disconnected');
 
             // Ignore "User cancelled" error
             if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
                 console.log('User cancelled selection');
-                this.updateConnectionStatus(false);
                 return;
             }
 
@@ -754,7 +757,6 @@ class MoonLamp {
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
                 console.log(`Connection attempt ${attempt}...`);
-                document.getElementById('statusText').textContent = `Connecting (attempt ${attempt}/3)...`;
 
                 // Step 1: Connect to GATT server
                 console.log('Connecting to GATT Server...');
@@ -850,7 +852,8 @@ class MoonLamp {
                 });
 
                 // Step 8: Success!
-                this.updateConnectionStatus(true);
+                this.isConnecting = false;
+                this.updateConnectionStatus('connected');
                 console.log('Connected successfully!');
 
                 // Sync time immediately on connection (if supported)
@@ -874,9 +877,10 @@ class MoonLamp {
                 if (attempt < 3) {
                     const delay = attempt * 1000; // 1s, 2s
                     console.log(`Retrying in ${delay}ms...`);
-                    document.getElementById('statusText').textContent = `Attempt ${attempt} failed, retrying in ${delay / 1000}s...`;
+                    this.updateConnectionStatus('connecting');
                     await new Promise(resolve => setTimeout(resolve, delay));
                 } else {
+                    this.isConnecting = false;
                     // All attempts failed
                     throw lastError;
                 }
@@ -888,13 +892,17 @@ class MoonLamp {
         this.characteristics = {};
         this.server = null;
         this.service = null;
-        this.updateConnectionStatus(false);
+
+        if (!this.isConnecting) {
+            this.updateConnectionStatus('disconnected');
+        }
     }
 
     async disconnect() {
         if (this.device && this.device.gatt.connected) {
+            this.isConnecting = false;
             this.device.gatt.disconnect();
-            this.updateConnectionStatus(false);
+            this.updateConnectionStatus('disconnected');
             console.log('Disconnected');
         }
     }

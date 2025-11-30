@@ -41,6 +41,18 @@ class MoonLamp {
         this.init();
     }
 
+    getLocalToUtcTime(hour, minute) {
+        const now = new Date();
+        now.setHours(hour, minute, 0, 0);
+        return { hour: now.getUTCHours(), minute: now.getUTCMinutes() };
+    }
+
+    getUtcToLocalTime(hour, minute) {
+        const now = new Date();
+        now.setUTCHours(hour, minute, 0, 0);
+        return { hour: now.getHours(), minute: now.getMinutes() };
+    }
+
     init() {
         this.setupEventListeners();
         this.createLEDRing();
@@ -914,22 +926,18 @@ class MoonLamp {
         }
 
         try {
-            // Get current Unix timestamp in seconds, adjusted for local timezone
-            // This makes the ESP32 use local time, so schedules work correctly
-            const now = new Date();
-            const utcTimestamp = Math.floor(now.getTime() / 1000);
-            const timezoneOffsetSeconds = now.getTimezoneOffset() * -60; // getTimezoneOffset returns minutes, negative for ahead of UTC
-            const localTimestamp = utcTimestamp + timezoneOffsetSeconds;
-            
+            // Send pure UTC timestamp so the ESP32 keeps time in UTC
+            const utcTimestamp = Math.floor(Date.now() / 1000);
+
             // Send as 4-byte little-endian uint32
             const data = new Uint8Array(4);
-            data[0] = localTimestamp & 0xFF;
-            data[1] = (localTimestamp >> 8) & 0xFF;
-            data[2] = (localTimestamp >> 16) & 0xFF;
-            data[3] = (localTimestamp >> 24) & 0xFF;
+            data[0] = utcTimestamp & 0xFF;
+            data[1] = (utcTimestamp >> 8) & 0xFF;
+            data[2] = (utcTimestamp >> 16) & 0xFF;
+            data[3] = (utcTimestamp >> 24) & 0xFF;
             
             await this.characteristics.timeSync.writeValue(data);
-            console.log('Time synced to device (local):', now.toLocaleString());
+            console.log('Time synced to device (UTC seconds):', utcTimestamp);
         } catch (error) {
             console.error('Failed to sync time:', error);
         }
@@ -1017,10 +1025,15 @@ class MoonLamp {
             this.automations = [];
             for (let i = 0; i < count; i++) {
                 const offset = 1 + i * 8;
+                const utcHour = value.getUint8(offset + 1);
+                const utcMinute = value.getUint8(offset + 2);
+                const { hour, minute } = this.getUtcToLocalTime(utcHour, utcMinute);
                 this.automations.push({
                     enabled: value.getUint8(offset) !== 0,
-                    hour: value.getUint8(offset + 1),
-                    minute: value.getUint8(offset + 2),
+                    hour,
+                    minute,
+                    hourUtc: utcHour,
+                    minuteUtc: utcMinute,
                     presetId: value.getUint8(offset + 3),
                     brightness: value.getUint8(offset + 4),
                     r: value.getUint8(offset + 5),
@@ -1045,8 +1058,9 @@ class MoonLamp {
             // Command 0x01 = Add automation
             const data = new Uint8Array(8);
             data[0] = 0x01; // Add command
-            data[1] = hour;
-            data[2] = minute;
+            const utc = this.getLocalToUtcTime(hour, minute);
+            data[1] = utc.hour;
+            data[2] = utc.minute;
             data[3] = presetId;
             data[4] = brightness;
             data[5] = r;
@@ -1211,8 +1225,9 @@ class MoonLamp {
             const data = new Uint8Array(9);
             data[0] = 0x03; // Update command
             data[1] = index;
-            data[2] = hour;
-            data[3] = minute;
+            const utc = this.getLocalToUtcTime(hour, minute);
+            data[2] = utc.hour;
+            data[3] = utc.minute;
             data[4] = presetId;
             data[5] = brightness;
             data[6] = 0; // r (not used for preset)

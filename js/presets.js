@@ -288,7 +288,7 @@ export class PresetsController {
             width: 200,
             color: '#ff6600',
             borderWidth: 2,
-            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderColor: '#ffffff',
             layout: [
                 { component: iro.ui.Wheel },
                 { component: iro.ui.Slider, options: { sliderType: 'value' } }
@@ -342,7 +342,7 @@ export class PresetsController {
             width: 200,
             color: currentHex,
             borderWidth: 2,
-            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderColor: '#ffffff',
             layout: [
                 { component: iro.ui.Wheel },
                 { component: iro.ui.Slider, options: { sliderType: 'value' } }

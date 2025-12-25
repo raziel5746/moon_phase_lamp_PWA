@@ -429,6 +429,37 @@
     font-weight: 600;
 }
 
+.preset-dialog-content.preset-dialog-wide {
+    width: 360px;
+}
+
+.color-picker-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.preset-dialog-content .form-row input[type="text"] {
+    flex: 1;
+    padding: 12px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    transition: border-color 0.3s ease;
+}
+
+.preset-dialog-content .form-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.preset-dialog-content .form-row input[type="text"]::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
 .dialog-buttons {
     display: flex;
     gap: 12px;

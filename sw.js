@@ -8,6 +8,7 @@ const urlsToCache = [
   '/moon_phase_lamp_PWA/icon-192.png',
   '/moon_phase_lamp_PWA/icon-512.png',
   '/moon_phase_lamp_PWA/suncalc.js',
+  '/moon_phase_lamp_PWA/iro.min.js',
   // CSS modules
   '/moon_phase_lamp_PWA/css/base.css',
   '/moon_phase_lamp_PWA/css/components.css',

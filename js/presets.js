@@ -261,15 +261,13 @@ export class PresetsController {
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
         dialog.innerHTML = `
-            <div class="preset-dialog-content">
+            <div class="preset-dialog-content preset-dialog-wide">
                 <h3>Add Custom Preset</h3>
-                <div class="form-row">
-                    <label>Color:</label>
-                    <input type="color" id="newPresetColor" value="#ff6600">
+                <div class="color-picker-container">
+                    <div id="iroColorPicker"></div>
                 </div>
                 <div class="form-row">
-                    <label>Name:</label>
-                    <input type="text" id="newPresetName" placeholder="My Color" maxlength="15">
+                    <input type="text" id="newPresetName" placeholder="Color name" maxlength="15">
                 </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelPresetBtn">Cancel</button>
@@ -279,19 +277,27 @@ export class PresetsController {
         `;
         document.body.appendChild(dialog);
 
+        // Initialize iro.js color picker
+        const colorPicker = new iro.ColorPicker('#iroColorPicker', {
+            width: 200,
+            color: '#ff6600',
+            borderWidth: 2,
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            layout: [
+                { component: iro.ui.Wheel },
+                { component: iro.ui.Slider, options: { sliderType: 'value' } }
+            ]
+        });
+
         document.getElementById('cancelPresetBtn').addEventListener('click', () => {
             dialog.remove();
         });
 
         document.getElementById('savePresetBtn').addEventListener('click', () => {
-            const color = document.getElementById('newPresetColor').value;
+            const color = colorPicker.color;
             const name = document.getElementById('newPresetName').value || 'Custom';
             
-            const r = parseInt(color.substr(1, 2), 16);
-            const g = parseInt(color.substr(3, 2), 16);
-            const b = parseInt(color.substr(5, 2), 16);
-            
-            this.addCustomPreset(r, g, b, name);
+            this.addCustomPreset(color.red, color.green, color.blue, name);
             dialog.remove();
         });
 

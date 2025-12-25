@@ -89,6 +89,18 @@ header {
     align-items: baseline;
 }
 
+.app-title h1 {
+    transition: opacity 0.2s ease;
+}
+
+.app-title.clickable h1 {
+    cursor: pointer;
+}
+
+.app-title.clickable h1:hover {
+    opacity: 0.8;
+}
+
 h1 {
     font-size: 1.8em;
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 50%, var(--accent) 100%);
@@ -117,16 +129,16 @@ h1 {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
     font-size: 0.85em;
     color: var(--text-secondary);
     background: var(--glass-bg);
-    padding: 8px 16px;
+    padding:0px 16px;
     border-radius: 20px;
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(10px);
     cursor: pointer;
     transition: all 0.3s ease;
+    height: 40px;
 }
 
 .connection-status:hover {
@@ -137,9 +149,9 @@ h1 {
 }
 
 .status-dot {
-    width: 8px;
+    width: 40px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: 4px;
     background: var(--danger);
     box-shadow: 0 0 8px var(--danger-glow);
 }
@@ -411,7 +423,7 @@ h3 {
 
 .tab-btn {
     flex: 1;
-    padding: 12px 16px;
+    padding: 18px 16px;
     background: transparent;
     border: none;
     border-radius: 12px;
@@ -456,7 +468,7 @@ h3 {
 .presets-layout {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 135px);
+    height: calc(100vh - 175px);
     overflow: hidden;
     gap: 20px;
 }
@@ -797,7 +809,7 @@ h3 {
     color: #22c55e;
 }
 
-.zero-btn-container {
+.motor-settings-container {
     position: absolute;
     right: 0;
     display: flex;
@@ -805,21 +817,71 @@ h3 {
     align-items: center;
 }
 
-.zero-btn {
+.settings-btn {
     border: 2px solid var(--glass-border);
-    font-size: 1.3em;
-    font-weight: 700;
     color: var(--text-secondary);
+    padding: 10px;
 }
 
-.zero-btn:hover {
+.settings-btn:hover {
     border-color: var(--primary);
     color: var(--text);
     background: rgba(99, 102, 241, 0.1);
 }
 
-.zero-btn-text {
-    font-size: 32px;
+.settings-btn svg {
+    display: block;
+}
+
+.motor-settings-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: #1a1a2e;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 130px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.motor-settings-menu.show {
+    display: flex;
+}
+
+.motor-settings-menu .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.motor-settings-menu .menu-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.motor-settings-menu .menu-item:active {
+    background: rgba(99, 102, 241, 0.3);
+    transform: scale(0.97);
+}
+
+.motor-settings-menu .menu-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
 }
 
 /* Auto Tracking Section */
@@ -884,13 +946,12 @@ h3 {
     border-radius: 10px;
     border: 1px solid var(--glass-border);
     margin-bottom: 10px;
-    transition: opacity 0.3s ease, border-color 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.3s ease, border-color 0.2s ease;
     cursor: pointer;
 }
 
 .automation-item:hover {
     border-color: var(--primary);
-    transform: translateX(4px);
 }
 
 .automation-item.disabled {

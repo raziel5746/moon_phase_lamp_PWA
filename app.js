@@ -9,7 +9,8 @@ const MOTOR_POSITION_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef5';
 const TIME_SYNC_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef6';
 const AUTO_TRACKING_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef7';
 const AUTOMATIONS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef8';
-const CUSTOM_PRESETS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef9';
+const CUSTOM_PRESETS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefa';
+const DEVICE_NAME_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefb';
 
 class MoonLamp {
     constructor() {
@@ -133,6 +134,13 @@ class MoonLamp {
     }
 
     setupEventListeners() {
+        // Rename lamp by clicking on title (only when connected)
+        document.querySelector('.app-title h1').addEventListener('click', () => {
+            if (this.device && this.device.gatt.connected && this.characteristics.deviceName) {
+                this.showRenameDialog();
+            }
+        });
+
         // Bluetooth connection via status badge
         document.getElementById('connectionStatus').addEventListener('click', () => {
             if (this.device && this.device.gatt.connected) {
@@ -362,7 +370,25 @@ class MoonLamp {
             isDragging = false;
         });
 
-        document.getElementById('zeroMotorBtn').addEventListener('click', () => {
+        // Motor settings menu (gear icon)
+        const motorSettingsBtn = document.getElementById('motorSettingsBtn');
+        const motorSettingsMenu = document.getElementById('motorSettingsMenu');
+        
+        motorSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            motorSettingsMenu.classList.toggle('show');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!motorSettingsMenu.contains(e.target) && e.target !== motorSettingsBtn) {
+                motorSettingsMenu.classList.remove('show');
+            }
+        });
+        
+        // Zero button (in menu)
+        document.getElementById('zeroBtn').addEventListener('click', () => {
+            motorSettingsMenu.classList.remove('show');
             this.setMotorZero();
             // Update UI to show 0 position
             this.motorAngle = 0;
@@ -370,6 +396,12 @@ class MoonLamp {
             this.updateCurrentPosMarker(0);
             document.getElementById('motorValue').textContent = '0°';
             document.getElementById('currentPosition').textContent = '0°';
+        });
+        
+        // Calibrate button (in menu) - triggers Hall sensor homing
+        document.getElementById('calibrateBtn').addEventListener('click', () => {
+            motorSettingsMenu.classList.remove('show');
+            this.calibrateMotor();
         });
 
         document.getElementById('realMoonBtn').addEventListener('click', () => {
@@ -413,20 +445,78 @@ class MoonLamp {
         const addAutomationBtn = document.getElementById('addAutomationBtn');
         if (addAutomationBtn) {
             addAutomationBtn.addEventListener('click', () => {
-                const timeInput = document.getElementById('automationTime');
-                const presetSelect = document.getElementById('automationPreset');
-                const brightnessInput = document.getElementById('automationBrightness');
-                
-                if (timeInput && presetSelect && brightnessInput) {
-                    const [hour, minute] = timeInput.value.split(':').map(Number);
-                    const presetId = parseInt(presetSelect.value);
-                    const brightnessPercent = parseInt(brightnessInput.value);
-                    const brightness = Math.round(brightnessPercent * 255 / 100);
-                    
-                    this.addAutomation(hour, minute, presetId, brightness);
-                }
+                this.showAddAutomationDialog();
             });
         }
+    }
+
+    showAddAutomationDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Add Schedule</h3>
+                <div class="form-row">
+                    <label>Time:</label>
+                    <input type="time" id="addAutomationTime" value="07:00">
+                </div>
+                <div class="form-row">
+                    <label>Preset:</label>
+                    <select id="addAutomationPreset">
+                        ${this.presets.map((p, i) => 
+                            `<option value="${i}">${p.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-row brightness-row">
+                    <label>Brightness:</label>
+                    <div class="automation-brightness-btns">
+                        <button type="button" class="brightness-select-btn" data-brightness="0">0%</button>
+                        <button type="button" class="brightness-select-btn" data-brightness="25">25%</button>
+                        <button type="button" class="brightness-select-btn" data-brightness="50">50%</button>
+                        <button type="button" class="brightness-select-btn active" data-brightness="75">75%</button>
+                        <button type="button" class="brightness-select-btn" data-brightness="100">100%</button>
+                    </div>
+                    <input type="hidden" id="addAutomationBrightness" value="75">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelAddBtn">Cancel</button>
+                    <button class="btn btn-primary" id="confirmAddBtn">Add</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        // Brightness button handlers
+        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dialog.querySelectorAll('.brightness-select-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('addAutomationBrightness').value = btn.dataset.brightness;
+            });
+        });
+
+        document.getElementById('cancelAddBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('confirmAddBtn').addEventListener('click', async () => {
+            const time = document.getElementById('addAutomationTime').value;
+            const preset = parseInt(document.getElementById('addAutomationPreset').value);
+            const brightnessPercent = parseInt(document.getElementById('addAutomationBrightness').value);
+            const brightness = Math.round(brightnessPercent * 255 / 100);
+            
+            if (time) {
+                const [hour, minute] = time.split(':').map(Number);
+                await this.addAutomation(hour, minute, preset, brightness);
+                dialog.remove();
+            }
+        });
+
+        // Close on backdrop click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
     }
 
     setRealMoonPosition() {
@@ -706,21 +796,21 @@ class MoonLamp {
 
     updateConnectionStatus(state) {
         const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
+        const appTitle = document.querySelector('.app-title');
 
         statusDot.classList.remove('connected', 'connecting');
 
         switch (state) {
             case 'connected':
                 statusDot.classList.add('connected');
-                statusText.textContent = 'Connected';
+                appTitle.classList.add('clickable');
                 break;
             case 'connecting':
                 statusDot.classList.add('connecting');
-                statusText.textContent = 'Connecting';
+                appTitle.classList.remove('clickable');
                 break;
             default:
-                statusText.textContent = 'Not Connected';
+                appTitle.classList.remove('clickable');
         }
     }
 
@@ -737,7 +827,10 @@ class MoonLamp {
             this.updateConnectionStatus('connecting');
             console.log('Requesting Bluetooth Device...');
             this.device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: 'MoonLamp' }],
+                filters: [
+                    { namePrefix: 'Moon Lamp' },
+                    { namePrefix: 'MoonLamp' }
+                ],
                 optionalServices: [LAMP_SERVICE_UUID]
             });
 
@@ -857,6 +950,16 @@ class MoonLamp {
                     this.characteristics.customPresets = null;
                 }
 
+                // Try to get optional device name characteristic
+                try {
+                    console.log('Looking for device name characteristic:', DEVICE_NAME_CHAR_UUID);
+                    this.characteristics.deviceName = await this.service.getCharacteristic(DEVICE_NAME_CHAR_UUID);
+                    console.log('Device name characteristic found:', this.characteristics.deviceName);
+                } catch (e) {
+                    console.log('Device name characteristic not available (older firmware):', e.message);
+                    this.characteristics.deviceName = null;
+                }
+
                 // Step 7: Subscribe to notifications
                 await this.characteristics.ledState.startNotifications();
                 this.characteristics.ledState.addEventListener('characteristicvaluechanged', (e) => {
@@ -879,6 +982,7 @@ class MoonLamp {
                 await this.readAutoTracking();
                 await this.readAutomations();
                 await this.readCustomPresets();
+                await this.readDeviceName();
 
                 return; // Success, exit function
 
@@ -1009,6 +1113,111 @@ class MoonLamp {
         } catch (error) {
             console.error('Failed to set auto tracking:', error);
         }
+    }
+
+    async readDeviceName() {
+        if (!this.characteristics.deviceName) {
+            console.log('Device name characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.characteristics.deviceName.readValue();
+            const decoder = new TextDecoder();
+            this.currentDeviceName = decoder.decode(value);
+            console.log('Device name:', this.currentDeviceName);
+            
+            // Update header to show device name
+            const titleEl = document.querySelector('.app-title h1');
+            if (titleEl && this.currentDeviceName) {
+                titleEl.textContent = '🌙 ' + this.currentDeviceName;
+            }
+        } catch (error) {
+            console.error('Failed to read device name:', error);
+        }
+    }
+
+    async setDeviceName(newName) {
+        if (!this.characteristics.deviceName) {
+            alert('Device name feature not available on this firmware');
+            return;
+        }
+
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(newName.substring(0, 20));
+            await this.characteristics.deviceName.writeValue(data);
+            this.currentDeviceName = newName;
+            console.log('Device name set to:', newName);
+            
+            // Update header
+            const titleEl = document.querySelector('.app-title h1');
+            if (titleEl) {
+                titleEl.textContent = '🌙 ' + newName;
+            }
+            
+            alert('Name saved! Restart the lamp for the new Bluetooth name to take effect.');
+        } catch (error) {
+            console.error('Failed to set device name:', error);
+            alert('Failed to set device name');
+        }
+    }
+
+    showRenameDialog() {
+        // Extract suffix from current name (part after "Moon Lamp ")
+        const currentName = this.currentDeviceName || 'Moon Lamp';
+        const prefix = 'Moon Lamp';
+        let suffix = '';
+        if (currentName.startsWith(prefix + ' ')) {
+            suffix = currentName.substring(prefix.length + 1);
+        } else if (currentName !== prefix) {
+            suffix = currentName.replace(prefix, '').trim();
+        }
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Rename Lamp</h3>
+                <div class="form-row">
+                    <label style="min-width: auto;">Moon Lamp</label>
+                    <input type="text" id="deviceNameInput" value="${suffix}" maxlength="9" placeholder="(optional)" style="flex: 1; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text); font-size: 0.95em;">
+                </div>
+                <p class="info-text" style="margin-top: 8px; font-size: 0.8em;">Add a suffix to identify this lamp. Restart lamp after renaming.</p>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelRenameBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveRenameBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        const input = document.getElementById('deviceNameInput');
+        input.focus();
+        input.select();
+
+        document.getElementById('cancelRenameBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        const saveName = async () => {
+            const suffix = input.value.trim();
+            const fullName = suffix ? `Moon Lamp ${suffix}` : 'Moon Lamp';
+            await this.setDeviceName(fullName);
+            dialog.remove();
+        };
+
+        document.getElementById('saveRenameBtn').addEventListener('click', saveName);
+
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+
+        input.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                await saveName();
+            }
+        });
     }
 
     async readAutomations() {
@@ -1255,7 +1464,12 @@ class MoonLamp {
 
         const presetNames = ['Warm White', 'Sunset', 'Ocean Blue', 'Pink Dream', 'Forest Green'];
         
-        container.innerHTML = this.automations.map((auto, index) => {
+        // Create sorted array with original indices for proper callbacks
+        const sortedAutomations = this.automations
+            .map((auto, index) => ({ auto, index }))
+            .sort((a, b) => (a.auto.hour * 60 + a.auto.minute) - (b.auto.hour * 60 + b.auto.minute));
+        
+        container.innerHTML = sortedAutomations.map(({ auto, index }) => {
             const timeStr = `${auto.hour.toString().padStart(2, '0')}:${auto.minute.toString().padStart(2, '0')}`;
             const presetName = this.presets && this.presets[auto.presetId] 
                 ? this.presets[auto.presetId].name 
@@ -1777,14 +1991,32 @@ class MoonLamp {
             return;
         }
         try {
-            // Use a special out-of-range value (>360) as a "set zero" command
-            const ZERO_COMMAND = 65535; // 0xFFFF
+            // Command 361 = set current position as zero
+            const ZERO_COMMAND = 361;
             const data = new Uint16Array([ZERO_COMMAND]);
+            console.log('Sending zero command:', ZERO_COMMAND, 'bytes:', data[0]);
             await this.characteristics.motorPosition.writeValue(data);
-            console.log('Motor zero set command sent');
+            console.log('Motor zero set command sent (361)');
         } catch (error) {
             console.error('Failed to set motor zero:', error);
             alert('Failed to set motor zero');
+        }
+    }
+
+    async calibrateMotor() {
+        if (!this.characteristics.motorPosition) {
+            alert('Not connected to lamp');
+            return;
+        }
+        try {
+            // Command 362 = calibrate (Hall sensor homing)
+            const CALIBRATE_COMMAND = 362;
+            const data = new Uint16Array([CALIBRATE_COMMAND]);
+            await this.characteristics.motorPosition.writeValue(data);
+            console.log('Motor calibration command sent');
+        } catch (error) {
+            console.error('Failed to calibrate motor:', error);
+            alert('Failed to calibrate motor');
         }
     }
 

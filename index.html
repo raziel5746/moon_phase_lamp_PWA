@@ -24,7 +24,6 @@
             </div>
             <div class="connection-status" id="connectionStatus">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Not Connected</span>
             </div>
         </header>
 
@@ -148,18 +147,43 @@
                         <circle cx="125" cy="125" r="7" fill="#0f0f1a" />
                     </svg>
                     <div class="motor-values">
+                        <div class="motor-settings-container">
+                            <button class="square-btn settings-btn" id="motorSettingsBtn" title="Motor settings">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                            </button>
+                            <div class="motor-settings-menu" id="motorSettingsMenu">
+                                <button class="menu-item" id="calibrateBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="22" y1="12" x2="18" y2="12"></line>
+                                        <line x1="6" y1="12" x2="2" y2="12"></line>
+                                        <line x1="12" y1="6" x2="12" y2="2"></line>
+                                        <line x1="12" y1="22" x2="12" y2="18"></line>
+                                    </svg>
+                                    Calibrate
+                                </button>
+                                <button class="menu-item" id="zeroBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    Zero
+                                </button>
+                            </div>
+                        </div>
                         <div class="current-pos-value">
                             <span id="currentPosition">0°</span>
                         </div>
                         <div class="motor-value">
                             <span id="motorValue">0°</span>
                         </div>
-                        <div class="zero-btn-container">
-                            <button class="square-btn zero-btn" id="zeroMotorBtn" title="Set current position as zero"><span class="zero-btn-text">0°</span></button>
-                        </div>
                     </div>
                 </div>
-                
+
                 <!-- Auto Tracking Settings -->
                 <div class="auto-tracking-section">
                     <div class="tracking-interval">
@@ -190,36 +214,8 @@
                     <p class="info-text">Connect to lamp to view automations.</p>
                 </div>
                 
-                <!-- Add Automation Form -->
-                <div class="add-automation-form">
-                    <h3>Add New Schedule</h3>
-                    <div class="form-row">
-                        <label>Time:</label>
-                        <input type="time" id="automationTime" value="07:00">
-                    </div>
-                    <div class="form-row">
-                        <label>Preset:</label>
-                        <select id="automationPreset">
-                            <option value="0">Warm White</option>
-                            <option value="1">Sunset</option>
-                            <option value="2">Ocean Blue</option>
-                            <option value="3">Pink Dream</option>
-                            <option value="4">Forest Green</option>
-                        </select>
-                    </div>
-                    <div class="form-row brightness-row">
-                        <label>Brightness:</label>
-                        <div class="automation-brightness-btns">
-                            <button type="button" class="brightness-select-btn" data-brightness="0">0%</button>
-                            <button type="button" class="brightness-select-btn" data-brightness="25">25%</button>
-                            <button type="button" class="brightness-select-btn" data-brightness="50">50%</button>
-                            <button type="button" class="brightness-select-btn active" data-brightness="75">75%</button>
-                            <button type="button" class="brightness-select-btn" data-brightness="100">100%</button>
-                        </div>
-                        <input type="hidden" id="automationBrightness" value="75">
-                    </div>
-                    <button class="btn btn-primary" id="addAutomationBtn">Add Schedule</button>
-                </div>
+                <!-- Add Schedule Button -->
+                <button class="btn btn-primary" id="addAutomationBtn" style="width: 100%; margin-top: 16px;">Add Schedule</button>
             </div>
         </div>
     </div>

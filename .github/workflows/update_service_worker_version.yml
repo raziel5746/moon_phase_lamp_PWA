@@ -41,7 +41,8 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           sed -i "s/__VERSION__/$VERSION/g" sw.js
-          sed -i "s/__VERSION__/$VERSION/g" app.js
+          sed -i "s/__VERSION__/$VERSION/g" js/app.js
+          sed -i "s/__VERSION__/$VERSION/g" js/ui.js
 
       # Upload to GitHub Pages
       - name: Upload artifact

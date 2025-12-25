@@ -171,11 +171,17 @@ export class UIController {
 
         if ('serviceWorker' in navigator && isSecureProtocol) {
             const swVersion = 'v__VERSION__';
+            let updatePromptShown = false;
+            
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
 
                     const showUpdatePrompt = (worker) => {
+                        // Prevent duplicate prompts
+                        if (updatePromptShown) return;
+                        updatePromptShown = true;
+                        
                         const shouldUpdate = confirm('A new version of Moon Lamp is available. Reload now?');
                         if (shouldUpdate) {
                             if (worker) {
@@ -184,9 +190,13 @@ export class UIController {
                         }
                     };
 
+                    // Check for waiting worker immediately
                     if (reg.waiting) {
                         showUpdatePrompt(reg.waiting);
                     }
+
+                    // Force check for updates on page load
+                    reg.update().catch(err => console.log('Update check failed:', err));
 
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;

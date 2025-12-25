@@ -43,9 +43,8 @@ self.addEventListener('install', (event) => {
         console.error('Cache failed:', error);
       })
   );
-
-  // Allow this SW to move to the "installed" state immediately
-  self.skipWaiting();
+  // Don't call skipWaiting() here - let the client decide when to activate
+  // via the SKIP_WAITING message after user confirms the update
 });
 
 // Fetch event - serve from cache, fallback to network

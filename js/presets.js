@@ -155,7 +155,12 @@ export class PresetsController {
                     e.stopPropagation();
                     this.confirmDeletePreset(preset);
                 } else if (!this.presetDeleteMode) {
-                    this.setColorPreset(preset);
+                    // If clicking on already selected preset, open edit dialog
+                    if (this.selectedPreset === preset) {
+                        this.showEditPresetDialog(preset);
+                    } else {
+                        this.setColorPreset(preset);
+                    }
                 }
             });
 
@@ -197,14 +202,15 @@ export class PresetsController {
     }
 
     async setColorPreset(preset) {
-        const success = await this.ledController.setColorPreset(preset);
-        if (success) {
-            this.selectedPreset = preset;
-            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
-                const btnPreset = parseInt(btn.dataset.preset);
-                btn.classList.toggle('selected', btnPreset === preset);
-            });
-        }
+        // Update UI immediately (optimistic update)
+        this.selectedPreset = preset;
+        document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+            const btnPreset = parseInt(btn.dataset.preset);
+            btn.classList.toggle('selected', btnPreset === preset);
+        });
+        
+        // Then send to device
+        await this.ledController.setColorPreset(preset);
     }
 
     enablePresetDeleteMode() {
@@ -304,6 +310,113 @@ export class PresetsController {
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) dialog.remove();
         });
+    }
+
+    showEditPresetDialog(presetIndex) {
+        const preset = this.presets[presetIndex];
+        if (!preset) return;
+
+        const currentHex = `#${preset.r.toString(16).padStart(2, '0')}${preset.g.toString(16).padStart(2, '0')}${preset.b.toString(16).padStart(2, '0')}`;
+
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content preset-dialog-wide">
+                <h3>Edit Preset</h3>
+                <div class="color-picker-container">
+                    <div id="iroColorPickerEdit"></div>
+                </div>
+                <div class="form-row">
+                    <input type="text" id="editPresetName" value="${preset.name}" placeholder="Color name" maxlength="15">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelEditPresetBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveEditPresetBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        // Initialize iro.js color picker with current color
+        const colorPicker = new iro.ColorPicker('#iroColorPickerEdit', {
+            width: 200,
+            color: currentHex,
+            borderWidth: 2,
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            layout: [
+                { component: iro.ui.Wheel },
+                { component: iro.ui.Slider, options: { sliderType: 'value' } }
+            ]
+        });
+
+        document.getElementById('cancelEditPresetBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('saveEditPresetBtn').addEventListener('click', () => {
+            const color = colorPicker.color;
+            const name = document.getElementById('editPresetName').value || preset.name;
+            
+            // Close modal immediately for snappy UX
+            dialog.remove();
+            
+            // Update and apply in background
+            this.updatePreset(presetIndex, color.red, color.green, color.blue, name);
+            this.setColorPreset(presetIndex);
+        });
+
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+    }
+
+    async updatePreset(index, r, g, b, name) {
+        // Always update local state first
+        const wasCustom = this.presets[index]?.isCustom || false;
+        this.presets[index] = { r, g, b, name, isCustom: wasCustom };
+        console.log('Preset updated locally:', index, { r, g, b, name });
+        
+        // Re-render and keep selection
+        const previousSelection = this.selectedPreset;
+        this.renderPresets();
+        this.selectedPreset = previousSelection;
+        
+        // Update the selected button visually
+        if (this.selectedPreset !== undefined) {
+            const selectedBtn = document.querySelector(`.preset-btn[data-preset="${this.selectedPreset}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+        }
+
+        if (!this.bluetooth.hasCharacteristic('customPresets')) {
+            // Not connected - local update only
+            return;
+        }
+
+        try {
+            // Command 0x03 = Update preset
+            const nameBytes = new TextEncoder().encode(name.substring(0, 15));
+            const data = new Uint8Array(6 + nameBytes.length);
+            data[0] = 0x03; // Update command
+            data[1] = index;
+            data[2] = r;
+            data[3] = g;
+            data[4] = b;
+            data[5] = nameBytes.length;
+            data.set(nameBytes, 6);
+
+            console.log('Sending preset update command:', data);
+            await this.bluetooth.writeCharacteristic('customPresets', data);
+            console.log('Preset updated on device:', name);
+            
+            // Re-read presets from device to confirm
+            await this.readCustomPresets();
+        } catch (error) {
+            console.error('Failed to update preset on device:', error);
+            // Local update already applied, just log the error
+            console.log('Preset updated locally only');
+        }
     }
 
     updatePresetFeedback(ledStates) {

@@ -83,6 +83,10 @@ class MoonLamp {
         document.querySelectorAll('.brightness-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const brightness = parseInt(e.currentTarget.dataset.brightness);
+                // Update UI immediately (optimistic update)
+                document.querySelectorAll('.brightness-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                // Then send to device
                 this.ledController.setBrightness(brightness);
             });
         });

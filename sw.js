@@ -4,11 +4,29 @@ const CACHE_NAME = 'moon-lamp-v__VERSION__';
 const urlsToCache = [
   '/moon_phase_lamp_PWA/',
   '/moon_phase_lamp_PWA/index.html',
-  '/moon_phase_lamp_PWA/styles.css',
-  '/moon_phase_lamp_PWA/app.js',
   '/moon_phase_lamp_PWA/manifest.json',
   '/moon_phase_lamp_PWA/icon-192.png',
-  '/moon_phase_lamp_PWA/icon-512.png'
+  '/moon_phase_lamp_PWA/icon-512.png',
+  '/moon_phase_lamp_PWA/suncalc.js',
+  // CSS modules
+  '/moon_phase_lamp_PWA/css/base.css',
+  '/moon_phase_lamp_PWA/css/components.css',
+  '/moon_phase_lamp_PWA/css/tabs.css',
+  '/moon_phase_lamp_PWA/css/led-ring.css',
+  '/moon_phase_lamp_PWA/css/presets.css',
+  '/moon_phase_lamp_PWA/css/motor.css',
+  '/moon_phase_lamp_PWA/css/automations.css',
+  '/moon_phase_lamp_PWA/css/responsive.css',
+  // JS modules
+  '/moon_phase_lamp_PWA/js/app.js',
+  '/moon_phase_lamp_PWA/js/constants.js',
+  '/moon_phase_lamp_PWA/js/utils.js',
+  '/moon_phase_lamp_PWA/js/bluetooth.js',
+  '/moon_phase_lamp_PWA/js/led-controller.js',
+  '/moon_phase_lamp_PWA/js/motor-controller.js',
+  '/moon_phase_lamp_PWA/js/presets.js',
+  '/moon_phase_lamp_PWA/js/automations.js',
+  '/moon_phase_lamp_PWA/js/ui.js'
 ];
 
 // Install event - cache files

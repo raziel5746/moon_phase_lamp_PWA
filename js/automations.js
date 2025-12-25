@@ -1,0 +1,343 @@
+// Automations Controller
+import { getLocalToUtcTime, getUtcToLocalTime, formatTime, brightnessToUI, brightnessToFirmware } from './utils.js';
+
+export class AutomationsController {
+    constructor(bluetooth, presetsController) {
+        this.bluetooth = bluetooth;
+        this.presetsController = presetsController;
+        this.automations = [];
+    }
+
+    async readAutomations() {
+        if (!this.bluetooth.hasCharacteristic('automations')) {
+            console.log('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.bluetooth.readCharacteristic('automations');
+            const count = value.getUint8(0);
+            console.log('Automations count:', count);
+
+            this.automations = [];
+            for (let i = 0; i < count; i++) {
+                const offset = 1 + i * 8;
+                const utcHour = value.getUint8(offset + 1);
+                const utcMinute = value.getUint8(offset + 2);
+                const { hour, minute } = getUtcToLocalTime(utcHour, utcMinute);
+                this.automations.push({
+                    enabled: value.getUint8(offset) !== 0,
+                    hour,
+                    minute,
+                    hourUtc: utcHour,
+                    minuteUtc: utcMinute,
+                    presetId: value.getUint8(offset + 3),
+                    brightness: value.getUint8(offset + 4),
+                    r: value.getUint8(offset + 5),
+                    g: value.getUint8(offset + 6),
+                    b: value.getUint8(offset + 7)
+                });
+            }
+
+            this.renderAutomations();
+        } catch (error) {
+            console.error('Failed to read automations:', error);
+        }
+    }
+
+    async addAutomation(hour, minute, presetId, brightness, r = 0, g = 0, b = 0) {
+        if (!this.bluetooth.hasCharacteristic('automations')) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            const data = new Uint8Array(8);
+            data[0] = 0x01; // Add command
+            const utc = getLocalToUtcTime(hour, minute);
+            data[1] = utc.hour;
+            data[2] = utc.minute;
+            data[3] = presetId;
+            data[4] = brightness;
+            data[5] = r;
+            data[6] = g;
+            data[7] = b;
+
+            await this.bluetooth.writeCharacteristic('automations', data);
+            console.log('Automation added:', hour + ':' + minute);
+            
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to add automation:', error);
+        }
+    }
+
+    async removeAutomation(index) {
+        if (!this.bluetooth.hasCharacteristic('automations')) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        const btn = document.querySelector(`.automation-item:nth-child(${index + 1}) .btn-icon`);
+        if (btn) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+        }
+
+        try {
+            const data = new Uint8Array(2);
+            data[0] = 0x02; // Remove command
+            data[1] = index;
+
+            await this.bluetooth.writeCharacteristic('automations', data);
+            console.log('Automation removed:', index);
+            
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to remove automation:', error);
+            if (btn) {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+    }
+
+    async toggleAutomation(index, enabled) {
+        if (!this.bluetooth.hasCharacteristic('automations')) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            const data = new Uint8Array(3);
+            data[0] = 0x04; // Enable/disable command
+            data[1] = index;
+            data[2] = enabled ? 1 : 0;
+
+            await this.bluetooth.writeCharacteristic('automations', data);
+            console.log('Automation', index, enabled ? 'enabled' : 'disabled');
+            
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to toggle automation:', error);
+        }
+    }
+
+    async updateAutomation(index, hour, minute, presetId, brightness) {
+        if (!this.bluetooth.hasCharacteristic('automations')) {
+            console.warn('Automations characteristic not available');
+            return;
+        }
+
+        try {
+            const data = new Uint8Array(9);
+            data[0] = 0x03; // Update command
+            data[1] = index;
+            const utc = getLocalToUtcTime(hour, minute);
+            data[2] = utc.hour;
+            data[3] = utc.minute;
+            data[4] = presetId;
+            data[5] = brightness;
+            data[6] = 0;
+            data[7] = 0;
+            data[8] = 0;
+
+            await this.bluetooth.writeCharacteristic('automations', data);
+            console.log('Automation updated:', index);
+            
+            await this.readAutomations();
+        } catch (error) {
+            console.error('Failed to update automation:', error);
+        }
+    }
+
+    renderAutomations() {
+        const container = document.getElementById('automationsList');
+        if (!container) return;
+
+        if (!this.automations || this.automations.length === 0) {
+            container.innerHTML = '<p class="info-text">No automations set. Add one to schedule LED changes.</p>';
+            return;
+        }
+
+        const presets = this.presetsController.presets;
+        const presetNames = ['Warm White', 'Sunset', 'Ocean Blue', 'Pink Dream', 'Forest Green'];
+        
+        const sortedAutomations = this.automations
+            .map((auto, index) => ({ auto, index }))
+            .sort((a, b) => (a.auto.hour * 60 + a.auto.minute) - (b.auto.hour * 60 + b.auto.minute));
+        
+        container.innerHTML = sortedAutomations.map(({ auto, index }) => {
+            const timeStr = formatTime(auto.hour, auto.minute);
+            const presetName = presets && presets[auto.presetId] 
+                ? presets[auto.presetId].name 
+                : (auto.presetId < presetNames.length ? presetNames[auto.presetId] : 'Custom');
+            
+            return `
+                <div class="automation-item ${auto.enabled ? '' : 'disabled'}" onclick="window.moonLamp.showEditAutomationDialog(${index})">
+                    <div class="automation-info">
+                        <span class="automation-time">${timeStr}</span>
+                        <span class="automation-preset">${presetName} @ ${brightnessToUI(auto.brightness)}%</span>
+                    </div>
+                    <div class="automation-actions" onclick="event.stopPropagation()">
+                        <label class="toggle-label small">
+                            <input type="checkbox" ${auto.enabled ? 'checked' : ''} 
+                                   onchange="window.moonLamp.toggleAutomation(${index}, this.checked)">
+                        </label>
+                        <button class="btn-icon delete-btn" onclick="window.moonLamp.removeAutomation(${index})">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    showAddAutomationDialog() {
+        const presets = this.presetsController.presets;
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Add Schedule</h3>
+                <div class="form-row">
+                    <label>Time:</label>
+                    <input type="time" id="addAutomationTime" value="07:00">
+                </div>
+                <div class="form-row">
+                    <label>Preset:</label>
+                    <select id="addAutomationPreset">
+                        ${presets.map((p, i) => 
+                            `<option value="${i}">${p.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-row brightness-row">
+                    <label>Brightness:</label>
+                    <div class="automation-brightness-btns">
+                        <button type="button" class="brightness-select-btn" data-brightness="0">0%</button>
+                        <button type="button" class="brightness-select-btn" data-brightness="25">25%</button>
+                        <button type="button" class="brightness-select-btn" data-brightness="50">50%</button>
+                        <button type="button" class="brightness-select-btn active" data-brightness="75">75%</button>
+                        <button type="button" class="brightness-select-btn" data-brightness="100">100%</button>
+                    </div>
+                    <input type="hidden" id="addAutomationBrightness" value="75">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelAddBtn">Cancel</button>
+                    <button class="btn btn-primary" id="confirmAddBtn">Add</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dialog.querySelectorAll('.brightness-select-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('addAutomationBrightness').value = btn.dataset.brightness;
+            });
+        });
+
+        document.getElementById('cancelAddBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('confirmAddBtn').addEventListener('click', async () => {
+            const time = document.getElementById('addAutomationTime').value;
+            const preset = parseInt(document.getElementById('addAutomationPreset').value);
+            const brightnessPercent = parseInt(document.getElementById('addAutomationBrightness').value);
+            const brightness = brightnessToFirmware(brightnessPercent);
+            
+            if (time) {
+                const [hour, minute] = time.split(':').map(Number);
+                await this.addAutomation(hour, minute, preset, brightness);
+                dialog.remove();
+            }
+        });
+
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+    }
+
+    showEditAutomationDialog(index) {
+        const auto = this.automations[index];
+        if (!auto) return;
+
+        const presets = this.presetsController.presets;
+        const timeStr = formatTime(auto.hour, auto.minute);
+        const brightnessPercent = brightnessToUI(auto.brightness);
+        const brightnessLevels = [0, 25, 50, 75, 100];
+        const closestBrightness = brightnessLevels.reduce((prev, curr) => 
+            Math.abs(curr - brightnessPercent) < Math.abs(prev - brightnessPercent) ? curr : prev
+        );
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Edit Schedule</h3>
+                <div class="form-row">
+                    <label>Time:</label>
+                    <input type="time" id="editAutomationTime" value="${timeStr}">
+                </div>
+                <div class="form-row">
+                    <label>Preset:</label>
+                    <select id="editAutomationPreset">
+                        ${presets.map((p, i) => 
+                            `<option value="${i}" ${i === auto.presetId ? 'selected' : ''}>${p.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="form-row brightness-row">
+                    <label>Brightness:</label>
+                    <div class="automation-brightness-btns">
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 0 ? 'active' : ''}" data-brightness="0">0%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 25 ? 'active' : ''}" data-brightness="25">25%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 50 ? 'active' : ''}" data-brightness="50">50%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 75 ? 'active' : ''}" data-brightness="75">75%</button>
+                        <button type="button" class="brightness-select-btn ${closestBrightness === 100 ? 'active' : ''}" data-brightness="100">100%</button>
+                    </div>
+                    <input type="hidden" id="editAutomationBrightness" value="${closestBrightness}">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelEditBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveEditBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dialog.querySelectorAll('.brightness-select-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('editAutomationBrightness').value = btn.dataset.brightness;
+            });
+        });
+
+        document.getElementById('cancelEditBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('saveEditBtn').addEventListener('click', async () => {
+            const time = document.getElementById('editAutomationTime').value;
+            const preset = parseInt(document.getElementById('editAutomationPreset').value);
+            const brightnessPercent = parseInt(document.getElementById('editAutomationBrightness').value);
+            const brightness = brightnessToFirmware(brightnessPercent);
+            
+            if (time) {
+                const [hour, minute] = time.split(':').map(Number);
+                await this.updateAutomation(index, hour, minute, preset, brightness);
+                dialog.remove();
+            }
+        });
+
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+    }
+}

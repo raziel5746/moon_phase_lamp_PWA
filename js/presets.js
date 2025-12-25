@@ -1,0 +1,352 @@
+// Presets Controller
+import { DEFAULT_PRESETS } from './constants.js';
+
+export class PresetsController {
+    constructor(bluetooth, ledController) {
+        this.bluetooth = bluetooth;
+        this.ledController = ledController;
+        this.presets = [...DEFAULT_PRESETS];
+        this.selectedPreset = undefined;
+        this.presetDeleteMode = false;
+        this.presetHoldTimer = null;
+    }
+
+    async readCustomPresets() {
+        if (!this.bluetooth.hasCharacteristic('customPresets')) {
+            console.log('Custom presets characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.bluetooth.readCharacteristic('customPresets');
+            const count = value.getUint8(0);
+            console.log('Presets count:', count);
+
+            this.presets = [];
+            let offset = 1;
+            for (let i = 0; i < count; i++) {
+                const r = value.getUint8(offset);
+                const g = value.getUint8(offset + 1);
+                const b = value.getUint8(offset + 2);
+                const nameLen = value.getUint8(offset + 3);
+                let name = '';
+                for (let j = 0; j < nameLen; j++) {
+                    name += String.fromCharCode(value.getUint8(offset + 4 + j));
+                }
+                this.presets.push({ r, g, b, name, isCustom: i >= 5 });
+                offset += 4 + nameLen;
+            }
+
+            this.renderPresets();
+            this.updateAutomationPresetDropdown();
+        } catch (error) {
+            console.error('Failed to read custom presets:', error);
+        }
+    }
+
+    async addCustomPreset(r, g, b, name) {
+        const customCount = this.presets.filter(p => p.isCustom).length;
+        if (customCount >= 5) {
+            alert('Maximum 5 custom presets allowed');
+            return;
+        }
+
+        if (!this.bluetooth.hasCharacteristic('customPresets')) {
+            this.presets.push({ r, g, b, name, isCustom: true });
+            this.renderPresets();
+            return;
+        }
+
+        try {
+            const nameBytes = new TextEncoder().encode(name.substring(0, 15));
+            const data = new Uint8Array(5 + nameBytes.length);
+            data[0] = 0x01; // Add command
+            data[1] = r;
+            data[2] = g;
+            data[3] = b;
+            data[4] = nameBytes.length;
+            data.set(nameBytes, 5);
+
+            await this.bluetooth.writeCharacteristic('customPresets', data);
+            console.log('Custom preset added:', name);
+            
+            await this.readCustomPresets();
+        } catch (error) {
+            console.error('Failed to add custom preset:', error);
+            alert('Failed to add preset: ' + error.message);
+        }
+    }
+
+    async removeCustomPreset(index) {
+        if (index < 5 || index >= this.presets.length) {
+            console.warn('Cannot remove: invalid index or default preset');
+            return;
+        }
+
+        if (!this.bluetooth.hasCharacteristic('customPresets')) {
+            this.presets.splice(index, 1);
+            this.renderPresets();
+            this.updateAutomationPresetDropdown();
+            console.log('Custom preset removed locally:', index);
+            return;
+        }
+
+        try {
+            const data = new Uint8Array(2);
+            data[0] = 0x02; // Remove command
+            data[1] = index;
+
+            await this.bluetooth.writeCharacteristic('customPresets', data);
+            console.log('Custom preset removed:', index);
+            
+            await this.readCustomPresets();
+        } catch (error) {
+            console.error('Failed to remove custom preset:', error);
+        }
+    }
+
+    renderPresets() {
+        const container = document.querySelector('.preset-grid');
+        if (!container || !this.presets) return;
+
+        let html = this.presets.map((preset, index) => `
+            <button class="preset-btn${this.presetDeleteMode && preset.isCustom ? ' delete-mode' : ''}" data-preset="${index}">
+                <div class="preset-color" style="background: rgb(${preset.r},${preset.g},${preset.b});"></div>
+                <span>${preset.name}</span>
+                ${this.presetDeleteMode && preset.isCustom ? `
+                    <div class="preset-trash-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
+                        </svg>
+                    </div>
+                ` : ''}
+            </button>
+        `).join('');
+
+        const customCount = this.presets.filter(p => p.isCustom).length;
+        if (customCount < 5 && !this.presetDeleteMode) {
+            html += `
+                <button class="preset-btn add-preset-btn" id="addPresetBtn">
+                    <div class="preset-color add-preset-color">+</div>
+                    <span>Add Custom</span>
+                </button>
+            `;
+        }
+
+        container.innerHTML = html;
+        this._attachPresetListeners(container);
+
+        if (this.selectedPreset !== undefined) {
+            const selectedBtn = container.querySelector(`.preset-btn[data-preset="${this.selectedPreset}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+        }
+    }
+
+    _attachPresetListeners(container) {
+        container.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+            const preset = parseInt(btn.dataset.preset);
+            const presetData = this.presets[preset];
+            
+            btn.addEventListener('click', (e) => {
+                if (this.presetDeleteMode && presetData.isCustom) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.confirmDeletePreset(preset);
+                } else if (!this.presetDeleteMode) {
+                    this.setColorPreset(preset);
+                }
+            });
+
+            // Hold to enable delete mode (touch)
+            btn.addEventListener('touchstart', () => {
+                this.presetHoldTimer = setTimeout(() => {
+                    this.enablePresetDeleteMode();
+                }, 600);
+            });
+            
+            btn.addEventListener('touchend', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+            
+            btn.addEventListener('touchmove', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+
+            // Hold to enable delete mode (mouse)
+            btn.addEventListener('mousedown', () => {
+                this.presetHoldTimer = setTimeout(() => {
+                    this.enablePresetDeleteMode();
+                }, 600);
+            });
+            
+            btn.addEventListener('mouseup', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                clearTimeout(this.presetHoldTimer);
+            });
+        });
+
+        const addBtn = document.getElementById('addPresetBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.showAddPresetDialog());
+        }
+    }
+
+    async setColorPreset(preset) {
+        const success = await this.ledController.setColorPreset(preset);
+        if (success) {
+            this.selectedPreset = preset;
+            document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+                const btnPreset = parseInt(btn.dataset.preset);
+                btn.classList.toggle('selected', btnPreset === preset);
+            });
+        }
+    }
+
+    enablePresetDeleteMode() {
+        const hasCustomPresets = this.presets.some(p => p.isCustom);
+        if (!hasCustomPresets) return;
+        
+        this.presetDeleteMode = true;
+        this.renderPresets();
+        
+        const exitHandler = (e) => {
+            const container = document.querySelector('.preset-grid');
+            if (!container) {
+                document.removeEventListener('click', exitHandler);
+                return;
+            }
+
+            const clickedPreset = e.target.closest('.preset-btn');
+            if (!container.contains(e.target) || !clickedPreset) {
+                this.exitPresetDeleteMode();
+                document.removeEventListener('click', exitHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', exitHandler), 100);
+    }
+
+    exitPresetDeleteMode() {
+        this.presetDeleteMode = false;
+        this.renderPresets();
+    }
+
+    confirmDeletePreset(index) {
+        const preset = this.presets[index];
+        if (!preset || !preset.isCustom) return;
+        
+        if (confirm(`Delete "${preset.name}" preset?`)) {
+            this.removeCustomPreset(index);
+            const hasCustomPresets = this.presets.some(p => p.isCustom);
+            if (!hasCustomPresets) {
+                this.exitPresetDeleteMode();
+            }
+        }
+    }
+
+    updateAutomationPresetDropdown() {
+        const select = document.getElementById('automationPreset');
+        if (!select || !this.presets) return;
+
+        select.innerHTML = this.presets.map((preset, index) => 
+            `<option value="${index}">${preset.name}</option>`
+        ).join('');
+    }
+
+    showAddPresetDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Add Custom Preset</h3>
+                <div class="form-row">
+                    <label>Color:</label>
+                    <input type="color" id="newPresetColor" value="#ff6600">
+                </div>
+                <div class="form-row">
+                    <label>Name:</label>
+                    <input type="text" id="newPresetName" placeholder="My Color" maxlength="15">
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn" id="cancelPresetBtn">Cancel</button>
+                    <button class="btn btn-primary" id="savePresetBtn">Save</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+
+        document.getElementById('cancelPresetBtn').addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        document.getElementById('savePresetBtn').addEventListener('click', () => {
+            const color = document.getElementById('newPresetColor').value;
+            const name = document.getElementById('newPresetName').value || 'Custom';
+            
+            const r = parseInt(color.substr(1, 2), 16);
+            const g = parseInt(color.substr(3, 2), 16);
+            const b = parseInt(color.substr(5, 2), 16);
+            
+            this.addCustomPreset(r, g, b, name);
+            dialog.remove();
+        });
+
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) dialog.remove();
+        });
+    }
+
+    updatePresetFeedback(ledStates) {
+        const firstLed = ledStates[0];
+        const allSame = ledStates.every(led =>
+            led.r === firstLed.r &&
+            led.g === firstLed.g &&
+            led.b === firstLed.b &&
+            led.brightness === firstLed.brightness
+        );
+
+        document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.brightness-btn').forEach(btn => btn.classList.remove('active'));
+
+        if (!allSame) return;
+
+        const r = firstLed.r;
+        const g = firstLed.g;
+        const b = firstLed.b;
+        const brightness = firstLed.brightness;
+
+        const matches = (tr, tg, tb) => {
+            return Math.abs(r - tr) < 5 && Math.abs(g - tg) < 5 && Math.abs(b - tb) < 5;
+        };
+
+        let activePreset = -1;
+
+        if (this.presets) {
+            for (let i = 0; i < this.presets.length; i++) {
+                const p = this.presets[i];
+                if (matches(p.r, p.g, p.b)) {
+                    activePreset = i;
+                    break;
+                }
+            }
+        }
+
+        this.selectedPreset = activePreset;
+        document.querySelectorAll('.preset-btn[data-preset]').forEach(btn => {
+            btn.classList.remove('selected', 'active');
+        });
+        if (activePreset !== -1) {
+            const btn = document.querySelector(`.preset-btn[data-preset="${activePreset}"]`);
+            if (btn) btn.classList.add('selected');
+        }
+
+        const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${brightness}"]`);
+        if (brightnessBtn) {
+            brightnessBtn.classList.add('active');
+        }
+    }
+}

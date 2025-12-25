@@ -1,0 +1,261 @@
+/* Presets Layout */
+.presets-layout {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 175px);
+    overflow: hidden;
+    gap: 20px;
+}
+
+.color-presets-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.preset-grid-scroll {
+    flex: 1;
+    overflow-y: auto;
+    margin: -4px;
+    padding: 4px;
+}
+
+.brightness-card {
+    flex-shrink: 0;
+    margin-bottom: 0;
+}
+
+.brightness-grid {
+    display: flex;
+    gap: 8px;
+}
+
+.brightness-grid .brightness-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 8px;
+}
+
+.brightness-grid .brightness-btn:hover {
+    border-color: var(--primary);
+}
+
+/* Presets */
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.preset-btn,
+.brightness-btn {
+    padding: 16px 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.preset-btn::before,
+.brightness-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.preset-btn:hover::before,
+.brightness-btn:hover::before {
+    opacity: 1;
+}
+
+.preset-btn:hover,
+.brightness-btn:hover {
+    border-color: var(--primary);
+}
+
+.preset-btn.active,
+.brightness-btn.active {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 
+        0 4px 15px rgba(99, 102, 241, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.preset-btn span,
+.brightness-btn {
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.preset-color {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.preset-btn:hover .preset-color {
+    transform: scale(1.1);
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.4),
+        0 0 20px currentColor;
+}
+
+/* Custom Presets */
+.preset-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.preset-btn:hover .preset-delete {
+    opacity: 1;
+}
+
+/* Delete mode for presets */
+.preset-btn.delete-mode {
+    border-color: var(--danger);
+    animation: shake 0.5s ease-in-out;
+}
+
+.preset-btn.delete-mode:hover {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+}
+
+.preset-trash-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    pointer-events: none;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.5);
+}
+
+.preset-btn.delete-mode .preset-color {
+    opacity: 0.4;
+}
+
+.preset-btn.delete-mode span {
+    opacity: 0.6;
+}
+
+.preset-btn.selected {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.add-preset-btn {
+    border: 2px dashed var(--glass-border);
+    background: transparent;
+}
+
+.add-preset-color {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: var(--text-secondary);
+    background: var(--glass-bg) !important;
+    border: 2px dashed var(--glass-border);
+}
+
+.add-preset-btn:hover .add-preset-color {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Automation brightness buttons in dialogs */
+.automation-brightness-btns {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.automation-brightness-btns .brightness-select-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.automation-brightness-btns .brightness-select-btn:hover {
+    border-color: var(--primary);
+}
+
+.automation-brightness-btns .brightness-select-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.brightness-row {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.brightness-row label {
+    margin-bottom: 8px;
+}

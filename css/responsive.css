@@ -1,0 +1,58 @@
+/* Responsive */
+@media (max-width: 480px) {
+    body {
+        padding: 12px;
+    }
+
+    body::before {
+        opacity: 0.4;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .card {
+        padding: 18px;
+        border-radius: 16px;
+    }
+
+    .tabs {
+        padding: 4px;
+    }
+
+    .tab-btn {
+        padding: 10px 12px;
+        font-size: 0.85em;
+    }
+
+    .led-ring {
+        width: 220px;
+        height: 220px;
+    }
+
+    .led-ring::before {
+        width: 180px;
+        height: 180px;
+    }
+
+    .led {
+        width: 20px;
+        height: 20px;
+    }
+
+    .preset-grid {
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 10px;
+    }
+
+    .preset-btn,
+    .brightness-btn {
+        padding: 14px 10px;
+    }
+
+    .preset-color {
+        width: 38px;
+        height: 38px;
+    }
+}

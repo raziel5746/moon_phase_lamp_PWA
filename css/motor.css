@@ -1,0 +1,233 @@
+/* Motor Control */
+.motor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.motor-header h2 {
+    margin-bottom: 0;
+}
+
+.moon-btn-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.moon-btn {
+    border: 2px solid var(--accent);
+    font-size: 1.8em;
+    line-height: 1;
+    box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.moon-btn:hover {
+    box-shadow: 0 6px 25px var(--accent-glow);
+    background: rgba(251, 191, 36, 0.1);
+}
+
+.moon-angle-label {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.motor-dial-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Decorative glow behind dial */
+.motor-dial-container::before {
+    content: '';
+    position: absolute;
+    width: 85%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+#motorDial {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+}
+
+#motorDial circle {
+    transition: stroke 0.3s ease;
+}
+
+#motorPointer {
+    transform-origin: 125px 125px;
+    filter: drop-shadow(0 2px 8px rgba(34, 197, 94, 0.5));
+    will-change: transform;
+}
+
+#motorPointer.animating {
+    transition: transform 0.3s ease;
+}
+
+#currentPosMarker {
+    transition: transform 0.3s ease;
+    transform-origin: 125px 125px;
+    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.5));
+}
+
+.motor-values {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    width: 100%;
+    position: relative;
+}
+
+.current-pos-value {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+.motor-value {
+    font-size: 2em;
+    font-weight: 700;
+    color: #22c55e;
+}
+
+.motor-settings-container {
+    position: absolute;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.settings-btn {
+    border: 2px solid var(--glass-border);
+    color: var(--text-secondary);
+    padding: 10px;
+}
+
+.settings-btn:hover {
+    border-color: var(--primary);
+    color: var(--text);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.settings-btn svg {
+    display: block;
+}
+
+.motor-settings-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: #1a1a2e;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 130px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.motor-settings-menu.show {
+    display: flex;
+}
+
+.motor-settings-menu .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.motor-settings-menu .menu-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.motor-settings-menu .menu-item:active {
+    background: rgba(99, 102, 241, 0.3);
+    transform: scale(0.97);
+}
+
+.motor-settings-menu .menu-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* Auto Tracking Section */
+.auto-tracking-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--glass-bg);
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.tracking-interval {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tracking-checkbox {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.tracking-interval label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.tracking-interval select {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.tracking-interval select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.tracking-interval select option {
+    background: var(--card-bg);
+    color: var(--text);
+}

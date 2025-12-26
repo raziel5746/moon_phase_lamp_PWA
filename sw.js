@@ -71,13 +71,15 @@ self.addEventListener('fetch', (event) => {
   }
   
   event.respondWith(
-    caches.match(event.request)
+    caches.match(event.request, { ignoreSearch: true })
       .then((response) => {
         // Cache hit - return response
         if (response) {
+          console.log('Cache hit:', event.request.url);
           return response;
         }
 
+        console.log('Cache miss, fetching:', event.request.url);
         // Clone the request
         const fetchRequest = event.request.clone();
 

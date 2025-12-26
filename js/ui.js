@@ -243,38 +243,18 @@ export class UIController {
         const existingBtn = document.getElementById('updateBtn');
         if (existingBtn) existingBtn.remove();
         
-        // Fetch the new version number from network
+        // Fetch the new version number from network (bypassing cache)
         let newVersion = 'Update';
-        let newVersionRaw = null;
         try {
             const response = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 if (data?.version) {
                     newVersion = `v${data.version}`;
-                    newVersionRaw = data.version;
                 }
             }
         } catch (e) {
             console.warn('Could not fetch new version:', e);
-        }
-        
-        // Get current cached version to compare
-        let currentVersion = null;
-        try {
-            const cachedResponse = await fetch('version.json');
-            if (cachedResponse.ok) {
-                const cachedData = await cachedResponse.json();
-                currentVersion = cachedData?.version;
-            }
-        } catch (e) {
-            console.warn('Could not fetch cached version:', e);
-        }
-        
-        // Don't show button if versions match (already updated)
-        if (newVersionRaw && currentVersion && newVersionRaw === currentVersion) {
-            console.log('Versions match, no update needed:', currentVersion);
-            return;
         }
         
         const updateBtn = document.createElement('button');

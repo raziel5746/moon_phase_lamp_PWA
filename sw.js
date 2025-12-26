@@ -60,12 +60,24 @@ const neverCache = [
   'sw.js'
 ];
 
+// Files that should bypass cache when requested with query string (for cache-busting)
+const bypassCacheWithQuery = [
+  'version.json'
+];
+
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
   // Always fetch these files fresh (never serve from cache)
   if (neverCache.some(file => url.pathname.endsWith(file))) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // Bypass cache for specific files when they have a query string (cache-busting)
+  if (url.search && bypassCacheWithQuery.some(file => url.pathname.endsWith(file))) {
+    console.log('Bypassing cache (query string):', event.request.url);
     event.respondWith(fetch(event.request));
     return;
   }

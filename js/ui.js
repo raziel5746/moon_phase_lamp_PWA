@@ -207,20 +207,26 @@ export class UIController {
             navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
+                    console.log('SW state - installing:', reg.installing, 'waiting:', reg.waiting, 'active:', reg.active);
                     
                     // Check if there's already a waiting SW
                     if (reg.waiting) {
+                        console.log('Found waiting SW on registration');
                         this.onNewServiceWorkerAvailable(reg.waiting);
                     }
                     
                     // Listen for new SW installing
                     reg.addEventListener('updatefound', () => {
+                        console.log('updatefound event fired');
                         const newWorker = reg.installing;
                         if (!newWorker) return;
                         
+                        console.log('New worker installing, state:', newWorker.state);
                         newWorker.addEventListener('statechange', () => {
+                            console.log('Worker state changed to:', newWorker.state);
                             // New SW is installed and waiting
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('New SW installed and waiting, showing update button');
                                 this.onNewServiceWorkerAvailable(newWorker);
                             }
                         });

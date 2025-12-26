@@ -199,6 +199,10 @@ class MoonLamp {
 
                 // Update preset feedback after reading LED state
                 this.presetsController.updatePresetFeedback(this.ledController.ledStates);
+                
+                // Update brightness slider with current brightness
+                const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
+                this.updateBrightnessSlider(currentBrightness);
             }
         } catch (error) {
             alert('Failed to connect: ' + error.message);
@@ -243,11 +247,14 @@ class MoonLamp {
                 valueEl.style.left = `calc(${percent}% - 70px)`;
             }
             
-            // Update preset button selection to match current value
-            const presetValues = [0, 25, 50, 75, 100];
+            // Update preset button selection to match current value (only for preset values)
             document.querySelectorAll('.brightness-btn').forEach(btn => {
                 const btnValue = parseInt(btn.dataset.brightness);
-                btn.classList.toggle('active', btnValue === percent);
+                if (percent === btnValue) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
             
             return percent;
@@ -256,8 +263,11 @@ class MoonLamp {
         const sendBrightness = (brightness) => {
             if (brightness !== lastBrightness) {
                 lastBrightness = brightness;
-                // Clear preset button selection since we're using custom value
-                document.querySelectorAll('.brightness-btn').forEach(b => b.classList.remove('active'));
+                // Update preset button selection based on final value
+                document.querySelectorAll('.brightness-btn').forEach(btn => {
+                    const btnValue = parseInt(btn.dataset.brightness);
+                    btn.classList.toggle('active', btnValue === brightness);
+                });
                 this.ledController.setBrightness(brightness);
             }
         };

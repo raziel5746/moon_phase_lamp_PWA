@@ -179,20 +179,24 @@ export class UIController {
                 .then(reg => {
                     console.log('Service Worker registered', reg);
 
-                    const invokeUpdateFlow = (worker) => {
+                    const showUpdateButton = (worker) => {
                         if (updatePromptShown) return;
                         updatePromptShown = true;
                         
-                        const shouldUpdate = confirm('A new version of Moon Lamp is available. Reload now?');
-                        if (shouldUpdate && worker) {
-                            // Send string message, not object
-                            worker.postMessage('SKIP_WAITING');
+                        const updateBtn = document.getElementById('updateBtn');
+                        if (updateBtn) {
+                            updateBtn.style.display = 'flex';
+                            updateBtn.addEventListener('click', () => {
+                                if (worker) {
+                                    worker.postMessage('SKIP_WAITING');
+                                }
+                            });
                         }
                     };
 
-                    // Check for waiting worker on page load (user may have dismissed prompt before)
+                    // Check for waiting worker on page load
                     if (reg.waiting) {
-                        invokeUpdateFlow(reg.waiting);
+                        showUpdateButton(reg.waiting);
                     }
 
                     // Force check for updates
@@ -206,7 +210,7 @@ export class UIController {
                         // Wait until new SW is installed (ready to take over)
                         newWorker.addEventListener('statechange', () => {
                             if (reg.waiting && navigator.serviceWorker.controller) {
-                                invokeUpdateFlow(reg.waiting);
+                                showUpdateButton(reg.waiting);
                             }
                         });
                     });

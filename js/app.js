@@ -9,28 +9,20 @@ import { UIController } from './ui.js';
 // Debug: Log viewport dimensions and find overflow source
 const logViewport = (event) => {
     const viewportHeight = window.innerHeight;
+    const bodyStyle = getComputedStyle(document.body);
+    const container = document.querySelector('.container');
+    const containerRect = container ? container.getBoundingClientRect() : null;
+    
     console.log(`[Viewport ${event}]`, {
         innerHeight: viewportHeight,
         documentHeight: document.documentElement.scrollHeight,
-        bodyHeight: document.body.scrollHeight,
-        overflow: document.documentElement.scrollHeight - viewportHeight
+        overflow: document.documentElement.scrollHeight - viewportHeight,
+        bodyPaddingBottom: bodyStyle.paddingBottom,
+        bodyMarginBottom: bodyStyle.marginBottom,
+        containerBottom: containerRect ? Math.round(containerRect.bottom) : null,
+        containerHeight: containerRect ? Math.round(containerRect.height) : null,
+        scrollY: window.scrollY
     });
-    
-    // Find elements causing overflow
-    if (document.documentElement.scrollHeight > viewportHeight) {
-        const elements = document.querySelectorAll('body > *, header, .container, .tabs, .tab-content.active, .presets-layout');
-        elements.forEach(el => {
-            const rect = el.getBoundingClientRect();
-            const bottom = rect.bottom;
-            if (bottom > viewportHeight) {
-                console.log(`[Overflow] ${el.tagName}.${el.className}`, {
-                    bottom: Math.round(bottom),
-                    height: Math.round(rect.height),
-                    overflowBy: Math.round(bottom - viewportHeight)
-                });
-            }
-        });
-    }
 };
 logViewport('initial');
 window.addEventListener('load', () => logViewport('load'));

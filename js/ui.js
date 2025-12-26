@@ -302,9 +302,9 @@ export class UIController {
             return;
         }
         
-        // Send skip waiting message to the waiting SW
+        // Send skip waiting message to the waiting SW (standard pattern)
         console.log('Sending SKIP_WAITING to:', this.waitingServiceWorker.scriptURL);
-        this.waitingServiceWorker.postMessage('SKIP_WAITING');
+        this.waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
     }
 
     async forceResetSW() {

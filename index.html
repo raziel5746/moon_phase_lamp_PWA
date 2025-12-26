@@ -47,14 +47,6 @@
             </div>
         </header>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="presets">Presets</button>
-            <!-- <button class="tab-btn" data-tab="custom">Custom</button> -->
-            <button class="tab-btn" data-tab="motor">Motor</button>
-            <button class="tab-btn" data-tab="automations">Schedule</button>
-        </div>
-
         <!-- Presets Tab -->
         <div class="tab-content active" id="presets">
             <div class="presets-layout">
@@ -243,6 +235,13 @@
                 <button class="btn btn-primary" id="addAutomationBtn" style="width: 100%; margin-top: 16px;">Add Schedule</button>
             </div>
         </div>
+    </div>
+
+    <!-- Tabs (outside container since they're fixed) -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="presets">Presets</button>
+        <button class="tab-btn" data-tab="motor">Motor</button>
+        <button class="tab-btn" data-tab="automations">Schedule</button>
     </div>
 
     <script src="suncalc.js"></script>

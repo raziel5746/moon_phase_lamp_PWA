@@ -178,29 +178,28 @@ export class UIController {
                     console.log('Service Worker registered', reg);
 
                     const showUpdatePrompt = (worker) => {
-                        // Prevent duplicate prompts
                         if (updatePromptShown) return;
                         updatePromptShown = true;
                         
                         const shouldUpdate = confirm('A new version of Moon Lamp is available. Reload now?');
-                        if (shouldUpdate) {
-                            if (worker) {
-                                worker.postMessage({ type: 'SKIP_WAITING' });
-                            }
+                        if (shouldUpdate && worker) {
+                            worker.postMessage({ type: 'SKIP_WAITING' });
                         }
                     };
 
-                    // Check for waiting worker immediately
+                    // Check for waiting worker on page load
                     if (reg.waiting) {
                         showUpdatePrompt(reg.waiting);
                     }
 
-                    // Force check for updates on page load
+                    // Force check for updates
                     reg.update().catch(err => console.log('Update check failed:', err));
 
+                    // Listen for new service worker installing
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         if (!newWorker) return;
+                        
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                 showUpdatePrompt(newWorker);
@@ -208,6 +207,7 @@ export class UIController {
                         });
                     });
 
+                    // Reload when new SW takes control
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
                         window.location.reload();
                     });

@@ -43,8 +43,7 @@ self.addEventListener('install', (event) => {
         console.error('Cache failed:', error);
       })
   );
-  // Don't call skipWaiting() here - let the client decide when to activate
-  // via the SKIP_WAITING message after user confirms the update
+  // Don't skipWaiting here - let client prompt user first
 });
 
 // Fetch event - serve from cache, fallback to network

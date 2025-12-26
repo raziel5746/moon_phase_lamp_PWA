@@ -173,7 +173,8 @@ export class UIController {
             const swVersion = 'v__VERSION__';
             let refreshing = false;
             
-            navigator.serviceWorker.register(`./sw.js?${swVersion}`)
+            // Include timestamp to bypass browser HTTP cache
+            navigator.serviceWorker.register(`./sw.js?v=${swVersion}&t=${Date.now()}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
                     

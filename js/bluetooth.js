@@ -64,10 +64,13 @@ export class BluetoothManager {
     }
 
     async _connectToDevice() {
+        const maxRetries = 3;
+        const baseDelay = 2000; // 2 seconds base delay
         let lastError;
-        for (let attempt = 1; attempt <= 3; attempt++) {
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                console.log(`Connection attempt ${attempt}...`);
+                console.log(`Connection attempt ${attempt}/${maxRetries}...`);
 
                 console.log('Connecting to GATT Server...');
                 const connectPromise = this.device.gatt.connect();
@@ -124,9 +127,10 @@ export class BluetoothManager {
                 lastError = error;
                 console.log(`Attempt ${attempt} failed:`, error.message);
 
-                if (attempt < 3) {
-                    const delay = attempt * 1000;
-                    console.log(`Retrying in ${delay}ms...`);
+                if (attempt < maxRetries) {
+                    // Exponential backoff: 2s, 4s, 8s...
+                    const delay = baseDelay * Math.pow(2, attempt - 1);
+                    console.log(`Retrying in ${delay / 1000}s... (${maxRetries - attempt} tries left)`);
                     this._notifyConnectionChange('connecting');
                     await new Promise(resolve => setTimeout(resolve, delay));
                 } else {

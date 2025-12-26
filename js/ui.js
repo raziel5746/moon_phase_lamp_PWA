@@ -186,17 +186,15 @@ export class UIController {
                         const updateBtn = document.getElementById('updateBtn');
                         if (updateBtn) {
                             updateBtn.style.display = 'flex';
-                            updateBtn.addEventListener('click', async () => {
-                                // Unregister SW, clear caches, and hard reload with cache bust
-                                try {
-                                    const cacheNames = await caches.keys();
-                                    await Promise.all(cacheNames.map(name => caches.delete(name)));
-                                    await reg.unregister();
-                                } catch (e) {
-                                    console.error('Failed to clear caches:', e);
+                            updateBtn.addEventListener('click', () => {
+                                // Send skipWaiting to the waiting worker
+                                if (reg.waiting) {
+                                    reg.waiting.postMessage('SKIP_WAITING');
+                                    // Fallback reload after short delay
+                                    setTimeout(() => window.location.reload(), 500);
+                                } else {
+                                    window.location.reload();
                                 }
-                                // Navigate with cache-busting query param
-                                window.location.href = window.location.pathname + '?update=' + Date.now();
                             });
                         }
                     };

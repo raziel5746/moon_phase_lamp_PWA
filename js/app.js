@@ -6,6 +6,24 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
+// Debug: Log viewport dimensions on load and resize
+const logViewport = (event) => {
+    console.log(`[Viewport ${event}]`, {
+        innerHeight: window.innerHeight,
+        innerWidth: window.innerWidth,
+        documentHeight: document.documentElement.scrollHeight,
+        bodyHeight: document.body.scrollHeight,
+        clientHeight: document.documentElement.clientHeight,
+        visualViewport: window.visualViewport ? {
+            height: window.visualViewport.height,
+            offsetTop: window.visualViewport.offsetTop
+        } : 'not supported'
+    });
+};
+logViewport('initial');
+window.addEventListener('load', () => logViewport('load'));
+window.addEventListener('resize', () => logViewport('resize'));
+
 class MoonLamp {
     constructor() {
         this.bluetooth = new BluetoothManager();

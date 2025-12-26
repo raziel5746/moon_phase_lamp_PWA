@@ -26,8 +26,9 @@
 </head>
 
 <body>
+    <!-- DEBUG: Container wrapped in template to hide it -->
+    <template>
     <div class="container">
-        <!-- DEBUG: Header commented out to test overflow issue
         <header>
             <div class="app-title">
                 <h1>🌙 Moon Lamp</h1>
@@ -39,7 +40,6 @@
                 </div>
             </div>
         </header>
-        -->
 
         <!-- Presets Tab -->
         <div class="tab-content active" id="presets">
@@ -230,6 +230,7 @@
             </div>
         </div>
     </div>
+    </template>
 
     <!-- Tabs (outside container since they're fixed) -->
     <div class="tabs">

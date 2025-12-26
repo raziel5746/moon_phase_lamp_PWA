@@ -78,7 +78,7 @@ body::before {
 }
 
 .container {
-    flex: 1;
+    flex: 1 1 0;
     max-width: 600px;
     width: 100%;
     margin: 0 auto;
@@ -89,6 +89,7 @@ body::before {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    max-height: 100%;
 }
 
 header {

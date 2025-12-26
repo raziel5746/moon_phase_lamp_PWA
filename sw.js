@@ -43,7 +43,8 @@ self.addEventListener('install', (event) => {
         console.error('Cache failed:', error);
       })
   );
-  // skipWaiting will be called via postMessage from the client
+  // Activate immediately for reliable updates
+  self.skipWaiting();
 });
 
 // Fetch event - serve from cache, fallback to network

@@ -171,56 +171,16 @@ export class UIController {
 
         if ('serviceWorker' in navigator && isSecureProtocol) {
             const swVersion = 'v__VERSION__';
-            let updatePromptShown = false;
-            
             let refreshing = false;
             
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
-
-                    const showUpdateButton = () => {
-                        if (updatePromptShown) return;
-                        updatePromptShown = true;
-                        
-                        const updateBtn = document.getElementById('updateBtn');
-                        if (updateBtn) {
-                            updateBtn.style.display = 'flex';
-                            updateBtn.addEventListener('click', () => {
-                                // Send skipWaiting to the waiting worker
-                                if (reg.waiting) {
-                                    reg.waiting.postMessage('SKIP_WAITING');
-                                    // Fallback reload after short delay
-                                    setTimeout(() => window.location.reload(), 500);
-                                } else {
-                                    window.location.reload();
-                                }
-                            });
-                        }
-                    };
-
-                    // Check for waiting worker on page load
-                    if (reg.waiting) {
-                        showUpdateButton();
-                    }
-
+                    
                     // Force check for updates
                     reg.update().catch(err => console.log('Update check failed:', err));
 
-                    // Listen for new service worker installing
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        if (!newWorker) return;
-                        
-                        // Wait until new SW is installed (ready to take over)
-                        newWorker.addEventListener('statechange', () => {
-                            if (reg.waiting && navigator.serviceWorker.controller) {
-                                showUpdateButton();
-                            }
-                        });
-                    });
-
-                    // Reload when new SW takes control (prevent multiple reloads)
+                    // Reload when new SW takes control
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
                         if (!refreshing) {
                             refreshing = true;

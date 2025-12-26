@@ -6,19 +6,31 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
-// Debug: Log viewport dimensions on load and resize
+// Debug: Log viewport dimensions and find overflow source
 const logViewport = (event) => {
+    const viewportHeight = window.innerHeight;
     console.log(`[Viewport ${event}]`, {
-        innerHeight: window.innerHeight,
-        innerWidth: window.innerWidth,
+        innerHeight: viewportHeight,
         documentHeight: document.documentElement.scrollHeight,
         bodyHeight: document.body.scrollHeight,
-        clientHeight: document.documentElement.clientHeight,
-        visualViewport: window.visualViewport ? {
-            height: window.visualViewport.height,
-            offsetTop: window.visualViewport.offsetTop
-        } : 'not supported'
+        overflow: document.documentElement.scrollHeight - viewportHeight
     });
+    
+    // Find elements causing overflow
+    if (document.documentElement.scrollHeight > viewportHeight) {
+        const elements = document.querySelectorAll('body > *, header, .container, .tabs, .tab-content.active, .presets-layout');
+        elements.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const bottom = rect.bottom;
+            if (bottom > viewportHeight) {
+                console.log(`[Overflow] ${el.tagName}.${el.className}`, {
+                    bottom: Math.round(bottom),
+                    height: Math.round(rect.height),
+                    overflowBy: Math.round(bottom - viewportHeight)
+                });
+            }
+        });
+    }
 };
 logViewport('initial');
 window.addEventListener('load', () => logViewport('load'));

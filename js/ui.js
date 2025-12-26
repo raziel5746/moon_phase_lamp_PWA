@@ -186,14 +186,16 @@ export class UIController {
                         const updateBtn = document.getElementById('updateBtn');
                         if (updateBtn) {
                             updateBtn.style.display = 'flex';
-                            updateBtn.addEventListener('click', () => {
-                                // Always get the current waiting worker at click time
-                                if (reg.waiting) {
-                                    reg.waiting.postMessage('SKIP_WAITING');
-                                } else {
-                                    // Fallback: just reload
-                                    window.location.reload();
+                            updateBtn.addEventListener('click', async () => {
+                                // Unregister SW, clear caches, and reload
+                                try {
+                                    const cacheNames = await caches.keys();
+                                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                                    await reg.unregister();
+                                } catch (e) {
+                                    console.error('Failed to clear caches:', e);
                                 }
+                                window.location.reload(true);
                             });
                         }
                     };

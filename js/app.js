@@ -6,27 +6,10 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
-// Debug: Log viewport dimensions and find overflow source
-const logViewport = (event) => {
-    const viewportHeight = window.innerHeight;
-    const bodyStyle = getComputedStyle(document.body);
-    const container = document.querySelector('.container');
-    const containerRect = container ? container.getBoundingClientRect() : null;
-    
-    console.log(`[Viewport ${event}]`, {
-        innerHeight: viewportHeight,
-        documentHeight: document.documentElement.scrollHeight,
-        overflow: document.documentElement.scrollHeight - viewportHeight,
-        bodyPaddingBottom: bodyStyle.paddingBottom,
-        bodyMarginBottom: bodyStyle.marginBottom,
-        containerBottom: containerRect ? Math.round(containerRect.bottom) : null,
-        containerHeight: containerRect ? Math.round(containerRect.height) : null,
-        scrollY: window.scrollY
-    });
-};
-logViewport('initial');
-window.addEventListener('load', () => logViewport('load'));
-window.addEventListener('resize', () => logViewport('resize'));
+// Disable scroll restoration to prevent mobile overflow issue
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
 
 class MoonLamp {
     constructor() {

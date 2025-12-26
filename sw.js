@@ -46,7 +46,19 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache:', CACHE_NAME);
-        return cache.addAll(urlsToCache);
+        // Fetch with cache-busting to ensure we get fresh files from server
+        const fetchPromises = urlsToCache.map(url => {
+          // Build absolute URL for fetch
+          const absoluteUrl = new URL(url, self.location.origin).href;
+          const cacheBustUrl = absoluteUrl + (absoluteUrl.includes('?') ? '&' : '?') + 'v=' + CACHE_NAME;
+          return fetch(cacheBustUrl, { cache: 'no-store' })
+            .then(response => {
+              if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+              // Store with the absolute URL (without cache-bust query) for proper matching
+              return cache.put(absoluteUrl, response);
+            });
+        });
+        return Promise.all(fetchPromises);
       })
       .catch((error) => {
         console.error('Cache failed:', error);

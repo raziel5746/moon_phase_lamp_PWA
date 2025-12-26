@@ -280,15 +280,19 @@ class MoonLamp {
         slider.addEventListener('touchstart', (e) => {
             isDragging = true;
             updateSlider(e);
-        });
+            e.preventDefault();
+        }, { passive: false });
 
         document.addEventListener('mousemove', (e) => {
             if (isDragging) updateSlider(e);
         });
 
         document.addEventListener('touchmove', (e) => {
-            if (isDragging) updateSlider(e);
-        });
+            if (isDragging) {
+                updateSlider(e);
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         document.addEventListener('mouseup', () => {
             if (isDragging) {

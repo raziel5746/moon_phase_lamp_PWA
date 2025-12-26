@@ -186,17 +186,21 @@ export class UIController {
                 return;
             }
             
-            // Listen for activation complete message from SW
+            // Listen for controller change - this fires when a new SW takes control
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                console.log('New service worker took control');
+                if (refreshing) return;
+                refreshing = true;
+                // Reload to get new files from the new SW
+                window.location.reload();
+            });
+            
+            // Also listen for activation complete as backup
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data?.type === 'ACTIVATION_COMPLETE') {
-                    console.log('SW activation complete, waiting before reload...');
-                    if (refreshing) return;
-                    refreshing = true;
-                    // Small delay to ensure new SW is fully in control before reload
-                    setTimeout(() => {
-                        console.log('Reloading now...');
-                        window.location.reload();
-                    }, 500);
+                    console.log('SW activation complete message received');
+                    // The controllerchange event should handle the reload
+                    // This is just for logging
                 }
             });
             

@@ -57,7 +57,6 @@ self.addEventListener('install', (event) => {
 
 // Files that should never be cached (always fetch fresh)
 const neverCache = [
-  'version.json',
   'sw.js'
 ];
 

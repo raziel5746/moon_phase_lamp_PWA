@@ -189,10 +189,14 @@ export class UIController {
             // Listen for activation complete message from SW
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data?.type === 'ACTIVATION_COMPLETE') {
-                    console.log('SW activation complete, reloading...');
+                    console.log('SW activation complete, waiting before reload...');
                     if (refreshing) return;
                     refreshing = true;
-                    window.location.reload();
+                    // Small delay to ensure new SW is fully in control before reload
+                    setTimeout(() => {
+                        console.log('Reloading now...');
+                        window.location.reload();
+                    }, 500);
                 }
             });
             
@@ -224,10 +228,10 @@ export class UIController {
         }
     }
     
-    onNewServiceWorkerAvailable(worker) {
+    async onNewServiceWorkerAvailable(worker) {
         console.log('New service worker available');
         this.waitingServiceWorker = worker;
-        this.showUpdateButton();
+        await this.showUpdateButton();
     }
     
     async showUpdateButton() {

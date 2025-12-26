@@ -115,8 +115,15 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      // Ensure the new SW takes control of already-open clients
+      console.log('Old caches deleted, claiming clients...');
       return self.clients.claim();
+    }).then(() => {
+      // Notify all clients that activation is complete
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'ACTIVATION_COMPLETE' });
+        });
+      });
     })
   );
 });

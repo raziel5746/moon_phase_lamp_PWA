@@ -182,11 +182,14 @@ export class UIController {
                 return;
             }
             
-            // Reload page when new SW takes control
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (refreshing) return;
-                refreshing = true;
-                window.location.reload();
+            // Listen for activation complete message from SW
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data?.type === 'ACTIVATION_COMPLETE') {
+                    console.log('SW activation complete, reloading...');
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                }
             });
             
             navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)

@@ -43,6 +43,47 @@
     border-color: var(--primary);
 }
 
+/* Brightness Slider */
+.brightness-slider-container {
+    margin-top: 12px;
+}
+
+.brightness-slider {
+    position: relative;
+    height: 48px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    cursor: pointer;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.brightness-slider-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 15px 0 0 15px;
+    transition: width 0.05s ease-out;
+}
+
+.brightness-slider-value {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: calc(50% - 35px);
+    font-size: 0.9em;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    transition: left 0.05s ease-out;
+}
+
 /* Presets */
 .preset-grid {
     display: grid;

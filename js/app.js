@@ -86,10 +86,14 @@ class MoonLamp {
                 // Update UI immediately (optimistic update)
                 document.querySelectorAll('.brightness-btn').forEach(b => b.classList.remove('active'));
                 e.currentTarget.classList.add('active');
+                this.updateBrightnessSlider(brightness);
                 // Then send to device
                 this.ledController.setBrightness(brightness);
             });
         });
+
+        // Brightness slider
+        this.setupBrightnessSlider();
 
         // LED selection controls
         const selectAllBtn = document.getElementById('selectAllBtn');
@@ -212,6 +216,94 @@ class MoonLamp {
 
     removeAutomation(index) {
         this.automationsController.removeAutomation(index);
+    }
+
+    setupBrightnessSlider() {
+        const slider = document.getElementById('brightnessSlider');
+        const fill = document.getElementById('brightnessSliderFill');
+        const valueEl = document.getElementById('brightnessSliderValue');
+        if (!slider || !fill || !valueEl) return;
+
+        let isDragging = false;
+        let lastBrightness = 50;
+
+        const updateSlider = (e) => {
+            const rect = slider.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let percent = ((clientX - rect.left) / rect.width) * 100;
+            percent = Math.max(0, Math.min(100, Math.round(percent)));
+            
+            fill.style.width = percent + '%';
+            valueEl.textContent = percent + '%';
+            valueEl.style.left = `calc(${percent}% - 20px)`;
+            
+            // Clamp position so text doesn't overflow, stays left of finger
+            if (percent < 18) {
+                valueEl.style.left = '8px';
+            } else {
+                valueEl.style.left = `calc(${percent}% - 55px)`;
+            }
+            
+            return percent;
+        };
+
+        const sendBrightness = (brightness) => {
+            if (brightness !== lastBrightness) {
+                lastBrightness = brightness;
+                // Clear preset button selection since we're using custom value
+                document.querySelectorAll('.brightness-btn').forEach(b => b.classList.remove('active'));
+                this.ledController.setBrightness(brightness);
+            }
+        };
+
+        slider.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateSlider(e);
+        });
+
+        slider.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateSlider(e);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) updateSlider(e);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) updateSlider(e);
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                const percent = parseInt(fill.style.width);
+                sendBrightness(percent);
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            if (isDragging) {
+                isDragging = false;
+                const percent = parseInt(fill.style.width);
+                sendBrightness(percent);
+            }
+        });
+    }
+
+    updateBrightnessSlider(brightness) {
+        const fill = document.getElementById('brightnessSliderFill');
+        const valueEl = document.getElementById('brightnessSliderValue');
+        if (!fill || !valueEl) return;
+
+        fill.style.width = brightness + '%';
+        valueEl.textContent = brightness + '%';
+        
+        if (brightness < 18) {
+            valueEl.style.left = '8px';
+        } else {
+            valueEl.style.left = `calc(${brightness}% - 55px)`;
+        }
     }
 }
 

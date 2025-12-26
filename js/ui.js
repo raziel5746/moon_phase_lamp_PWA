@@ -55,7 +55,9 @@ export class UIController {
         }
 
         try {
-            const response = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+            // Load version from cache (not network) to show the actual installed version
+            // This ensures the header shows the cached version, not the latest server version
+            const response = await fetch('version.json');
             if (!response.ok) throw new Error('Failed to load version');
             const data = await response.json();
             if (data?.version) {

@@ -72,14 +72,28 @@ export class BluetoothManager {
             try {
                 console.log(`Connection attempt ${attempt}/${maxRetries}...`);
 
+                // Android workaround: disconnect before connecting to clear any stale connection state
+                if (this.device.gatt.connected) {
+                    console.log('Device appears connected, disconnecting first...');
+                    try {
+                        this.device.gatt.disconnect();
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    } catch (e) {
+                        console.log('Pre-disconnect failed (expected):', e.message);
+                    }
+                }
+
                 console.log('Connecting to GATT Server...');
                 const connectPromise = this.device.gatt.connect();
+                // Longer timeout for first attempt (15s), shorter for retries (10s)
+                const timeout = attempt === 1 ? 15000 : 10000;
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Connection timeout')), 10000)
+                    setTimeout(() => reject(new Error('Connection timeout')), timeout)
                 );
 
                 this.server = await Promise.race([connectPromise, timeoutPromise]);
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Increased delay after GATT connect to let the connection stabilize
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 console.log('Getting Service...');
                 const servicePromise = this.server.getPrimaryService(LAMP_SERVICE_UUID);
@@ -162,13 +176,17 @@ export class BluetoothManager {
     }
 
     _handleDisconnect() {
+        // Don't clear state if we're in the middle of a connection attempt
+        // The retry logic will handle reconnection
+        if (this.isConnecting) {
+            console.log('Disconnect during connection attempt - will retry');
+            return;
+        }
+        
         this.characteristics = {};
         this.server = null;
         this.service = null;
-
-        if (!this.isConnecting) {
-            this._notifyConnectionChange('disconnected');
-        }
+        this._notifyConnectionChange('disconnected');
     }
 
     _notifyConnectionChange(state) {

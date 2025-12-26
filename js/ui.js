@@ -179,7 +179,7 @@ export class UIController {
                 .then(reg => {
                     console.log('Service Worker registered', reg);
 
-                    const showUpdateButton = (worker) => {
+                    const showUpdateButton = () => {
                         if (updatePromptShown) return;
                         updatePromptShown = true;
                         
@@ -187,8 +187,12 @@ export class UIController {
                         if (updateBtn) {
                             updateBtn.style.display = 'flex';
                             updateBtn.addEventListener('click', () => {
-                                if (worker) {
-                                    worker.postMessage('SKIP_WAITING');
+                                // Always get the current waiting worker at click time
+                                if (reg.waiting) {
+                                    reg.waiting.postMessage('SKIP_WAITING');
+                                } else {
+                                    // Fallback: just reload
+                                    window.location.reload();
                                 }
                             });
                         }
@@ -196,7 +200,7 @@ export class UIController {
 
                     // Check for waiting worker on page load
                     if (reg.waiting) {
-                        showUpdateButton(reg.waiting);
+                        showUpdateButton();
                     }
 
                     // Force check for updates
@@ -210,7 +214,7 @@ export class UIController {
                         // Wait until new SW is installed (ready to take over)
                         newWorker.addEventListener('statechange', () => {
                             if (reg.waiting && navigator.serviceWorker.controller) {
-                                showUpdateButton(reg.waiting);
+                                showUpdateButton();
                             }
                         });
                     });

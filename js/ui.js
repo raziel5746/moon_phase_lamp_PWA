@@ -43,30 +43,17 @@ export class UIController {
         const versionEl = document.getElementById('appVersion');
         if (!versionEl) return;
 
-        const setVersion = (label) => {
-            versionEl.textContent = label;
-            versionEl.setAttribute('aria-label', `App version ${label}`);
-        };
-
-        if (!window.location.protocol.startsWith('http')) {
-            setVersion('dev');
-            console.info('App version fetch skipped: requires serving over http/https.');
-            return;
+        // Use the version embedded in this file by the build process
+        // This ensures we show the version of the actual code running
+        const embeddedVersion = '__VERSION__';
+        
+        if (embeddedVersion.includes('__')) {
+            // Development mode - version not replaced
+            versionEl.textContent = 'dev';
+        } else {
+            versionEl.textContent = `v${embeddedVersion}`;
         }
-
-        try {
-            // Load version from cache (not network) to show the actual installed version
-            // This ensures the header shows the cached version, not the latest server version
-            const response = await fetch('version.json');
-            if (!response.ok) throw new Error('Failed to load version');
-            const data = await response.json();
-            if (data?.version) {
-                setVersion(`v${data.version}`);
-            }
-        } catch (error) {
-            console.warn('Unable to load app version:', error);
-            setVersion('dev');
-        }
+        versionEl.setAttribute('aria-label', `App version ${versionEl.textContent}`);
     }
 
     async readDeviceName() {

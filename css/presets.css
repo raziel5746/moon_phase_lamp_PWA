@@ -2,7 +2,7 @@
 .presets-layout {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 175px);
+    height: 100%;
     overflow: hidden;
     gap: 20px;
 }

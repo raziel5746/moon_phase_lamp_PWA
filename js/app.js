@@ -6,10 +6,29 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
-// Disable scroll restoration to prevent mobile overflow issue
-if ('scrollRestoration' in history) {
-    history.scrollRestoration = 'manual';
-}
+// Debug: Log detailed layout info to diagnose mobile PWA overflow
+const debugLayout = () => {
+    const vh = window.innerHeight;
+    const docH = document.documentElement.scrollHeight;
+    const bodyH = document.body.scrollHeight;
+    const container = document.querySelector('.container');
+    const tabs = document.querySelector('.tabs');
+    const presets = document.querySelector('.presets-layout');
+    
+    console.log('[Layout Debug]', JSON.stringify({
+        viewport: vh,
+        doc: docH,
+        body: bodyH,
+        overflow: docH - vh,
+        container: container ? container.scrollHeight : null,
+        tabs: tabs ? tabs.offsetHeight : null,
+        presets: presets ? presets.scrollHeight : null,
+        bodyPadding: getComputedStyle(document.body).paddingBottom
+    }));
+};
+window.addEventListener('load', debugLayout);
+setTimeout(debugLayout, 100);
+setTimeout(debugLayout, 500);
 
 class MoonLamp {
     constructor() {

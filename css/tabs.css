@@ -1,9 +1,6 @@
 /* Tabs */
 .tabs {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    flex-shrink: 0;
     display: flex;
     gap: 8px;
     background: var(--card-bg);

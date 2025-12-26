@@ -1,6 +1,6 @@
 /* Responsive */
 @media (max-width: 480px) {
-    body {
+    .container {
         padding: 12px;
     }
 

@@ -187,7 +187,7 @@ export class UIController {
                         if (updateBtn) {
                             updateBtn.style.display = 'flex';
                             updateBtn.addEventListener('click', async () => {
-                                // Unregister SW, clear caches, and reload
+                                // Unregister SW, clear caches, and hard reload with cache bust
                                 try {
                                     const cacheNames = await caches.keys();
                                     await Promise.all(cacheNames.map(name => caches.delete(name)));
@@ -195,7 +195,8 @@ export class UIController {
                                 } catch (e) {
                                     console.error('Failed to clear caches:', e);
                                 }
-                                window.location.reload(true);
+                                // Navigate with cache-busting query param
+                                window.location.href = window.location.pathname + '?update=' + Date.now();
                             });
                         }
                     };

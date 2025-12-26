@@ -33,14 +33,14 @@ class MoonLamp {
         this.init();
     }
 
-    init() {
+    async init() {
         this.setupEventListeners();
         this.ledController.createLEDRing();
         this.motorController.createMotorDial();
         this.motorController.setupDialInteraction();
         this.uiController.updateConnectionStatus('disconnected');
         this.presetsController.renderPresets();
-        this.uiController.loadAppVersion();
+        await this.uiController.loadAppVersion();
         this.uiController.registerServiceWorker();
     }
 

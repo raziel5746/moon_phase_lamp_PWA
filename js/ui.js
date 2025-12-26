@@ -6,6 +6,20 @@ export class UIController {
         this.bluetooth = bluetooth;
         this.currentDeviceName = null;
         this.waitingServiceWorker = null;
+        this.deferredInstallPrompt = null;
+        
+        // Capture the install prompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredInstallPrompt = e;
+            this.showInstallButton();
+        });
+        
+        // Hide install button if app is already installed
+        window.addEventListener('appinstalled', () => {
+            this.deferredInstallPrompt = null;
+            this.hideInstallButton();
+        });
     }
 
     updateConnectionStatus(state) {
@@ -280,5 +294,40 @@ export class UIController {
         } catch (e) {
             console.error('Reset failed:', e);
         }
+    }
+    
+    showInstallButton() {
+        // Don't show if already exists
+        if (document.getElementById('installBtn')) return;
+        
+        const installBtn = document.createElement('button');
+        installBtn.id = 'installBtn';
+        installBtn.className = 'install-btn';
+        installBtn.innerHTML = '<span>Install</span>';
+        installBtn.title = 'Install app to home screen';
+        
+        installBtn.addEventListener('click', async () => {
+            if (!this.deferredInstallPrompt) return;
+            
+            this.deferredInstallPrompt.prompt();
+            const { outcome } = await this.deferredInstallPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                this.deferredInstallPrompt = null;
+                this.hideInstallButton();
+            }
+        });
+        
+        // Insert before connection status
+        const headerActions = document.querySelector('.header-actions');
+        const connectionStatus = document.getElementById('connectionStatus');
+        if (headerActions && connectionStatus) {
+            headerActions.insertBefore(installBtn, connectionStatus);
+        }
+    }
+    
+    hideInstallButton() {
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) installBtn.remove();
     }
 }

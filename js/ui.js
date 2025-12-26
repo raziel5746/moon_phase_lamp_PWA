@@ -3,6 +3,7 @@ export class UIController {
     constructor(bluetooth) {
         this.bluetooth = bluetooth;
         this.currentDeviceName = null;
+        this.waitingServiceWorker = null;
     }
 
     updateConnectionStatus(state) {
@@ -52,7 +53,7 @@ export class UIController {
         }
 
         try {
-            const response = await fetch('version.json');
+            const response = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
             if (!response.ok) throw new Error('Failed to load version');
             const data = await response.json();
             if (data?.version) {
@@ -181,14 +182,89 @@ export class UIController {
                 return;
             }
             
+            // Reload page when new SW takes control
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
+            
             navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
+                    
+                    // Check if there's already a waiting SW
+                    if (reg.waiting) {
+                        this.onNewServiceWorkerAvailable(reg.waiting);
+                    }
+                    
+                    // Listen for new SW installing
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        if (!newWorker) return;
+                        
+                        newWorker.addEventListener('statechange', () => {
+                            // New SW is installed and waiting
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                this.onNewServiceWorkerAvailable(newWorker);
+                            }
+                        });
+                    });
                 })
                 .catch(err => console.error('Service Worker registration failed', err));
         } else if (!isSecureProtocol) {
             console.info('Service worker registration skipped: requires http/https protocol.');
         }
+    }
+    
+    onNewServiceWorkerAvailable(worker) {
+        console.log('New service worker available');
+        this.waitingServiceWorker = worker;
+        this.showUpdateButton();
+    }
+    
+    async showUpdateButton() {
+        // Remove existing button if any
+        const existingBtn = document.getElementById('updateBtn');
+        if (existingBtn) existingBtn.remove();
+        
+        // Fetch the new version number
+        let newVersion = 'Update';
+        try {
+            const response = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+            if (response.ok) {
+                const data = await response.json();
+                if (data?.version) {
+                    newVersion = `v${data.version}`;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not fetch new version:', e);
+        }
+        
+        const updateBtn = document.createElement('button');
+        updateBtn.id = 'updateBtn';
+        updateBtn.className = 'update-btn';
+        updateBtn.innerHTML = `<span>${newVersion}</span>`;
+        updateBtn.title = 'New version available - click to update';
+        
+        updateBtn.addEventListener('click', () => {
+            this.applyUpdate();
+        });
+        
+        // Insert before connection status in header-actions
+        const headerActions = document.querySelector('.header-actions');
+        const connectionStatus = document.getElementById('connectionStatus');
+        if (headerActions && connectionStatus) {
+            headerActions.insertBefore(updateBtn, connectionStatus);
+        }
+    }
+    
+    applyUpdate() {
+        if (!this.waitingServiceWorker) return;
+        
+        // Send skip waiting message to the waiting SW
+        this.waitingServiceWorker.postMessage('SKIP_WAITING');
     }
 
     async forceResetSW() {

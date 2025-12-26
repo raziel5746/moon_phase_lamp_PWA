@@ -1,54 +1,73 @@
 // Service Worker for Moon Lamp PWA
 const CACHE_NAME = 'moon-lamp-v__VERSION__';
+// Detect base path from SW location (works for both localhost and GitHub Pages)
+const swPath = self.location.pathname;
+const BASE_PATH = swPath.substring(0, swPath.lastIndexOf('/') + 1);
 
-const urlsToCache = [
-  '/moon_phase_lamp_PWA/',
-  '/moon_phase_lamp_PWA/index.html',
-  '/moon_phase_lamp_PWA/manifest.json',
-  '/moon_phase_lamp_PWA/icon-192.png',
-  '/moon_phase_lamp_PWA/icon-512.png',
-  '/moon_phase_lamp_PWA/suncalc.js',
-  '/moon_phase_lamp_PWA/iro.min.js',
+const filesToCache = [
+  '',
+  'index.html',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png',
+  'suncalc.js',
+  'iro.min.js',
   // CSS modules
-  '/moon_phase_lamp_PWA/css/base.css',
-  '/moon_phase_lamp_PWA/css/components.css',
-  '/moon_phase_lamp_PWA/css/tabs.css',
-  '/moon_phase_lamp_PWA/css/led-ring.css',
-  '/moon_phase_lamp_PWA/css/presets.css',
-  '/moon_phase_lamp_PWA/css/motor.css',
-  '/moon_phase_lamp_PWA/css/automations.css',
-  '/moon_phase_lamp_PWA/css/responsive.css',
+  'css/base.css',
+  'css/components.css',
+  'css/tabs.css',
+  'css/led-ring.css',
+  'css/presets.css',
+  'css/motor.css',
+  'css/automations.css',
+  'css/responsive.css',
   // JS modules
-  '/moon_phase_lamp_PWA/js/app.js',
-  '/moon_phase_lamp_PWA/js/constants.js',
-  '/moon_phase_lamp_PWA/js/utils.js',
-  '/moon_phase_lamp_PWA/js/bluetooth.js',
-  '/moon_phase_lamp_PWA/js/led-controller.js',
-  '/moon_phase_lamp_PWA/js/motor-controller.js',
-  '/moon_phase_lamp_PWA/js/presets.js',
-  '/moon_phase_lamp_PWA/js/automations.js',
-  '/moon_phase_lamp_PWA/js/ui.js'
+  'js/app.js',
+  'js/constants.js',
+  'js/utils.js',
+  'js/bluetooth.js',
+  'js/led-controller.js',
+  'js/motor-controller.js',
+  'js/presets.js',
+  'js/automations.js',
+  'js/ui.js'
 ];
+
+// Build full URLs based on detected base path
+const urlsToCache = filesToCache.map(file => BASE_PATH + file);
 
 // Install event - cache files
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
+  console.log('Service Worker installing...', { CACHE_NAME, BASE_PATH, urlsToCache });
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
+        console.log('Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
       })
       .catch((error) => {
         console.error('Cache failed:', error);
       })
   );
-  // Activate immediately for reliable updates
-  self.skipWaiting();
+  // Don't call skipWaiting() here - let the user decide when to update
 });
+
+// Files that should never be cached (always fetch fresh)
+const neverCache = [
+  'version.json',
+  'sw.js'
+];
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // Always fetch these files fresh (never serve from cache)
+  if (neverCache.some(file => url.pathname.endsWith(file))) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

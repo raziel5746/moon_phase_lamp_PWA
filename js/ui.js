@@ -283,7 +283,10 @@ export class UIController {
         updateBtn.innerHTML = `<span>${newVersion}</span>`;
         updateBtn.title = 'New version available - click to update';
         
-        updateBtn.addEventListener('click', () => {
+        updateBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Update button clicked!');
             this.applyUpdate();
         });
         

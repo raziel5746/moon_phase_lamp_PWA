@@ -8,6 +8,7 @@ const filesToCache = [
   '',
   'index.html',
   'manifest.json',
+  'version.json',
   'icon-192.png',
   'icon-512.png',
   'suncalc.js',

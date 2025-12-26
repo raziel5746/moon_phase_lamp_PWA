@@ -173,8 +173,15 @@ export class UIController {
             const swVersion = 'v__VERSION__';
             let refreshing = false;
             
-            // Include timestamp to bypass browser HTTP cache
-            navigator.serviceWorker.register(`./sw.js?v=${swVersion}&t=${Date.now()}`)
+            // Check for force reset flag
+            if (window.location.search.includes('reset=1')) {
+                this.forceResetSW().then(() => {
+                    window.location.href = window.location.pathname;
+                });
+                return;
+            }
+            
+            navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
                     
@@ -192,6 +199,19 @@ export class UIController {
                 .catch(err => console.error('Service Worker registration failed', err));
         } else if (!isSecureProtocol) {
             console.info('Service worker registration skipped: requires http/https protocol.');
+        }
+    }
+
+    async forceResetSW() {
+        console.log('Force resetting service worker...');
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(r => r.unregister()));
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log('Service worker and caches cleared');
+        } catch (e) {
+            console.error('Reset failed:', e);
         }
     }
 }

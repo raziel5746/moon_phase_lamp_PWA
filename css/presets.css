@@ -75,7 +75,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    left: calc(50% - 35px);
+    left: calc(50% - 80px);
     font-size: 0.9em;
     font-weight: 600;
     color: white;

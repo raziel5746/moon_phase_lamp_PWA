@@ -238,10 +238,10 @@ class MoonLamp {
             valueEl.style.left = `calc(${percent}% - 20px)`;
             
             // Clamp position so text doesn't overflow, stays left of finger
-            if (percent < 18) {
+            if (percent < 22) {
                 valueEl.style.left = '8px';
             } else {
-                valueEl.style.left = `calc(${percent}% - 55px)`;
+                valueEl.style.left = `calc(${percent}% - 70px)`;
             }
             
             return percent;
@@ -299,10 +299,10 @@ class MoonLamp {
         fill.style.width = brightness + '%';
         valueEl.textContent = brightness + '%';
         
-        if (brightness < 18) {
+        if (brightness < 22) {
             valueEl.style.left = '8px';
         } else {
-            valueEl.style.left = `calc(${brightness}% - 55px)`;
+            valueEl.style.left = `calc(${brightness}% - 70px)`;
         }
     }
 }

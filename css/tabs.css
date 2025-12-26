@@ -49,7 +49,7 @@
 }
 
 #presets.tab-content.active {
-    overflow: hidden;
+    overflow: visible;
 }
 
 @keyframes fadeIn {

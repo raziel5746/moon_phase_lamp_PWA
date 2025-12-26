@@ -245,16 +245,28 @@ export class UIController {
         
         // Fetch the new version number from network (bypassing cache)
         let newVersion = 'Update';
+        let newVersionRaw = null;
         try {
             const response = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
             if (response.ok) {
                 const data = await response.json();
                 if (data?.version) {
                     newVersion = `v${data.version}`;
+                    newVersionRaw = data.version;
                 }
             }
         } catch (e) {
             console.warn('Could not fetch new version:', e);
+        }
+        
+        // Get current cached version to compare
+        const versionEl = document.getElementById('appVersion');
+        const currentVersion = versionEl?.textContent?.replace('v', '');
+        
+        // Don't show button if versions match (already updated)
+        if (newVersionRaw && currentVersion && newVersionRaw === currentVersion) {
+            console.log('Versions match, hiding update button:', currentVersion);
+            return;
         }
         
         const updateBtn = document.createElement('button');

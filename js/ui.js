@@ -192,9 +192,11 @@ export class UIController {
                 console.log('Current controller:', navigator.serviceWorker.controller?.scriptURL);
                 if (refreshing) return;
                 refreshing = true;
-                // Reload to get new files from the new SW
-                console.log('Reloading page...');
-                window.location.reload();
+                // Small delay to ensure new SW is fully ready before reload
+                console.log('Reloading page in 100ms...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
             });
             
             // Also listen for activation complete as backup
@@ -301,13 +303,20 @@ export class UIController {
     applyUpdate() {
         console.log('applyUpdate called, waitingServiceWorker:', this.waitingServiceWorker);
         if (!this.waitingServiceWorker) {
-            console.log('No waiting service worker!');
+            console.log('No waiting service worker, forcing reload');
+            window.location.reload();
             return;
         }
         
         // Send skip waiting message to the waiting SW (standard pattern)
         console.log('Sending SKIP_WAITING to:', this.waitingServiceWorker.scriptURL);
         this.waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Fallback: if controllerchange doesn't fire within 2 seconds, force reload
+        setTimeout(() => {
+            console.log('Fallback: forcing reload after timeout');
+            window.location.reload();
+        }, 2000);
     }
 
     async forceResetSW() {

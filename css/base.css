@@ -80,7 +80,7 @@ body::before {
     margin: 0 auto;
     position: relative;
     z-index: 1;
-    max-height: calc(100dvh - 80px);
+    height: calc(100dvh - 100px);
     overflow: hidden;
 }
 

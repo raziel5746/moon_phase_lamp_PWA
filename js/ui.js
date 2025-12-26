@@ -184,17 +184,6 @@ export class UIController {
             navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
-                    
-                    // Force check for updates
-                    reg.update().catch(err => console.log('Update check failed:', err));
-
-                    // Reload when new SW takes control
-                    navigator.serviceWorker.addEventListener('controllerchange', () => {
-                        if (!refreshing) {
-                            refreshing = true;
-                            window.location.reload();
-                        }
-                    });
                 })
                 .catch(err => console.error('Service Worker registration failed', err));
         } else if (!isSecureProtocol) {

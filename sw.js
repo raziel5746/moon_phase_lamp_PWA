@@ -30,7 +30,10 @@ const filesToCache = [
   'js/motor-controller.js',
   'js/presets.js',
   'js/automations.js',
-  'js/ui.js'
+  'js/ui.js',
+  'js/modal.js',
+  // CSS modules
+  'css/modal.css'
 ];
 
 // Build full URLs based on detected base path

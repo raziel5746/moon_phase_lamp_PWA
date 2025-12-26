@@ -1,5 +1,6 @@
 // Presets Controller
 import { DEFAULT_PRESETS } from './constants.js';
+import { Modal } from './modal.js';
 
 export class PresetsController {
     constructor(bluetooth, ledController) {
@@ -47,7 +48,7 @@ export class PresetsController {
     async addCustomPreset(r, g, b, name) {
         const customCount = this.presets.filter(p => p.isCustom).length;
         if (customCount >= 5) {
-            alert('Maximum 5 custom presets allowed');
+            Modal.warning('Maximum 5 custom presets allowed');
             return;
         }
 
@@ -73,7 +74,7 @@ export class PresetsController {
             await this.readCustomPresets();
         } catch (error) {
             console.error('Failed to add custom preset:', error);
-            alert('Failed to add preset: ' + error.message);
+            Modal.error('Failed to add preset: ' + error.message);
         }
     }
 
@@ -241,11 +242,12 @@ export class PresetsController {
         this.renderPresets();
     }
 
-    confirmDeletePreset(index) {
+    async confirmDeletePreset(index) {
         const preset = this.presets[index];
         if (!preset || !preset.isCustom) return;
         
-        if (confirm(`Delete "${preset.name}" preset?`)) {
+        const confirmed = await Modal.confirm(`Delete "${preset.name}" preset?`, 'Delete Preset');
+        if (confirmed) {
             this.removeCustomPreset(index);
             const hasCustomPresets = this.presets.some(p => p.isCustom);
             if (!hasCustomPresets) {

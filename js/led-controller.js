@@ -1,5 +1,6 @@
 // LED Ring Controller
 import { rgbToHex, brightnessToFirmware } from './utils.js';
+import { Modal } from './modal.js';
 
 export class LEDController {
     constructor(bluetooth) {
@@ -153,7 +154,7 @@ export class LEDController {
 
     async setIndividualLED(index, hexColor, brightness) {
         if (!this.bluetooth.hasCharacteristic('ledCustom')) {
-            alert('Not connected to lamp');
+            Modal.warning('Not connected to lamp');
             return;
         }
 
@@ -174,13 +175,13 @@ export class LEDController {
             this.updateLEDRing();
         } catch (error) {
             console.error('Failed to set LED:', error);
-            alert('Failed to set LED');
+            Modal.error('Failed to set LED');
         }
     }
 
     async applyToSelected() {
         if (this.selectedLeds.size === 0) {
-            alert('Select at least one LED first');
+            Modal.warning('Select at least one LED first');
             return;
         }
 
@@ -198,7 +199,7 @@ export class LEDController {
 
     async setColorPreset(preset) {
         if (!this.bluetooth.hasCharacteristic('colorPreset')) {
-            alert('Not connected to lamp');
+            Modal.warning('Not connected to lamp');
             return;
         }
 
@@ -209,14 +210,14 @@ export class LEDController {
             return true;
         } catch (error) {
             console.error('Failed to set color preset:', error);
-            alert('Failed to set color preset');
+            Modal.error('Failed to set color preset');
             return false;
         }
     }
 
     async setBrightness(brightness) {
         if (!this.bluetooth.hasCharacteristic('brightness')) {
-            alert('Not connected to lamp');
+            Modal.warning('Not connected to lamp');
             return;
         }
 
@@ -226,7 +227,7 @@ export class LEDController {
             console.log('Brightness set:', brightness);
         } catch (error) {
             console.error('Failed to set brightness:', error);
-            alert('Failed to set brightness');
+            Modal.error('Failed to set brightness');
         }
     }
 

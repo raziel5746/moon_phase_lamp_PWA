@@ -1,5 +1,6 @@
 // Motor Controller
 import { MOTOR_ZERO_COMMAND, MOTOR_CALIBRATE_COMMAND } from './constants.js';
+import { Modal } from './modal.js';
 
 export class MotorController {
     constructor(bluetooth) {
@@ -249,7 +250,7 @@ export class MotorController {
 
     async setMotorPosition(position) {
         if (!this.bluetooth.hasCharacteristic('motorPosition')) {
-            alert('Not connected to lamp');
+            Modal.warning('Not connected to lamp');
             return;
         }
 
@@ -261,13 +262,13 @@ export class MotorController {
             this.updateCurrentPosMarker(position);
         } catch (error) {
             console.error('Failed to set motor position:', error);
-            alert('Failed to set motor position');
+            Modal.error('Failed to set motor position');
         }
     }
 
     async setMotorZero() {
         if (!this.bluetooth.hasCharacteristic('motorPosition')) {
-            alert('Not connected to lamp');
+            Modal.warning('Not connected to lamp');
             return;
         }
         try {
@@ -283,13 +284,13 @@ export class MotorController {
             document.getElementById('currentPosition').textContent = '0°';
         } catch (error) {
             console.error('Failed to set motor zero:', error);
-            alert('Failed to set motor zero');
+            Modal.error('Failed to set motor zero');
         }
     }
 
     async calibrateMotor() {
         if (!this.bluetooth.hasCharacteristic('motorPosition')) {
-            alert('Not connected to lamp');
+            Modal.warning('Not connected to lamp');
             return;
         }
         try {
@@ -298,7 +299,7 @@ export class MotorController {
             console.log('Motor calibration command sent');
         } catch (error) {
             console.error('Failed to calibrate motor:', error);
-            alert('Failed to calibrate motor');
+            Modal.error('Failed to calibrate motor');
         }
     }
 

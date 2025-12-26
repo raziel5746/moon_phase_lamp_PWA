@@ -1,3 +1,5 @@
+import { Modal } from './modal.js';
+
 // UI Controller
 export class UIController {
     constructor(bluetooth) {
@@ -88,7 +90,7 @@ export class UIController {
 
     async setDeviceName(newName) {
         if (!this.bluetooth.hasCharacteristic('deviceName')) {
-            alert('Device name feature not available on this firmware');
+            Modal.warning('Device name feature not available on this firmware');
             return;
         }
 
@@ -104,10 +106,10 @@ export class UIController {
                 titleEl.textContent = '🌙 ' + newName;
             }
             
-            alert('Name saved! Restart the lamp for the new Bluetooth name to take effect.');
+            Modal.success('Name saved! Restart the lamp for the new Bluetooth name to take effect.', 'Name Updated');
         } catch (error) {
             console.error('Failed to set device name:', error);
-            alert('Failed to set device name');
+            Modal.error('Failed to set device name');
         }
     }
 

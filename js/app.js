@@ -5,6 +5,7 @@ import { MotorController } from './motor-controller.js';
 import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
+import { Modal } from './modal.js';
 
 // Fix for Chrome Android PWA viewport height bug
 // Chrome miscalculates viewport height on reload in standalone mode
@@ -61,9 +62,10 @@ class MoonLamp {
         });
 
         // Bluetooth connection via status badge
-        document.getElementById('connectionStatus').addEventListener('click', () => {
+        document.getElementById('connectionStatus').addEventListener('click', async () => {
             if (this.bluetooth.isConnected) {
-                if (confirm('Disconnect from Moon Lamp?')) {
+                const confirmed = await Modal.confirm('Disconnect from Moon Lamp?', 'Disconnect');
+                if (confirmed) {
                     this.bluetooth.disconnect();
                 }
             } else {
@@ -75,7 +77,8 @@ class MoonLamp {
         const resetBtn = document.getElementById('resetBtn');
         if (resetBtn) {
             resetBtn.addEventListener('click', async () => {
-                if (confirm('Reset app and clear cache? This will reload the app.')) {
+                const confirmed = await Modal.confirm('Reset app and clear cache? This will reload the app.', 'Reset App');
+                if (confirmed) {
                     try {
                         const registrations = await navigator.serviceWorker.getRegistrations();
                         await Promise.all(registrations.map(r => r.unregister()));
@@ -233,7 +236,7 @@ class MoonLamp {
                 this.updateBrightnessSlider(currentBrightness);
             }
         } catch (error) {
-            alert('Failed to connect: ' + error.message);
+            Modal.error('Failed to connect: ' + error.message, 'Connection Error');
         }
     }
 

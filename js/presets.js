@@ -360,9 +360,9 @@ export class PresetsController {
             // Close modal immediately for snappy UX
             dialog.remove();
             
-            // Update and apply in background
-            this.updatePreset(presetIndex, color.red, color.green, color.blue, name);
-            this.setColorPreset(presetIndex);
+            // Update preset first, then apply (sequential to avoid BLE race condition on mobile)
+            this.updatePreset(presetIndex, color.red, color.green, color.blue, name)
+                .then(() => this.setColorPreset(presetIndex));
         });
 
         dialog.addEventListener('click', (e) => {

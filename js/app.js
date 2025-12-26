@@ -9,23 +9,22 @@ import { UIController } from './ui.js';
 // Debug: Log detailed layout info to diagnose mobile PWA overflow
 const debugLayout = (label) => {
     const vh = window.innerHeight;
-    const docH = document.documentElement.scrollHeight;
-    const bodyH = document.body.scrollHeight;
-    const htmlH = document.documentElement.clientHeight;
     const container = document.querySelector('.container');
-    const tabs = document.querySelector('.tabs');
-    const header = document.querySelector('header');
+    const tabContent = document.querySelector('.tab-content.active');
+    const presetsLayout = document.querySelector('.presets-layout');
+    const scrollY = window.scrollY;
     
     console.log(`[Layout ${label}]`, JSON.stringify({
         innerHeight: vh,
-        docScrollH: docH,
-        bodyScrollH: bodyH,
-        htmlClientH: htmlH,
-        overflow: docH - vh,
-        containerH: container ? container.offsetHeight : null,
-        tabsH: tabs ? tabs.offsetHeight : null,
-        headerH: header ? header.offsetHeight : null,
-        bodyComputedH: getComputedStyle(document.body).height
+        scrollY: scrollY,
+        bodyScrollH: document.body.scrollHeight,
+        bodyOffsetH: document.body.offsetHeight,
+        containerScrollH: container?.scrollHeight,
+        containerOffsetH: container?.offsetHeight,
+        containerClientH: container?.clientHeight,
+        tabContentH: tabContent?.offsetHeight,
+        presetsH: presetsLayout?.offsetHeight,
+        overflow: document.body.scrollHeight - vh
     }));
 };
 debugLayout('immediate');

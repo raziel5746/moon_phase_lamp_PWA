@@ -6,31 +6,6 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
-// Debug: Log detailed layout info to diagnose mobile PWA overflow
-const debugLayout = (label) => {
-    const vh = window.innerHeight;
-    const container = document.querySelector('.container');
-    const tabContent = document.querySelector('.tab-content.active');
-    const presetsLayout = document.querySelector('.presets-layout');
-    const scrollY = window.scrollY;
-    
-    console.log(`[Layout ${label}]`, JSON.stringify({
-        innerHeight: vh,
-        scrollY: scrollY,
-        bodyScrollH: document.body.scrollHeight,
-        bodyOffsetH: document.body.offsetHeight,
-        containerScrollH: container?.scrollHeight,
-        containerOffsetH: container?.offsetHeight,
-        containerClientH: container?.clientHeight,
-        tabContentH: tabContent?.offsetHeight,
-        presetsH: presetsLayout?.offsetHeight,
-        overflow: document.body.scrollHeight - vh
-    }));
-};
-debugLayout('immediate');
-window.addEventListener('DOMContentLoaded', () => debugLayout('DOMContentLoaded'));
-window.addEventListener('load', () => debugLayout('load'));
-setTimeout(() => debugLayout('after100ms'), 100);
 
 class MoonLamp {
     constructor() {

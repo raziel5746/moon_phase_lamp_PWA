@@ -85,13 +85,15 @@ body::before {
     padding: 20px;
     position: relative;
     z-index: 1;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
     display: flex;
     flex-direction: column;
     min-height: 0;
-    max-height: 100%;
-    /* DEBUG: Red border to confirm CSS update - REMOVE LATER */
-    border: 3px solid red;
+    /* DEBUG: Green border to confirm CSS update - REMOVE LATER */
+    border: 3px solid lime;
 }
 
 header {

@@ -61,6 +61,24 @@ class MoonLamp {
             }
         });
 
+        // Reset button
+        const resetBtn = document.getElementById('resetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', async () => {
+                if (confirm('Reset app and clear cache? This will reload the app.')) {
+                    try {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(registrations.map(r => r.unregister()));
+                        const cacheNames = await caches.keys();
+                        await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    } catch (e) {
+                        console.error('Reset failed:', e);
+                    }
+                    window.location.reload();
+                }
+            });
+        }
+
         // Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {

@@ -81,8 +81,7 @@ body::before {
     position: relative;
     z-index: 1;
     max-height: calc(100dvh - 80px);
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 header {

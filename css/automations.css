@@ -1,4 +1,24 @@
 /* Automations Tab */
+#automations.tab-content.active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#automations .card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+#automationsList {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
 .automation-item {
     display: flex;
     justify-content: space-between;

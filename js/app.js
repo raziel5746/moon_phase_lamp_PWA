@@ -6,6 +6,15 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
+// Fix for Chrome Android PWA viewport height bug
+// Chrome miscalculates viewport height on reload in standalone mode
+// Solution: Set CSS variable based on actual window.innerHeight
+const setViewportHeight = () => {
+    const vh = window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', `${vh}px`);
+};
+setViewportHeight();
+window.addEventListener('resize', setViewportHeight);
 
 class MoonLamp {
     constructor() {

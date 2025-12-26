@@ -188,10 +188,12 @@ export class UIController {
             
             // Listen for controller change - this fires when a new SW takes control
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                console.log('New service worker took control');
+                console.log('controllerchange fired! New service worker took control');
+                console.log('Current controller:', navigator.serviceWorker.controller?.scriptURL);
                 if (refreshing) return;
                 refreshing = true;
                 // Reload to get new files from the new SW
+                console.log('Reloading page...');
                 window.location.reload();
             });
             
@@ -294,9 +296,14 @@ export class UIController {
     }
     
     applyUpdate() {
-        if (!this.waitingServiceWorker) return;
+        console.log('applyUpdate called, waitingServiceWorker:', this.waitingServiceWorker);
+        if (!this.waitingServiceWorker) {
+            console.log('No waiting service worker!');
+            return;
+        }
         
         // Send skip waiting message to the waiting SW
+        console.log('Sending SKIP_WAITING to:', this.waitingServiceWorker.scriptURL);
         this.waitingServiceWorker.postMessage('SKIP_WAITING');
     }
 

@@ -84,6 +84,10 @@ body::before {
     margin: 0 auto;
     position: relative;
     z-index: 1;
+    height: calc(100dvh - 90px - 40px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 header {

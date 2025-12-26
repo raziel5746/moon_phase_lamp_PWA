@@ -7,28 +7,31 @@ import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 
 // Debug: Log detailed layout info to diagnose mobile PWA overflow
-const debugLayout = () => {
+const debugLayout = (label) => {
     const vh = window.innerHeight;
     const docH = document.documentElement.scrollHeight;
     const bodyH = document.body.scrollHeight;
+    const htmlH = document.documentElement.clientHeight;
     const container = document.querySelector('.container');
     const tabs = document.querySelector('.tabs');
-    const presets = document.querySelector('.presets-layout');
+    const header = document.querySelector('header');
     
-    console.log('[Layout Debug]', JSON.stringify({
-        viewport: vh,
-        doc: docH,
-        body: bodyH,
+    console.log(`[Layout ${label}]`, JSON.stringify({
+        innerHeight: vh,
+        docScrollH: docH,
+        bodyScrollH: bodyH,
+        htmlClientH: htmlH,
         overflow: docH - vh,
-        container: container ? container.scrollHeight : null,
-        tabs: tabs ? tabs.offsetHeight : null,
-        presets: presets ? presets.scrollHeight : null,
-        bodyPadding: getComputedStyle(document.body).paddingBottom
+        containerH: container ? container.offsetHeight : null,
+        tabsH: tabs ? tabs.offsetHeight : null,
+        headerH: header ? header.offsetHeight : null,
+        bodyComputedH: getComputedStyle(document.body).height
     }));
 };
-window.addEventListener('load', debugLayout);
-setTimeout(debugLayout, 100);
-setTimeout(debugLayout, 500);
+debugLayout('immediate');
+window.addEventListener('DOMContentLoaded', () => debugLayout('DOMContentLoaded'));
+window.addEventListener('load', () => debugLayout('load'));
+setTimeout(() => debugLayout('after100ms'), 100);
 
 class MoonLamp {
     constructor() {

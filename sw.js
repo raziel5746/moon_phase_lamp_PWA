@@ -41,11 +41,9 @@ const urlsToCache = filesToCache.map(file => BASE_PATH + file);
 
 // Install event - cache files
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...', { CACHE_NAME, BASE_PATH, urlsToCache });
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache:', CACHE_NAME);
         // Fetch with cache-busting to ensure we get fresh files from server
         const fetchPromises = urlsToCache.map(url => {
           // Build absolute URL for fetch
@@ -53,8 +51,7 @@ self.addEventListener('install', (event) => {
           const cacheBustUrl = absoluteUrl + (absoluteUrl.includes('?') ? '&' : '?') + 'v=' + CACHE_NAME;
           return fetch(cacheBustUrl, { cache: 'no-store' })
             .then(response => {
-              if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
-              // Store with the absolute URL (without cache-bust query) for proper matching
+              if (!response.ok) throw new Error(`Failed to fetch ${url}`);
               return cache.put(absoluteUrl, response);
             });
         });
@@ -89,7 +86,6 @@ self.addEventListener('fetch', (event) => {
   
   // Bypass cache for specific files when they have a query string (cache-busting)
   if (url.search && bypassCacheWithQuery.some(file => url.pathname.endsWith(file))) {
-    console.log('Bypassing cache (query string):', event.request.url);
     event.respondWith(fetch(event.request));
     return;
   }
@@ -97,13 +93,9 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true })
       .then((response) => {
-        // Cache hit - return response
         if (response) {
-          console.log('Cache hit:', event.request.url);
           return response;
         }
-
-        console.log('Cache miss, fetching:', event.request.url);
         // Clone the request
         const fetchRequest = event.request.clone();
 
@@ -129,7 +121,6 @@ self.addEventListener('fetch', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
   const cacheWhitelist = [CACHE_NAME];
 
   event.waitUntil(
@@ -137,13 +128,11 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('Old caches deleted, claiming clients...');
       return self.clients.claim();
     }).then(() => {
       // Notify all clients that activation is complete
@@ -159,7 +148,6 @@ self.addEventListener('activate', (event) => {
 // Listen for messages from the client to trigger skipWaiting explicitly
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('Service Worker: SKIP_WAITING received, calling skipWaiting()');
     self.skipWaiting();
   }
 });

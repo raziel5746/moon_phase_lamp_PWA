@@ -175,49 +175,24 @@ export class UIController {
             
             // Listen for controller change - this fires when a new SW takes control
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                console.log('controllerchange fired! New service worker took control');
-                console.log('Current controller:', navigator.serviceWorker.controller?.scriptURL);
                 if (refreshing) return;
                 refreshing = true;
-                // Small delay to ensure new SW is fully ready before reload
-                console.log('Reloading page in 100ms...');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+                setTimeout(() => window.location.reload(), 100);
             });
             
-            // Also listen for activation complete as backup
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                if (event.data?.type === 'ACTIVATION_COMPLETE') {
-                    console.log('SW activation complete message received');
-                    // The controllerchange event should handle the reload
-                    // This is just for logging
-                }
-            });
             
             navigator.serviceWorker.register(`./sw.js?v=${swVersion}`)
                 .then(reg => {
-                    console.log('Service Worker registered', reg);
-                    console.log('SW state - installing:', reg.installing, 'waiting:', reg.waiting, 'active:', reg.active);
-                    
-                    // Check if there's already a waiting SW
                     if (reg.waiting) {
-                        console.log('Found waiting SW on registration');
                         this.onNewServiceWorkerAvailable(reg.waiting);
                     }
                     
-                    // Listen for new SW installing
                     reg.addEventListener('updatefound', () => {
-                        console.log('updatefound event fired');
                         const newWorker = reg.installing;
                         if (!newWorker) return;
                         
-                        console.log('New worker installing, state:', newWorker.state);
                         newWorker.addEventListener('statechange', () => {
-                            console.log('Worker state changed to:', newWorker.state);
-                            // New SW is installed and waiting
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('New SW installed and waiting, showing update button');
                                 this.onNewServiceWorkerAvailable(newWorker);
                             }
                         });
@@ -230,7 +205,6 @@ export class UIController {
     }
     
     async onNewServiceWorkerAvailable(worker) {
-        console.log('New service worker available');
         this.waitingServiceWorker = worker;
         await this.showUpdateButton();
     }
@@ -256,13 +230,12 @@ export class UIController {
             console.warn('Could not fetch new version:', e);
         }
         
-        // Get current cached version to compare
+        // Get current version to compare
         const versionEl = document.getElementById('appVersion');
         const currentVersion = versionEl?.textContent?.replace('v', '');
         
-        // Don't show button if versions match (already updated)
+        // Don't show button if versions match
         if (newVersionRaw && currentVersion && newVersionRaw === currentVersion) {
-            console.log('Versions match, hiding update button:', currentVersion);
             return;
         }
         
@@ -275,7 +248,6 @@ export class UIController {
         updateBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Update button clicked!');
             this.applyUpdate();
         });
         
@@ -288,32 +260,23 @@ export class UIController {
     }
     
     applyUpdate() {
-        console.log('applyUpdate called, waitingServiceWorker:', this.waitingServiceWorker);
         if (!this.waitingServiceWorker) {
-            console.log('No waiting service worker, forcing reload');
             window.location.reload();
             return;
         }
         
-        // Send skip waiting message to the waiting SW (standard pattern)
-        console.log('Sending SKIP_WAITING to:', this.waitingServiceWorker.scriptURL);
         this.waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
         
         // Fallback: if controllerchange doesn't fire within 2 seconds, force reload
-        setTimeout(() => {
-            console.log('Fallback: forcing reload after timeout');
-            window.location.reload();
-        }, 2000);
+        setTimeout(() => window.location.reload(), 2000);
     }
 
     async forceResetSW() {
-        console.log('Force resetting service worker...');
         try {
             const registrations = await navigator.serviceWorker.getRegistrations();
             await Promise.all(registrations.map(r => r.unregister()));
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => caches.delete(name)));
-            console.log('Service worker and caches cleared');
         } catch (e) {
             console.error('Reset failed:', e);
         }

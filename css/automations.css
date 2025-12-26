@@ -1,6 +1,6 @@
 /* Automations Tab */
 #automationsList {
-    max-height: 50vh;
+    max-height: calc(100vh - 280px);
     overflow-y: auto;
     overflow-x: hidden;
 }

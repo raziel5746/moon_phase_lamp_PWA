@@ -235,7 +235,6 @@ class MoonLamp {
             
             fill.style.width = percent + '%';
             valueEl.textContent = percent + '%';
-            valueEl.style.left = `calc(${percent}% - 20px)`;
             
             // Clamp position so text doesn't overflow, stays left of finger
             if (percent < 22) {
@@ -243,6 +242,13 @@ class MoonLamp {
             } else {
                 valueEl.style.left = `calc(${percent}% - 70px)`;
             }
+            
+            // Update preset button selection to match current value
+            const presetValues = [0, 25, 50, 75, 100];
+            document.querySelectorAll('.brightness-btn').forEach(btn => {
+                const btnValue = parseInt(btn.dataset.brightness);
+                btn.classList.toggle('active', btnValue === percent);
+            });
             
             return percent;
         };

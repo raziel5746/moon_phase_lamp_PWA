@@ -103,8 +103,7 @@ self.addEventListener('activate', (event) => {
 
 // Listen for messages from the client to trigger skipWaiting explicitly
 self.addEventListener('message', (event) => {
-  if (!event.data) return;
-  if (event.data.type === 'SKIP_WAITING') {
+  if (event.data === 'SKIP_WAITING') {
     console.log('Service Worker: SKIP_WAITING received');
     self.skipWaiting();
   }

@@ -173,23 +173,26 @@ export class UIController {
             const swVersion = 'v__VERSION__';
             let updatePromptShown = false;
             
+            let refreshing = false;
+            
             navigator.serviceWorker.register(`./sw.js?${swVersion}`)
                 .then(reg => {
                     console.log('Service Worker registered', reg);
 
-                    const showUpdatePrompt = (worker) => {
+                    const invokeUpdateFlow = (worker) => {
                         if (updatePromptShown) return;
                         updatePromptShown = true;
                         
                         const shouldUpdate = confirm('A new version of Moon Lamp is available. Reload now?');
                         if (shouldUpdate && worker) {
-                            worker.postMessage({ type: 'SKIP_WAITING' });
+                            // Send string message, not object
+                            worker.postMessage('SKIP_WAITING');
                         }
                     };
 
-                    // Check for waiting worker on page load
+                    // Check for waiting worker on page load (user may have dismissed prompt before)
                     if (reg.waiting) {
-                        showUpdatePrompt(reg.waiting);
+                        invokeUpdateFlow(reg.waiting);
                     }
 
                     // Force check for updates
@@ -200,16 +203,20 @@ export class UIController {
                         const newWorker = reg.installing;
                         if (!newWorker) return;
                         
+                        // Wait until new SW is installed (ready to take over)
                         newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                showUpdatePrompt(newWorker);
+                            if (reg.waiting && navigator.serviceWorker.controller) {
+                                invokeUpdateFlow(reg.waiting);
                             }
                         });
                     });
 
-                    // Reload when new SW takes control
+                    // Reload when new SW takes control (prevent multiple reloads)
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
-                        window.location.reload();
+                        if (!refreshing) {
+                            refreshing = true;
+                            window.location.reload();
+                        }
                     });
                 })
                 .catch(err => console.error('Service Worker registration failed', err));

@@ -8,6 +8,17 @@ export class MotorController {
         this.motorAngle = 0;
         this.pendingMotorAngle = undefined;
         this.moonPositionAngle = 0;
+        
+        // Handle motor position notifications (e.g., after calibration)
+        this.bluetooth.onMotorPositionUpdate = (dataView) => {
+            const degrees = dataView.getUint16(0, true);
+            console.log('Motor position notification received:', degrees + '°');
+            this.motorAngle = degrees;
+            this.updateMotorPointer(degrees);
+            this.updateCurrentPosMarker(degrees);
+            document.getElementById('motorValue').textContent = degrees + '°';
+            document.getElementById('currentPosition').textContent = degrees + '°';
+        };
     }
 
     createMotorDial() {

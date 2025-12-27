@@ -132,6 +132,14 @@ export class BluetoothManager {
                     }
                 });
 
+                // Subscribe to motor position notifications (for calibration completion)
+                await this.characteristics.motorPosition.startNotifications();
+                this.characteristics.motorPosition.addEventListener('characteristicvaluechanged', (e) => {
+                    if (this.onMotorPositionUpdate) {
+                        this.onMotorPositionUpdate(e.target.value);
+                    }
+                });
+
                 this.isConnecting = false;
                 this._notifyConnectionChange('connected');
                 console.log('Connected successfully!');

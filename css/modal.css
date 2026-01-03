@@ -65,7 +65,8 @@
 .modal-icon-warning {
     background: linear-gradient(135deg, var(--accent), #f59e0b);
     color: #1a1a2e;
-    padding-bottom: 4px; /* Optical adjustment for triangle icon */
+    padding-bottom: 4px;
+    /* Optical adjustment for triangle icon */
 }
 
 .modal-icon-error {
@@ -90,6 +91,7 @@
     color: var(--text-secondary);
     line-height: 1.5;
     margin-bottom: 24px;
+    white-space: pre-line;
 }
 
 .modal-buttons {

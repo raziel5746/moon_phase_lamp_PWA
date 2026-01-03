@@ -29,6 +29,25 @@ export class BluetoothManager {
     }
 
     async connect() {
+        // Check if Web Bluetooth API is supported
+        if (!navigator.bluetooth) {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (isIOS) {
+                throw new Error(
+                    'Web Bluetooth is not supported on iOS Safari.\n\n' +
+                    'To use this app on iOS, please install the "Bluefy" browser from the App Store, ' +
+                    'which adds Web Bluetooth support.'
+                );
+            } else {
+                throw new Error(
+                    'Web Bluetooth is not supported in this browser. ' +
+                    'Please use Chrome, Edge, or Opera on desktop/Android.'
+                );
+            }
+        }
+
         try {
             this.isConnecting = true;
             this._notifyConnectionChange('connecting');

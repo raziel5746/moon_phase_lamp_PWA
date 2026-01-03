@@ -6,12 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f0f1a">
     <meta name="description" content="Control your Moon Phase Lamp">
+
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Moon Lamp">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+
     <title>Moon Lamp Control</title>
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Modular CSS -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
@@ -22,7 +30,7 @@
     <link rel="stylesheet" href="css/automations.css">
     <link rel="stylesheet" href="css/modal.css">
     <link rel="stylesheet" href="css/responsive.css">
-    
+
     <link rel="icon" type="image/png" href="icon-192.png">
 </head>
 
@@ -151,7 +159,8 @@
                     <svg id="motorDial" viewBox="0 0 250 250">
                         <!-- Outer circle -->
                         <circle cx="125" cy="125" r="100" fill="none" stroke="rgba(99,102,241,0.4)" stroke-width="3" />
-                        <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="4 4" />
+                        <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"
+                            stroke-dasharray="4 4" />
                         <!-- Degree markers -->
                         <g id="degreeMarkers"></g>
                         <!-- Current position marker (blue) -->
@@ -166,14 +175,18 @@
                     <div class="motor-values">
                         <div class="motor-settings-container">
                             <button class="square-btn settings-btn" id="motorSettingsBtn" title="Motor settings">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="3"></circle>
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                    <path
+                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                    </path>
                                 </svg>
                             </button>
                             <div class="motor-settings-menu" id="motorSettingsMenu">
                                 <button class="menu-item" id="calibrateBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="22" y1="12" x2="18" y2="12"></line>
                                         <line x1="6" y1="12" x2="2" y2="12"></line>
@@ -183,7 +196,8 @@
                                     Calibrate
                                 </button>
                                 <button class="menu-item" id="zeroBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="12" y1="8" x2="12" y2="16"></line>
                                         <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -200,7 +214,8 @@
                         </div>
                         <div class="moon-btn-container">
                             <span class="moon-angle-label" id="moonAngle">--°</span>
-                            <button class="square-btn moon-btn" id="realMoonBtn" title="Set to Real Moon Position">🌙</button>
+                            <button class="square-btn moon-btn" id="realMoonBtn"
+                                title="Set to Real Moon Position">🌙</button>
                         </div>
                     </div>
                 </div>
@@ -222,6 +237,16 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- Motor Speed Settings -->
+                <div class="motor-speed-section">
+                    <label>Motor Speed:</label>
+                    <div class="speed-buttons">
+                        <button class="speed-btn" data-speed="0">Speed 1</button>
+                        <button class="speed-btn" data-speed="1">Speed 2</button>
+                        <button class="speed-btn" data-speed="2">Speed 3</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -229,13 +254,14 @@
         <div class="tab-content" id="automations">
             <div class="card">
                 <h2>Scheduled Lighting</h2>
-                
+
                 <div id="automationsList">
                     <p class="info-text">Connect to lamp to view automations.</p>
                 </div>
-                
+
                 <!-- Add Schedule Button -->
-                <button class="btn btn-primary" id="addAutomationBtn" style="width: 100%; margin-top: 16px;">Add Schedule</button>
+                <button class="btn btn-primary" id="addAutomationBtn" style="width: 100%; margin-top: 16px;">Add
+                    Schedule</button>
             </div>
         </div>
 

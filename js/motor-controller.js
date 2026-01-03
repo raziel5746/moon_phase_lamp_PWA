@@ -8,7 +8,7 @@ export class MotorController {
         this.motorAngle = 0;
         this.pendingMotorAngle = undefined;
         this.moonPositionAngle = 0;
-        
+
         // Handle motor position notifications (e.g., after calibration)
         this.bluetooth.onMotorPositionUpdate = (dataView) => {
             const degrees = dataView.getUint16(0, true);
@@ -61,7 +61,7 @@ export class MotorController {
         const moonPhase = this.calculateMoonPhase();
         const moonAngle = Math.round(moonPhase * 360);
         this.moonPositionAngle = moonAngle;
-        
+
         document.getElementById('moonAngle').textContent = moonAngle + '°';
 
         const moonRad = (moonAngle - 90) * Math.PI / 180;
@@ -114,14 +114,14 @@ export class MotorController {
 
             const dx = clientX - centerX;
             const dy = clientY - centerY;
-            
+
             const distance = Math.sqrt(dx * dx + dy * dy);
             const dialRadius = rect.width / 2;
             const normalizedDistance = distance / dialRadius;
 
             let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
-            
+
             if (normalizedDistance < 0.6) {
                 angle = Math.round(angle / 30) * 30;
                 if (angle === 360) angle = 0;
@@ -131,7 +131,7 @@ export class MotorController {
 
             pendingAngle = angle;
             this.pendingMotorAngle = angle;
-            
+
             if (!rafId) {
                 rafId = requestAnimationFrame(() => {
                     if (pendingAngle !== null) {
@@ -287,7 +287,7 @@ export class MotorController {
             console.log('Sending zero command:', MOTOR_ZERO_COMMAND);
             await this.bluetooth.writeCharacteristic('motorPosition', data);
             console.log('Motor zero set command sent');
-            
+
             this.motorAngle = 0;
             this.updateMotorPointer(0);
             this.updateCurrentPosMarker(0);
@@ -367,5 +367,52 @@ export class MotorController {
         } catch (error) {
             console.error('Failed to set auto tracking:', error);
         }
+    }
+
+    // Speed preset names for UI
+    static SPEED_PRESETS = ['Speed 1', 'Speed 2', 'Speed 3'];
+
+    async setMotorSpeed(preset) {
+        if (!this.bluetooth.hasCharacteristic('motorSpeed')) {
+            console.warn('Motor speed characteristic not available');
+            return;
+        }
+
+        try {
+            const data = new Uint8Array([preset]);
+            await this.bluetooth.writeCharacteristic('motorSpeed', data);
+            console.log('Motor speed set to preset:', preset, '(' + MotorController.SPEED_PRESETS[preset] + ')');
+            this.updateSpeedButtonsUI(preset);
+        } catch (error) {
+            console.error('Failed to set motor speed:', error);
+        }
+    }
+
+    async readMotorSpeed() {
+        if (!this.bluetooth.hasCharacteristic('motorSpeed')) {
+            console.log('Motor speed characteristic not available');
+            return;
+        }
+
+        try {
+            const value = await this.bluetooth.readCharacteristic('motorSpeed');
+            const preset = value.getUint8(0);
+            console.log('Motor speed preset:', preset, '(' + MotorController.SPEED_PRESETS[preset] + ')');
+            this.updateSpeedButtonsUI(preset);
+            return preset;
+        } catch (error) {
+            console.error('Failed to read motor speed:', error);
+        }
+    }
+
+    updateSpeedButtonsUI(activePreset) {
+        const buttons = document.querySelectorAll('.speed-btn');
+        buttons.forEach((btn, index) => {
+            if (index === activePreset) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
     }
 }

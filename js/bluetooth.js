@@ -1,4 +1,3 @@
-// Bluetooth connection management
 import {
     LAMP_SERVICE_UUID,
     LED_STATE_CHAR_UUID,
@@ -10,7 +9,8 @@ import {
     AUTO_TRACKING_CHAR_UUID,
     AUTOMATIONS_CHAR_UUID,
     CUSTOM_PRESETS_CHAR_UUID,
-    DEVICE_NAME_CHAR_UUID
+    DEVICE_NAME_CHAR_UUID,
+    MOTOR_SPEED_CHAR_UUID
 } from './constants.js';
 
 export class BluetoothManager {
@@ -33,7 +33,7 @@ export class BluetoothManager {
             this.isConnecting = true;
             this._notifyConnectionChange('connecting');
             console.log('Requesting Bluetooth Device...');
-            
+
             this.device = await navigator.bluetooth.requestDevice({
                 filters: [
                     { namePrefix: 'Moon Lamp' },
@@ -52,6 +52,11 @@ export class BluetoothManager {
         } catch (error) {
             console.error('Connection failed:', error);
             this.isConnecting = false;
+            // Clear device reference so isConnected returns false
+            this.device = null;
+            this.server = null;
+            this.service = null;
+            this.characteristics = {};
             this._notifyConnectionChange('disconnected');
 
             if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
@@ -169,7 +174,8 @@ export class BluetoothManager {
             { key: 'autoTracking', uuid: AUTO_TRACKING_CHAR_UUID, name: 'Auto tracking' },
             { key: 'automations', uuid: AUTOMATIONS_CHAR_UUID, name: 'Automations' },
             { key: 'customPresets', uuid: CUSTOM_PRESETS_CHAR_UUID, name: 'Custom presets' },
-            { key: 'deviceName', uuid: DEVICE_NAME_CHAR_UUID, name: 'Device name' }
+            { key: 'deviceName', uuid: DEVICE_NAME_CHAR_UUID, name: 'Device name' },
+            { key: 'motorSpeed', uuid: MOTOR_SPEED_CHAR_UUID, name: 'Motor speed' }
         ];
 
         for (const { key, uuid, name } of optionalChars) {
@@ -190,7 +196,7 @@ export class BluetoothManager {
             console.log('Disconnect during connection attempt - will retry');
             return;
         }
-        
+
         this.characteristics = {};
         this.server = null;
         this.service = null;
@@ -225,7 +231,7 @@ export class BluetoothManager {
             data[1] = (utcTimestamp >> 8) & 0xFF;
             data[2] = (utcTimestamp >> 16) & 0xFF;
             data[3] = (utcTimestamp >> 24) & 0xFF;
-            
+
             await this.characteristics.timeSync.writeValue(data);
             console.log('Time synced to device (UTC seconds):', utcTimestamp);
         } catch (error) {

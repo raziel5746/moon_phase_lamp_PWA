@@ -156,23 +156,23 @@ class MoonLamp {
         // Motor settings menu
         const motorSettingsBtn = document.getElementById('motorSettingsBtn');
         const motorSettingsMenu = document.getElementById('motorSettingsMenu');
-        
+
         motorSettingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             motorSettingsMenu.classList.toggle('show');
         });
-        
+
         document.addEventListener('click', (e) => {
             if (!motorSettingsMenu.contains(e.target) && e.target !== motorSettingsBtn) {
                 motorSettingsMenu.classList.remove('show');
             }
         });
-        
+
         document.getElementById('zeroBtn').addEventListener('click', () => {
             motorSettingsMenu.classList.remove('show');
             this.motorController.setMotorZero();
         });
-        
+
         document.getElementById('calibrateBtn').addEventListener('click', () => {
             motorSettingsMenu.classList.remove('show');
             this.motorController.calibrateMotor();
@@ -185,7 +185,7 @@ class MoonLamp {
         // Auto tracking controls
         const autoTrackingToggle = document.getElementById('autoTrackingToggle');
         const trackingInterval = document.getElementById('trackingInterval');
-        
+
         if (autoTrackingToggle) {
             autoTrackingToggle.addEventListener('change', () => {
                 const enabled = autoTrackingToggle.checked;
@@ -193,7 +193,7 @@ class MoonLamp {
                 this.motorController.setAutoTracking(enabled, interval);
             });
         }
-        
+
         if (trackingInterval) {
             trackingInterval.addEventListener('change', () => {
                 const enabled = autoTrackingToggle?.checked || false;
@@ -209,6 +209,14 @@ class MoonLamp {
                 this.automationsController.showAddAutomationDialog();
             });
         }
+
+        // Motor speed buttons
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const speed = parseInt(e.currentTarget.dataset.speed);
+                this.motorController.setMotorSpeed(speed);
+            });
+        });
     }
 
     async connect() {
@@ -224,13 +232,14 @@ class MoonLamp {
                 await this.ledController.readLEDState();
                 await this.motorController.readMotorPosition();
                 await this.motorController.readAutoTracking();
+                await this.motorController.readMotorSpeed();
                 await this.automationsController.readAutomations();
                 await this.presetsController.readCustomPresets();
                 await this.uiController.readDeviceName();
 
                 // Update preset feedback after reading LED state
                 this.presetsController.updatePresetFeedback(this.ledController.ledStates);
-                
+
                 // Update brightness slider with current brightness
                 const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
                 this.updateBrightnessSlider(currentBrightness);
@@ -267,17 +276,17 @@ class MoonLamp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let percent = ((clientX - rect.left) / rect.width) * 100;
             percent = Math.max(0, Math.min(100, Math.round(percent)));
-            
+
             fill.style.width = percent + '%';
             valueEl.textContent = percent + '%';
-            
+
             // Clamp position so text doesn't overflow, stays left of finger
             if (percent < 22) {
                 valueEl.style.left = '8px';
             } else {
                 valueEl.style.left = `calc(${percent}% - 70px)`;
             }
-            
+
             // Update preset button selection to match current value (only for preset values)
             document.querySelectorAll('.brightness-btn').forEach(btn => {
                 const btnValue = parseInt(btn.dataset.brightness);
@@ -287,7 +296,7 @@ class MoonLamp {
                     btn.classList.remove('active');
                 }
             });
-            
+
             return percent;
         };
 
@@ -349,7 +358,7 @@ class MoonLamp {
 
         fill.style.width = brightness + '%';
         valueEl.textContent = brightness + '%';
-        
+
         if (brightness < 22) {
             valueEl.style.left = '8px';
         } else {

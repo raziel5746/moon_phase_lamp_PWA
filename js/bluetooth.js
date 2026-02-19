@@ -89,22 +89,19 @@ export class BluetoothManager {
 
     async _connectToDevice() {
         const maxRetries = 3;
-        const baseDelay = 2000; // 2 seconds base delay
+        const baseDelay = 3000; // 3 seconds base delay
         let lastError;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 console.log(`Connection attempt ${attempt}/${maxRetries}...`);
 
-                // Android workaround: disconnect before connecting to clear any stale connection state
-                if (this.device.gatt.connected) {
-                    console.log('Device appears connected, disconnecting first...');
-                    try {
-                        this.device.gatt.disconnect();
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    } catch (e) {
-                        console.log('Pre-disconnect failed (expected):', e.message);
-                    }
+                // Always force-disconnect before each attempt to clear any stale GATT state
+                try {
+                    this.device.gatt.disconnect();
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (e) {
+                    // Expected if not connected
                 }
 
                 console.log('Connecting to GATT Server...');
@@ -116,8 +113,19 @@ export class BluetoothManager {
                 );
 
                 this.server = await Promise.race([connectPromise, timeoutPromise]);
-                // Increased delay after GATT connect to let the connection stabilize
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Wait for connection parameter negotiation to complete
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Re-connect if the parameter negotiation caused a transient disconnect
+                if (!this.server.connected) {
+                    console.log('Reconnecting after parameter negotiation...');
+                    this.server = await this.device.gatt.connect();
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                if (!this.server.connected) {
+                    throw new Error('GATT server disconnected after stabilization');
+                }
 
                 console.log('Getting Service...');
                 const servicePromise = this.server.getPrimaryService(LAMP_SERVICE_UUID);
@@ -126,27 +134,47 @@ export class BluetoothManager {
                 );
                 this.service = await Promise.race([servicePromise, serviceTimeout]);
 
-                if (!this.server || !this.server.connected) {
-                    throw new Error('GATT server disconnected while getting service');
-                }
-
                 console.log('Getting Characteristics...');
-                const [ledState, colorPreset, brightness, ledCustom, motorPosition] = await Promise.all([
-                    this.service.getCharacteristic(LED_STATE_CHAR_UUID),
-                    this.service.getCharacteristic(COLOR_PRESET_CHAR_UUID),
-                    this.service.getCharacteristic(BRIGHTNESS_CHAR_UUID),
-                    this.service.getCharacteristic(LED_CUSTOM_CHAR_UUID),
-                    this.service.getCharacteristic(MOTOR_POSITION_CHAR_UUID)
-                ]);
+                // Fetch all characteristics in one parallel batch to minimize GATT round-trips
+                const allUUIDs = [
+                    LED_STATE_CHAR_UUID,
+                    COLOR_PRESET_CHAR_UUID,
+                    BRIGHTNESS_CHAR_UUID,
+                    LED_CUSTOM_CHAR_UUID,
+                    MOTOR_POSITION_CHAR_UUID,
+                    TIME_SYNC_CHAR_UUID,
+                    AUTO_TRACKING_CHAR_UUID,
+                    AUTOMATIONS_CHAR_UUID,
+                    CUSTOM_PRESETS_CHAR_UUID,
+                    DEVICE_NAME_CHAR_UUID,
+                    MOTOR_SPEED_CHAR_UUID
+                ];
+                const allKeys = [
+                    'ledState', 'colorPreset', 'brightness', 'ledCustom', 'motorPosition',
+                    'timeSync', 'autoTracking', 'automations', 'customPresets', 'deviceName', 'motorSpeed'
+                ];
 
-                this.characteristics.ledState = ledState;
-                this.characteristics.colorPreset = colorPreset;
-                this.characteristics.brightness = brightness;
-                this.characteristics.ledCustom = ledCustom;
-                this.characteristics.motorPosition = motorPosition;
+                const results = await Promise.allSettled(
+                    allUUIDs.map(uuid => this.service.getCharacteristic(uuid))
+                );
 
-                // Optional characteristics
-                await this._getOptionalCharacteristics();
+                results.forEach((result, i) => {
+                    if (result.status === 'fulfilled') {
+                        this.characteristics[allKeys[i]] = result.value;
+                        console.log(`✓ ${allKeys[i]} characteristic found`);
+                    } else {
+                        this.characteristics[allKeys[i]] = null;
+                        console.log(`${allKeys[i]} characteristic not available`);
+                    }
+                });
+
+                // Verify required characteristics are present
+                const required = ['ledState', 'colorPreset', 'brightness', 'ledCustom', 'motorPosition'];
+                for (const key of required) {
+                    if (!this.characteristics[key]) {
+                        throw new Error(`Required characteristic '${key}' not found`);
+                    }
+                }
 
                 // Subscribe to LED state notifications
                 await this.characteristics.ledState.startNotifications();
@@ -183,27 +211,6 @@ export class BluetoothManager {
                     this.isConnecting = false;
                     throw lastError;
                 }
-            }
-        }
-    }
-
-    async _getOptionalCharacteristics() {
-        const optionalChars = [
-            { key: 'timeSync', uuid: TIME_SYNC_CHAR_UUID, name: 'Time sync' },
-            { key: 'autoTracking', uuid: AUTO_TRACKING_CHAR_UUID, name: 'Auto tracking' },
-            { key: 'automations', uuid: AUTOMATIONS_CHAR_UUID, name: 'Automations' },
-            { key: 'customPresets', uuid: CUSTOM_PRESETS_CHAR_UUID, name: 'Custom presets' },
-            { key: 'deviceName', uuid: DEVICE_NAME_CHAR_UUID, name: 'Device name' },
-            { key: 'motorSpeed', uuid: MOTOR_SPEED_CHAR_UUID, name: 'Motor speed' }
-        ];
-
-        for (const { key, uuid, name } of optionalChars) {
-            try {
-                this.characteristics[key] = await this.service.getCharacteristic(uuid);
-                console.log(`${name} characteristic found`);
-            } catch (e) {
-                console.log(`${name} characteristic not available (older firmware)`);
-                this.characteristics[key] = null;
             }
         }
     }

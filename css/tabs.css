@@ -52,3 +52,19 @@
 #presets.tab-content.active {
     overflow: visible;
 }
+
+#automations.tab-content.active {
+    overflow: hidden;
+}
+
+#motor.tab-content.active,
+#automations.tab-content.active {
+    padding-bottom: 0;
+}
+
+#motor .card,
+#automations .card {
+    flex: 1;
+    margin-bottom: 0;
+    min-height: 0;
+}

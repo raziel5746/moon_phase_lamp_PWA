@@ -75,14 +75,14 @@
 .brightness-slider-value {
     position: absolute;
     top: 50%;
+    left: 4px;
     transform: translateY(-50%);
-    left: calc(50% - 80px);
     font-size: 0.9em;
     font-weight: 600;
     color: white;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     pointer-events: none;
-    transition: left 0.05s ease-out;
+    white-space: nowrap;
 }
 
 /* Presets */
@@ -170,10 +170,10 @@
 /* Custom Presets */
 .preset-delete {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
+    top: 0;
+    right: 0;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: rgba(239, 68, 68, 0.9);
     border: none;

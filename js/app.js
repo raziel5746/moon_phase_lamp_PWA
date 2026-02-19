@@ -40,6 +40,8 @@ class MoonLamp {
         this.motorController.setupDialInteraction();
         this.uiController.updateConnectionStatus('disconnected');
         this.presetsController.renderPresets();
+        this.motorController.initSpeedUI();
+        requestAnimationFrame(() => this.updateBrightnessSlider(50));
         await this.uiController.loadAppVersion();
         this.uiController.registerServiceWorker();
     }
@@ -210,13 +212,13 @@ class MoonLamp {
             });
         }
 
-        // Motor speed buttons
-        document.querySelectorAll('.speed-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const speed = parseInt(e.currentTarget.dataset.speed);
-                this.motorController.setMotorSpeed(speed);
+        // Motor speed toggle button (cycles through speeds)
+        const speedToggleBtn = document.getElementById('speedToggleBtn');
+        if (speedToggleBtn) {
+            speedToggleBtn.addEventListener('click', () => {
+                this.motorController.cycleMotorSpeed();
             });
-        });
+        }
     }
 
     async connect() {
@@ -279,13 +281,7 @@ class MoonLamp {
 
             fill.style.width = percent + '%';
             valueEl.textContent = percent + '%';
-
-            // Clamp position so text doesn't overflow, stays left of finger
-            if (percent < 22) {
-                valueEl.style.left = '8px';
-            } else {
-                valueEl.style.left = `calc(${percent}% - 70px)`;
-            }
+            this._positionSliderLabel(slider, valueEl, percent);
 
             // Update preset button selection to match current value (only for preset values)
             document.querySelectorAll('.brightness-btn').forEach(btn => {
@@ -351,19 +347,26 @@ class MoonLamp {
         });
     }
 
+    _positionSliderLabel(slider, valueEl, percent) {
+        const sliderWidth = slider.getBoundingClientRect().width;
+        if (!sliderWidth) return;
+        const labelWidth = valueEl.getBoundingClientRect().width || 44;
+        const fillEdge = (percent / 100) * sliderWidth;
+        const idealLeft = fillEdge - labelWidth - 32;
+        const clamped = Math.max(4, Math.min(idealLeft, sliderWidth - labelWidth - 4));
+        valueEl.style.left = clamped + 'px';
+        valueEl.style.transform = 'translateY(-50%)';
+    }
+
     updateBrightnessSlider(brightness) {
+        const slider = document.getElementById('brightnessSlider');
         const fill = document.getElementById('brightnessSliderFill');
         const valueEl = document.getElementById('brightnessSliderValue');
-        if (!fill || !valueEl) return;
+        if (!fill || !valueEl || !slider) return;
 
         fill.style.width = brightness + '%';
         valueEl.textContent = brightness + '%';
-
-        if (brightness < 22) {
-            valueEl.style.left = '8px';
-        } else {
-            valueEl.style.left = `calc(${brightness}% - 70px)`;
-        }
+        requestAnimationFrame(() => this._positionSliderLabel(slider, valueEl, brightness));
     }
 }
 

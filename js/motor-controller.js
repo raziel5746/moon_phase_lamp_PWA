@@ -369,8 +369,15 @@ export class MotorController {
         }
     }
 
-    // Speed preset names for UI
+    // Speed icons: 1, 2, or 3 triangles
+    static SPEED_ICONS = ['▶', '▶▶', '▶▶▶'];
     static SPEED_PRESETS = ['Speed 1', 'Speed 2', 'Speed 3'];
+
+    currentSpeed = 0;
+
+    initSpeedUI() {
+        this.updateSpeedToggleUI(this.currentSpeed);
+    }
 
     async setMotorSpeed(preset) {
         if (!this.bluetooth.hasCharacteristic('motorSpeed')) {
@@ -382,15 +389,22 @@ export class MotorController {
             const data = new Uint8Array([preset]);
             await this.bluetooth.writeCharacteristic('motorSpeed', data);
             console.log('Motor speed set to preset:', preset, '(' + MotorController.SPEED_PRESETS[preset] + ')');
-            this.updateSpeedButtonsUI(preset);
+            this.currentSpeed = preset;
+            this.updateSpeedToggleUI(preset);
         } catch (error) {
             console.error('Failed to set motor speed:', error);
         }
     }
 
+    async cycleMotorSpeed() {
+        const next = (this.currentSpeed + 1) % 3;
+        await this.setMotorSpeed(next);
+    }
+
     async readMotorSpeed() {
         if (!this.bluetooth.hasCharacteristic('motorSpeed')) {
             console.log('Motor speed characteristic not available');
+            this.updateSpeedToggleUI(this.currentSpeed);
             return;
         }
 
@@ -398,21 +412,17 @@ export class MotorController {
             const value = await this.bluetooth.readCharacteristic('motorSpeed');
             const preset = value.getUint8(0);
             console.log('Motor speed preset:', preset, '(' + MotorController.SPEED_PRESETS[preset] + ')');
-            this.updateSpeedButtonsUI(preset);
+            this.currentSpeed = preset;
+            this.updateSpeedToggleUI(preset);
             return preset;
         } catch (error) {
             console.error('Failed to read motor speed:', error);
+            this.updateSpeedToggleUI(this.currentSpeed);
         }
     }
 
-    updateSpeedButtonsUI(activePreset) {
-        const buttons = document.querySelectorAll('.speed-btn');
-        buttons.forEach((btn, index) => {
-            if (index === activePreset) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
+    updateSpeedToggleUI(preset) {
+        const icon = document.getElementById('speedToggleIcon');
+        if (icon) icon.textContent = MotorController.SPEED_ICONS[preset];
     }
 }

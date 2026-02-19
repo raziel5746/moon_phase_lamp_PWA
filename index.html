@@ -154,6 +154,9 @@
             <div class="card motor-card">
                 <div class="motor-header">
                     <h2>Motor Control</h2>
+                    <button class="square-btn speed-toggle-btn" id="speedToggleBtn" title="Motor speed">
+                        <span id="speedToggleIcon">▶</span>
+                    </button>
                 </div>
                 <div class="motor-dial-container">
                     <svg id="motorDial" viewBox="0 0 250 250">
@@ -238,15 +241,6 @@
                     </div>
                 </div>
 
-                <!-- Motor Speed Settings -->
-                <div class="motor-speed-section">
-                    <label>Motor Speed:</label>
-                    <div class="speed-buttons">
-                        <button class="speed-btn" data-speed="0">Speed 1</button>
-                        <button class="speed-btn" data-speed="1">Speed 2</button>
-                        <button class="speed-btn" data-speed="2">Speed 3</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -260,8 +254,7 @@
                 </div>
 
                 <!-- Add Schedule Button -->
-                <button class="btn btn-primary" id="addAutomationBtn" style="width: 100%; margin-top: 16px;">Add
-                    Schedule</button>
+                <button class="btn btn-primary" id="addAutomationBtn">Add Schedule</button>
             </div>
         </div>
 

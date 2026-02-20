@@ -158,38 +158,40 @@
 
         <!-- Motor Tab -->
         <div class="tab-content" id="motor">
-            <div class="card motor-card">
-                <div class="motor-header">
-                    <h2>Motor Control</h2>
-                    <button class="square-btn speed-toggle-btn" id="speedToggleBtn" title="Motor speed">
-                        <span id="speedToggleIcon">▶</span>
-                    </button>
-                </div>
-                <div class="motor-dial-container">
-                    <svg id="motorDial" viewBox="0 0 250 250">
-                        <!-- Outer circle -->
-                        <circle cx="125" cy="125" r="100" fill="none" stroke="rgba(200,207,232,0.2)" stroke-width="3" />
-                        <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="1"
-                            stroke-dasharray="4 4" />
-                        <!-- Degree markers -->
-                        <g id="degreeMarkers"></g>
-                        <!-- Current position marker (blue) -->
-                        <line id="currentPosMarker" x1="125" y1="125" x2="125" y2="35" stroke="#3b82f6" stroke-width="4"
-                            stroke-linecap="round" opacity="0.7" />
-                        <!-- Target pointer (green) -->
-                        <line id="motorPointer" x1="125" y1="125" x2="125" y2="35" stroke="#22c55e" stroke-width="5"
-                            stroke-linecap="round" />
-                        <circle cx="125" cy="125" r="14" fill="#22c55e" />
-                        <circle cx="125" cy="125" r="7" style="fill: var(--background)" />
-                    </svg>
-                    <div class="motor-values">
-                        <div class="motor-settings-container">
-                            <button class="square-btn settings-btn" id="motorSettingsBtn" title="Motor settings">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                    <path
-                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            <div class="motor-layout">
+                <div class="card motor-card">
+                    <div class="motor-header">
+                        <h2>Motor Control</h2>
+                        <button class="square-btn speed-toggle-btn" id="speedToggleBtn" title="Motor speed">
+                            <span id="speedToggleIcon">▶</span>
+                        </button>
+                    </div>
+                    <div class="motor-dial-container">
+                        <svg id="motorDial" viewBox="0 0 250 250">
+                            <!-- Outer circle -->
+                            <circle cx="125" cy="125" r="100" fill="none" stroke="rgba(200,207,232,0.2)" stroke-width="3" />
+                            <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="1"
+                                stroke-dasharray="4 4" />
+                            <!-- Degree markers -->
+                            <g id="degreeMarkers"></g>
+                            <!-- Current position marker (blue) -->
+                            <line id="currentPosMarker" x1="125" y1="125" x2="125" y2="35" stroke="#3b82f6" stroke-width="4"
+                                stroke-linecap="round" opacity="0.7" />
+                            <!-- Target pointer (green) -->
+                            <line id="motorPointer" x1="125" y1="125" x2="125" y2="35" stroke="#22c55e" stroke-width="5"
+                                stroke-linecap="round" />
+                            <circle cx="125" cy="125" r="16" fill="#22c55e" />
+                            <circle cx="125" cy="125" r="12" style="fill: var(--background)" />
+                            <g id="dialMoonPhase"></g>
+                        </svg>
+                        <div class="motor-values">
+                            <div class="motor-settings-container">
+                                <button class="square-btn settings-btn" id="motorSettingsBtn" title="Motor settings">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path
+                                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
                                     </path>
                                 </svg>
                             </button>
@@ -249,15 +251,13 @@
                         </select>
                     </div>
                 </div>
-
-                <!-- Motor Position Presets -->
-                <div class="motor-presets-section">
-                    <div class="motor-preset-scroll">
-                        <div class="motor-preset-list" id="motorPresetList"></div>
-                    </div>
-                </div>
-
             </div>
+            <div class="motor-presets-card">
+                <div class="motor-preset-scroll">
+                    <div class="motor-preset-list" id="motorPresetList"></div>
+                </div>
+            </div>
+        </div>
         </div>
 
         <!-- Automations Tab -->

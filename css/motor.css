@@ -60,8 +60,12 @@
 }
 
 /* Override inline SVG fill on center circle */
-#motorDial circle[r="14"] {
+#motorDial circle[r="16"] {
     fill: var(--dial-target);
+}
+
+#dialMoonPhase {
+    color: var(--accent);
 }
 
 /* Moon marker and icon in dial — match the accent color per theme */
@@ -182,6 +186,29 @@
     opacity: 0.7;
 }
 
+/* Motor Tab Layout */
+.motor-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    gap: 16px;
+}
+
+.motor-layout .motor-card {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.motor-presets-card {
+    flex-shrink: 0;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px 22px;
+    border: 1px solid var(--primary);
+}
+
 /* Motor Position Presets */
 .motor-presets-section {
     margin-top: 16px;
@@ -254,10 +281,6 @@
     background: rgba(239, 68, 68, 0.1);
 }
 
-.motor-preset-btn.delete-mode .motor-preset-moon {
-    opacity: 0.4;
-}
-
 .motor-preset-btn.delete-mode .motor-preset-label,
 .motor-preset-btn.delete-mode .motor-preset-angle {
     opacity: 0.4;
@@ -270,6 +293,11 @@
     align-items: center;
     justify-content: center;
     color: var(--accent);
+}
+
+.motor-preset-moon svg {
+    width: 100%;
+    height: 100%;
 }
 
 .motor-preset-label {
@@ -289,18 +317,26 @@
 }
 
 .motor-preset-add {
-    border: 2px dashed var(--glass-border);
     background: transparent;
 }
 
-.motor-preset-add-icon {
-    font-size: 1.8em;
+.motor-preset-add .motor-preset-moon {
+    background: var(--glass-bg);
+    border: 2px dashed var(--glass-border);
+    border-radius: 50%;
+    font-size: 1.6em;
     color: var(--text-secondary);
-    line-height: 44px;
 }
 
-.motor-preset-add:hover .motor-preset-add-icon {
+.motor-preset-add:not(:disabled):hover .motor-preset-moon {
+    border-color: var(--primary);
     color: var(--primary);
+}
+
+.motor-preset-add-disabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
 }
 
 .motor-preset-trash {

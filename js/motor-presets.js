@@ -17,7 +17,6 @@ export class MotorPresetsController {
         this.presets = this._loadPresets();
         this.deleteMode = false;
         this.holdTimer = null;
-        this.selectedPreset = null;
     }
 
     _loadPresets() {
@@ -44,7 +43,7 @@ export class MotorPresetsController {
             const isDefault = index < DEFAULT_MOTOR_PRESETS.length;
             const canDelete = !isDefault || this.presets.length > 1;
             return `
-                <button class="motor-preset-btn${this.selectedPreset === index ? ' selected' : ''}${this.deleteMode && canDelete ? ' delete-mode' : ''}" data-index="${index}">
+                <button class="motor-preset-btn${this.deleteMode && canDelete ? ' delete-mode' : ''}" data-index="${index}">
                     <div class="motor-preset-moon">${moonSvg}</div>
                     <span class="motor-preset-label">${label}</span>
                     <span class="motor-preset-angle">${preset.angle}°</span>
@@ -58,14 +57,12 @@ export class MotorPresetsController {
                 </button>`;
         }).join('');
 
-        if (!this.deleteMode) {
-            html += `
-                <button class="motor-preset-btn motor-preset-add" id="addMotorPresetBtn">
-                    <div class="motor-preset-moon motor-preset-add-icon">+</div>
-                    <span class="motor-preset-label">Add</span>
-                    <span class="motor-preset-angle">&nbsp;</span>
-                </button>`;
-        }
+        html += `
+            <button class="motor-preset-btn motor-preset-add${this.deleteMode ? ' motor-preset-add-disabled' : ''}" id="addMotorPresetBtn"${this.deleteMode ? ' disabled' : ''}>
+                <div class="motor-preset-moon">+</div>
+                <span class="motor-preset-label">Add Custom</span>
+                <span class="motor-preset-angle">&nbsp;</span>
+            </button>`;
 
         container.innerHTML = html;
         this._attachListeners(container);
@@ -107,15 +104,28 @@ export class MotorPresetsController {
     _applyPreset(index) {
         const preset = this.presets[index];
         if (!preset) return;
-        if (this.selectedPreset === index) {
+        const currentAngle = parseInt(document.getElementById('motorValue')?.textContent) || 0;
+        const norm = ((currentAngle % 360) + 360) % 360;
+        const presetNorm = ((preset.angle % 360) + 360) % 360;
+        if (presetNorm === norm) {
             this._showEditDialog(index);
             return;
         }
-        this.selectedPreset = index;
-        this.renderPresets();
         this.motorController.updateMotorPointer(preset.angle);
         document.getElementById('motorValue').textContent = preset.angle + '°';
         this.motorController.setMotorPosition(preset.angle);
+    }
+
+    setActiveAngle(angle) {
+        const container = document.getElementById('motorPresetList');
+        if (!container) return;
+        const norm = ((angle % 360) + 360) % 360;
+        container.querySelectorAll('.motor-preset-btn[data-index]').forEach(btn => {
+            const preset = this.presets[parseInt(btn.dataset.index)];
+            if (!preset) return;
+            const presetNorm = ((preset.angle % 360) + 360) % 360;
+            btn.classList.toggle('selected', presetNorm === norm);
+        });
     }
 
     _enterDeleteMode() {

@@ -27,6 +27,7 @@ class MoonLamp {
         this.presetsController = new PresetsController(this.bluetooth, this.ledController);
         this.automationsController = new AutomationsController(this.bluetooth, this.presetsController);
         this.motorPresetsController = new MotorPresetsController(this.motorController);
+        this.motorController.motorPresetsController = this.motorPresetsController;
         this.uiController = new UIController(this.bluetooth);
 
         // Set up callbacks

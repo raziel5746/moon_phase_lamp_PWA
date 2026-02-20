@@ -144,6 +144,8 @@ export class MotorController {
                 rafId = requestAnimationFrame(() => {
                     if (pendingAngle !== null) {
                         this.updateMotorPointerDirect(motorPointer, pendingAngle);
+                        this.updateDialMoon(pendingAngle);
+                        this.motorPresetsController?.setActiveAngle(pendingAngle);
                         motorValueEl.textContent = pendingAngle + '°';
                     }
                     rafId = null;
@@ -211,6 +213,37 @@ export class MotorController {
     updateMotorPointer(targetAngle) {
         const pointer = document.getElementById('motorPointer');
         this.updateMotorPointerDirect(pointer, targetAngle);
+        this.updateDialMoon(targetAngle);
+        this.motorPresetsController?.setActiveAngle(targetAngle);
+    }
+
+    _dialMoonPath(angleDeg, cx, cy, r) {
+        const phase = ((angleDeg % 360) + 360) % 360 / 360;
+        if (phase <= 0.002) return null;
+        if (phase >= 0.998) {
+            return `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${cx + r} ${cy} A ${r} ${r} 0 0 0 ${cx - r} ${cy} Z`;
+        }
+        const tx = Math.cos(2 * Math.PI * phase);
+        const trx = Math.abs(tx) * r;
+        const topX = cx, topY = cy - r;
+        const botX = cx, botY = cy + r;
+        if (phase < 0.5) {
+            const ts = tx >= 0 ? 0 : 1;
+            return `M ${topX} ${topY} A ${r} ${r} 0 0 1 ${botX} ${botY} A ${trx} ${r} 0 0 ${ts} ${topX} ${topY} Z`;
+        } else {
+            const ts = tx >= 0 ? 1 : 0;
+            return `M ${topX} ${topY} A ${r} ${r} 0 0 0 ${botX} ${botY} A ${trx} ${r} 0 0 ${ts} ${topX} ${topY} Z`;
+        }
+    }
+
+    updateDialMoon(angleDeg) {
+        const group = document.getElementById('dialMoonPhase');
+        if (!group) return;
+        const cx = 125, cy = 125, r = 8;
+        const litPath = this._dialMoonPath(angleDeg, cx, cy, r);
+        group.innerHTML =
+            `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>` +
+            (litPath ? `<path d="${litPath}" fill="currentColor" opacity="0.9"/>` : '');
     }
 
     updateMotorPointerDirect(pointer, targetAngle) {

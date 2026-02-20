@@ -433,6 +433,10 @@ class MoonLamp {
         fill.style.width = brightness + '%';
         valueEl.textContent = brightness + '%';
         requestAnimationFrame(() => this._positionSliderLabel(slider, valueEl, brightness));
+
+        document.querySelectorAll('.brightness-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.brightness) === brightness);
+        });
     }
 }
 

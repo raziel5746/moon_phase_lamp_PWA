@@ -41,6 +41,10 @@ class MoonLamp {
 
     async init() {
         this.uiController.applyStoredTheme();
+        const defaultTab = this.uiController.getDefaultTab();
+        if (defaultTab !== 'presets') {
+            this.uiController.switchTab(defaultTab);
+        }
         this.setupEventListeners();
         this.ledController.createLEDRing();
 

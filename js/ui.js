@@ -212,6 +212,7 @@ export class UIController {
             </div>
         `;
 
+        const currentDefault = this.getDefaultTab();
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
         dialog.innerHTML = `
@@ -226,10 +227,22 @@ export class UIController {
                         }
                     </button>
                 </div>
+                <div class="settings-section">
+                    <h3 class="settings-section-title">Default Tab</h3>
+                    <select id="defaultTabSelect" style="width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--glass-border);border-radius:8px;color:var(--text);font-size:0.95em;cursor:pointer;appearance:none;-webkit-appearance:none;">
+                        <option value="presets"${currentDefault === 'presets' ? ' selected' : ''}>Presets</option>
+                        <option value="motor"${currentDefault === 'motor' ? ' selected' : ''}>Motor</option>
+                        <option value="automations"${currentDefault === 'automations' ? ' selected' : ''}>Schedule</option>
+                    </select>
+                </div>
                 ${renameSection}
             </div>
         `;
         document.body.appendChild(dialog);
+
+        document.getElementById('defaultTabSelect').addEventListener('change', (e) => {
+            localStorage.setItem('defaultTab', e.target.value);
+        });
 
         document.getElementById('themeToggleBtn').addEventListener('click', () => {
             this.toggleTheme();
@@ -266,6 +279,10 @@ export class UIController {
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) dialog.remove();
         });
+    }
+
+    getDefaultTab() {
+        return localStorage.getItem('defaultTab') || 'presets';
     }
 
     toggleTheme() {

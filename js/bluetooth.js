@@ -101,7 +101,9 @@ export class BluetoothManager {
                 // Always force-disconnect before each attempt to clear any stale GATT state
                 try {
                     this.device.gatt.disconnect();
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // Android needs longer cooldown after disconnect before reconnecting
+                    const isAndroid = /Android/i.test(navigator.userAgent);
+                    await new Promise(resolve => setTimeout(resolve, isAndroid ? 3000 : 1000));
                 } catch (e) {
                     // Expected if not connected
                 }

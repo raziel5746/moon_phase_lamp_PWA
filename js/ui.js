@@ -386,6 +386,10 @@ export class UIController {
         if (headerActions && connectionStatus) {
             headerActions.insertBefore(updateBtn, connectionStatus);
         }
+
+        // Hide moon icon to prevent header overflow
+        const titleMoonIcon = document.getElementById('titleMoonIcon');
+        if (titleMoonIcon) titleMoonIcon.style.display = 'none';
     }
     
     applyUpdate() {

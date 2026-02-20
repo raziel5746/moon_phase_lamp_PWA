@@ -72,6 +72,11 @@ class MoonLamp {
             this.presetsController.updatePresetFeedback(this.ledController.ledStates);
             const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
             this.updateBrightnessSlider(currentBrightness);
+            // If auto-tracking is enabled, immediately sync to current moon position
+            const autoTrackingToggle = document.getElementById('autoTrackingToggle');
+            if (autoTrackingToggle && autoTrackingToggle.checked) {
+                await this.motorController.setRealMoonPosition();
+            }
         } catch (error) {
             console.error('Failed to read state after reconnect:', error);
         }
@@ -304,6 +309,12 @@ class MoonLamp {
                 await this.automationsController.readAutomations();
                 await this.presetsController.readCustomPresets();
                 await this.uiController.readDeviceName();
+
+                // If auto-tracking is enabled, immediately sync to current moon position
+                const autoTrackingToggle = document.getElementById('autoTrackingToggle');
+                if (autoTrackingToggle && autoTrackingToggle.checked) {
+                    await this.motorController.setRealMoonPosition();
+                }
 
                 // Update preset feedback after reading LED state
                 this.presetsController.updatePresetFeedback(this.ledController.ledStates);

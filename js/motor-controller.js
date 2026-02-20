@@ -80,18 +80,21 @@ export class MotorController {
         moonMarker.setAttribute('stroke-linecap', 'round');
         moonMarker.setAttribute('id', 'moonMarker');
         moonMarker.style.cursor = 'pointer';
-        moonMarker.style.filter = 'drop-shadow(0 0 3px #ffd700)';
         markersGroup.appendChild(moonMarker);
 
-        const moonIcon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        moonIcon.setAttribute('x', moonX2 + 10 * Math.cos(moonRad));
-        moonIcon.setAttribute('y', moonY2 + 10 * Math.sin(moonRad));
-        moonIcon.setAttribute('text-anchor', 'middle');
-        moonIcon.setAttribute('dominant-baseline', 'middle');
+        // Filled crescent moon icon (SVG path scaled to ~16px, centered at icon position)
+        const iconCx = moonX2 + 12 * Math.cos(moonRad);
+        const iconCy = moonY2 + 12 * Math.sin(moonRad);
+        const moonIcon = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        // Crescent: filled circle minus offset circle, approximated as a path
+        // Using a simple crescent path centered at 0,0 scaled to r=7
+        // Same crescent path as moon button: M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z
+        // Centered at 0,0 by translating -12,-12 (half of 24 viewBox), scaled to 0.65
+        moonIcon.setAttribute('d', 'M9,0.79A9,9,0,1,1,-0.79,-9 7,7,0,0,0,9,0.79Z');
         moonIcon.setAttribute('fill', '#ffd700');
-        moonIcon.setAttribute('font-size', '16');
+        moonIcon.setAttribute('transform', `translate(${iconCx},${iconCy})`);
         moonIcon.setAttribute('id', 'moonIcon');
-        moonIcon.textContent = '🌙';
+        moonIcon.style.cursor = 'pointer';
         markersGroup.appendChild(moonIcon);
     }
 
@@ -240,8 +243,9 @@ export class MotorController {
         moonMarker.setAttribute('x2', moonX2);
         moonMarker.setAttribute('y2', moonY2);
 
-        moonIcon.setAttribute('x', moonX2 + 10 * Math.cos(moonRad));
-        moonIcon.setAttribute('y', moonY2 + 10 * Math.sin(moonRad));
+        const iconCx = moonX2 + 12 * Math.cos(moonRad);
+        const iconCy = moonY2 + 12 * Math.sin(moonRad);
+        moonIcon.setAttribute('transform', `translate(${iconCx},${iconCy})`);
 
         this.moonPositionAngle = degrees;
     }

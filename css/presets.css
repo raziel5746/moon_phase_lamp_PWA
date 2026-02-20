@@ -107,13 +107,16 @@
     gap: 8px;
     color: var(--text-secondary);
     position: relative;
+}
+
+.preset-btn.delete-mode {
     overflow: hidden;
 }
 
 .preset-btn:hover,
 .brightness-btn:hover {
     background: var(--surface-raised);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--primary);
     color: var(--text);
 }
 
@@ -131,16 +134,10 @@
 }
 
 .preset-color {
-    width: 44px;
-    height: 44px;
+    width: 57px;
+    height: 57px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: transform 0.15s ease;
-}
-
-.preset-btn:hover .preset-color {
-    transform: scale(1.08);
+    border: 6px solid white;
 }
 
 /* Custom Presets */

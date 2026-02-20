@@ -101,6 +101,8 @@ class MoonLamp {
         }
 
         // Tabs
+        const tabOrder = ['presets', 'motor', 'automations'];
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tabName = this.uiController.switchTab(e.currentTarget.dataset.tab);
@@ -109,6 +111,28 @@ class MoonLamp {
                 }
             });
         });
+
+        // Swipe on tab bar to navigate tabs
+        const tabBar = document.querySelector('.tabs');
+        let swipeStartX = null;
+        tabBar.addEventListener('touchstart', (e) => {
+            swipeStartX = e.touches[0].clientX;
+        }, { passive: true });
+        tabBar.addEventListener('touchend', (e) => {
+            if (swipeStartX === null) return;
+            const dx = e.changedTouches[0].clientX - swipeStartX;
+            swipeStartX = null;
+            if (Math.abs(dx) < 40) return;
+            const activeBtn = document.querySelector('.tab-btn.active');
+            const currentIdx = tabOrder.indexOf(activeBtn?.dataset.tab);
+            if (currentIdx === -1) return;
+            const nextIdx = dx > 0 ? currentIdx + 1 : currentIdx - 1;
+            if (nextIdx < 0 || nextIdx >= tabOrder.length) return;
+            const tabName = this.uiController.switchTab(tabOrder[nextIdx]);
+            if (tabName === 'custom') {
+                requestAnimationFrame(() => this.ledController.updateLEDLayout());
+            }
+        }, { passive: true });
 
         // Color presets
         document.querySelectorAll('.preset-btn').forEach(btn => {

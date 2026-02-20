@@ -19,14 +19,13 @@
 
 .moon-btn {
     border: 2px solid var(--accent);
-    font-size: 1.8em;
-    line-height: 1;
-    box-shadow: 0 4px 15px var(--accent-glow);
+    color: var(--accent);
 }
 
 .moon-btn:hover {
-    box-shadow: 0 6px 25px var(--accent-glow);
-    background: rgba(251, 191, 36, 0.1);
+    background: rgba(232, 184, 75, 0.15);
+    border-color: var(--accent);
+    border-width: 2px;
 }
 
 .moon-angle-label {
@@ -42,17 +41,6 @@
     position: relative;
 }
 
-/* Decorative glow behind dial */
-.motor-dial-container::before {
-    content: '';
-    position: absolute;
-    width: 85%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(200, 207, 232, 0.06) 0%, transparent 70%);
-    pointer-events: none;
-}
-
 #motorDial {
     width: 100%;
     max-width: 400px;
@@ -61,7 +49,6 @@
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
-    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
 }
 
 #motorDial circle {
@@ -70,7 +57,6 @@
 
 #motorPointer {
     transform-origin: 125px 125px;
-    filter: drop-shadow(0 2px 8px rgba(34, 197, 94, 0.5));
     will-change: transform;
 }
 
@@ -81,7 +67,6 @@
 #currentPosMarker {
     transition: transform 0.3s ease;
     transform-origin: 125px 125px;
-    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.5));
 }
 
 .motor-values {

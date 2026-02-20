@@ -2,7 +2,7 @@
 .motor-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 0;
 }
 
@@ -475,6 +475,25 @@
 .tracking-interval select option {
     background: var(--card-bg);
     color: var(--text);
+}
+
+/* Specific Date Display */
+.specific-date-display {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.specific-date-display.visible {
+    display: flex;
+}
+
+.specific-date-display svg {
+    flex-shrink: 0;
+    opacity: 0.7;
 }
 
 /* Speed Toggle Button */

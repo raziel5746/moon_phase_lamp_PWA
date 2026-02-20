@@ -278,6 +278,11 @@ class MoonLamp {
             this.motorController.showAutoTrackingModal();
         });
 
+        document.getElementById('specificDateBtn').addEventListener('click', () => {
+            motorSettingsMenu.classList.remove('show');
+            this.motorController.showSpecificDateModal();
+        });
+
         // Automations
         const addAutomationBtn = document.getElementById('addAutomationBtn');
         if (addAutomationBtn) {

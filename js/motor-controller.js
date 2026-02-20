@@ -192,6 +192,7 @@ export class MotorController {
 
         document.addEventListener('mouseup', () => {
             if (isDragging && this.pendingMotorAngle !== undefined) {
+                this.clearSpecificDate();
                 this.setMotorPosition(this.pendingMotorAngle);
                 this.pendingMotorAngle = undefined;
             }
@@ -200,6 +201,7 @@ export class MotorController {
 
         document.addEventListener('touchend', () => {
             if (isDragging && this.pendingMotorAngle !== undefined) {
+                this.clearSpecificDate();
                 this.setMotorPosition(this.pendingMotorAngle);
                 this.pendingMotorAngle = undefined;
             }
@@ -291,6 +293,7 @@ export class MotorController {
     }
 
     async setRealMoonPosition() {
+        this.clearSpecificDate();
         const phase = this.calculateMoonPhase();
         const degrees = Math.round(phase * 360);
         console.log(`Calculated Moon Phase: ${phase.toFixed(4)}, Target Degrees: ${degrees}`);
@@ -514,6 +517,74 @@ export class MotorController {
             this.setAutoTracking(enabled, interval);
             dialog.remove();
         });
+    }
+
+    showSpecificDateModal() {
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0];
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Specific Date</h3>
+                <p class="info-text">Calculate moon position for a specific date and time.</p>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div>
+                        <label style="font-size:0.85em;color:var(--text-secondary);display:block;margin-bottom:4px;">Date</label>
+                        <input type="date" id="specificDateInput" value="${dateStr}" style="width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--glass-border);border-radius:8px;color:var(--text);font-size:0.95em;box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:var(--text-secondary);display:block;margin-bottom:4px;">Time (optional, default 12:00)</label>
+                        <input type="time" id="specificTimeInput" style="width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--glass-border);border-radius:8px;color:var(--text);font-size:0.95em;box-sizing:border-box;">
+                    </div>
+                </div>
+                <div class="dialog-buttons" style="margin-top:16px;">
+                    <button class="btn btn-secondary" id="cancelSpecificDateBtn">Cancel</button>
+                    <button class="btn btn-primary" id="applySpecificDateBtn">Apply</button>
+                </div>
+            </div>`;
+        document.body.appendChild(dialog);
+
+        document.getElementById('cancelSpecificDateBtn').addEventListener('click', () => dialog.remove());
+        dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });
+
+        document.getElementById('applySpecificDateBtn').addEventListener('click', () => {
+            const dateVal = document.getElementById('specificDateInput').value;
+            const timeVal = document.getElementById('specificTimeInput').value || '12:00';
+            if (!dateVal) return;
+            const dateTime = new Date(`${dateVal}T${timeVal}:00`);
+            if (isNaN(dateTime.getTime())) return;
+            dialog.remove();
+            this.setSpecificDatePosition(dateTime);
+        });
+    }
+
+    async setSpecificDatePosition(date) {
+        const illumination = SunCalc.getMoonIllumination(date);
+        const degrees = Math.round(illumination.phase * 360);
+        console.log(`Moon phase for ${date.toISOString()}: phase=${illumination.phase.toFixed(4)}, degrees=${degrees}`);
+
+        this.updateMotorPointer(degrees);
+        document.getElementById('motorValue').textContent = degrees + '°';
+
+        const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+        this.showSpecificDateLabel(`${dateStr} ${timeStr}`);
+
+        await this.setMotorPosition(degrees);
+    }
+
+    showSpecificDateLabel(text) {
+        const display = document.getElementById('specificDateDisplay');
+        const textEl = document.getElementById('specificDateText');
+        if (!display || !textEl) return;
+        textEl.textContent = text;
+        display.classList.add('visible');
+    }
+
+    clearSpecificDate() {
+        const display = document.getElementById('specificDateDisplay');
+        if (display) display.classList.remove('visible');
     }
 
     // Speed icons: 1, 2, or 3 triangles

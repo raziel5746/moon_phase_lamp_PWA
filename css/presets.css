@@ -120,8 +120,8 @@
 .preset-btn.active,
 .brightness-btn.active {
     border-color: var(--accent);
-    background: var(--surface-raised);
-    color: var(--accent);
+    background: rgba(232, 184, 75, 0.15);
+    color: var(--text);
 }
 
 .preset-btn span,

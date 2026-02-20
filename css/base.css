@@ -33,6 +33,29 @@ html {
     --surface-raised: #1c2438;
 }
 
+[data-theme="light"] {
+    --primary: #3d4f7c;
+    --primary-light: #5a6fa0;
+    --secondary: #6b7a99;
+    --background: #f0f2f7;
+    --background-gradient: linear-gradient(180deg, #f0f2f7 0%, #e8ebf4 100%);
+    --card-bg: #ffffff;
+    --card-border: rgba(0, 0, 0, 0.08);
+    --card-glow: transparent;
+    --text: #1a2035;
+    --text-secondary: #5a6580;
+    --accent: #c9922a;
+    --accent-glow: rgba(201, 146, 42, 0.2);
+    --success: #16a34a;
+    --success-glow: rgba(22, 163, 74, 0.2);
+    --danger: #dc2626;
+    --danger-glow: rgba(220, 38, 38, 0.2);
+    --glass-bg: rgba(0, 0, 0, 0.02);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --surface: #e8ebf4;
+    --surface-raised: #dde1ee;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: var(--background);
@@ -128,7 +151,7 @@ header {
     background: var(--success);
     border: none;
     border-radius: 6px;
-    color: #0a0c14;
+    color: var(--background);
     font-size: 0.8em;
     font-weight: 600;
     letter-spacing: 0.03em;
@@ -207,6 +230,9 @@ h1 {
     color: var(--text);
     letter-spacing: 0.18em;
     text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .app-version {
@@ -215,9 +241,9 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 2px 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.4);
+    background: var(--surface);
 }
 
 h2 {

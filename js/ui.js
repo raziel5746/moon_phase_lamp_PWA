@@ -126,7 +126,7 @@ export class UIController {
         }
     }
 
-    showRenameDialog() {
+    showSettingsModal(isConnected) {
         const currentName = this.currentDeviceName || 'Moon Lamp';
         const prefix = 'Moon Lamp';
         let suffix = '';
@@ -135,51 +135,99 @@ export class UIController {
         } else if (currentName !== prefix) {
             suffix = currentName.replace(prefix, '').trim();
         }
-        
+
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+        const renameSection = isConnected ? `
+            <div class="settings-section">
+                <h3 class="settings-section-title">Lamp Name</h3>
+                <div class="form-row">
+                    <label style="min-width: auto; flex-shrink: 0;">Moon Lamp</label>
+                    <input type="text" id="deviceNameInput" value="${suffix}" maxlength="9" placeholder="(optional)" style="flex: 1; padding: 10px 14px; background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text); font-size: 0.95em;">
+                </div>
+                <p class="info-text" style="margin-top: 6px; font-size: 0.8em;">Add a suffix to identify this lamp. Restart lamp after renaming.</p>
+                <div class="dialog-buttons" style="margin-top: 12px;">
+                    <button class="btn" id="cancelRenameBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveRenameBtn">Save Name</button>
+                </div>
+            </div>
+        ` : `
+            <div class="settings-section">
+                <p class="info-text" style="text-align: center;">Connect to lamp to rename it.</p>
+                <div class="dialog-buttons" style="margin-top: 12px;">
+                    <button class="btn" id="cancelRenameBtn">Close</button>
+                </div>
+            </div>
+        `;
+
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
         dialog.innerHTML = `
             <div class="preset-dialog-content">
-                <h3>Rename Lamp</h3>
-                <div class="form-row">
-                    <label style="min-width: auto;">Moon Lamp</label>
-                    <input type="text" id="deviceNameInput" value="${suffix}" maxlength="9" placeholder="(optional)" style="flex: 1; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text); font-size: 0.95em;">
+                <h3>Moon Lamp</h3>
+                <div class="settings-section">
+                    <h3 class="settings-section-title">Appearance</h3>
+                    <button class="btn theme-toggle-btn" id="themeToggleBtn">
+                        ${isDark
+                            ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Switch to Light`
+                            : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Switch to Dark`
+                        }
+                    </button>
                 </div>
-                <p class="info-text" style="margin-top: 8px; font-size: 0.8em;">Add a suffix to identify this lamp. Restart lamp after renaming.</p>
-                <div class="dialog-buttons">
-                    <button class="btn" id="cancelRenameBtn">Cancel</button>
-                    <button class="btn btn-primary" id="saveRenameBtn">Save</button>
-                </div>
+                ${renameSection}
             </div>
         `;
         document.body.appendChild(dialog);
 
-        const input = document.getElementById('deviceNameInput');
-        input.focus();
-        input.select();
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+            this.toggleTheme();
+            dialog.remove();
+        });
 
         document.getElementById('cancelRenameBtn').addEventListener('click', () => {
             dialog.remove();
         });
 
-        const saveName = async () => {
-            const suffix = input.value.trim();
-            const fullName = suffix ? `Moon Lamp ${suffix}` : 'Moon Lamp';
-            await this.setDeviceName(fullName);
-            dialog.remove();
-        };
+        if (isConnected) {
+            const input = document.getElementById('deviceNameInput');
+            input.focus();
+            input.select();
 
-        document.getElementById('saveRenameBtn').addEventListener('click', saveName);
+            const saveName = async () => {
+                const suffix = input.value.trim();
+                const fullName = suffix ? `Moon Lamp ${suffix}` : 'Moon Lamp';
+                await this.setDeviceName(fullName);
+                dialog.remove();
+            };
+
+            document.getElementById('saveRenameBtn').addEventListener('click', saveName);
+            input.addEventListener('keypress', async (e) => {
+                if (e.key === 'Enter') await saveName();
+            });
+        }
 
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) dialog.remove();
         });
+    }
 
-        input.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter') {
-                await saveName();
-            }
-        });
+    toggleTheme() {
+        const html = document.documentElement;
+        const isLight = html.getAttribute('data-theme') === 'light';
+        if (isLight) {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            html.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    applyStoredTheme() {
+        const stored = localStorage.getItem('theme');
+        if (stored === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
     }
 
     registerServiceWorker() {

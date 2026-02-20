@@ -49,8 +49,7 @@
     border-radius: 12px;
     padding: 20px 22px;
     margin-bottom: 16px;
-    border: 1px solid var(--card-border);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(232, 184, 75, 0.18);
 }
 
 /* Buttons */
@@ -69,7 +68,7 @@
 
 .btn-primary {
     background: var(--primary);
-    color: #0a0c14;
+    color: var(--background);
 }
 
 .btn-primary:hover {
@@ -399,11 +398,11 @@
 .preset-dialog-content {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 24px;
     max-width: 90%;
-    width: 380px;
-    backdrop-filter: blur(20px);
+    width: 340px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .preset-dialog-content h3 {

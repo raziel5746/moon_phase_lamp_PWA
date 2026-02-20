@@ -34,6 +34,7 @@ class MoonLamp {
     }
 
     async init() {
+        this.uiController.applyStoredTheme();
         this.setupEventListeners();
         this.ledController.createLEDRing();
         this.motorController.createMotorDial();
@@ -56,10 +57,15 @@ class MoonLamp {
     }
 
     setupEventListeners() {
+        // Settings modal via title click (always available)
+        document.querySelector('.app-title h1').addEventListener('click', () => {
+            this.uiController.showSettingsModal(this.bluetooth.isConnected);
+        });
+
         // Rename lamp by clicking on device name label (only when connected)
         document.getElementById('deviceNameLabel').addEventListener('click', () => {
             if (this.bluetooth.isConnected && this.bluetooth.hasCharacteristic('deviceName')) {
-                this.uiController.showRenameDialog();
+                this.uiController.showSettingsModal(true);
             }
         });
 

@@ -308,13 +308,63 @@ export class MotorController {
             Modal.warning('Not connected to lamp');
             return;
         }
+
+        // Show a persistent loading indicator
+        const loadingDialog = document.createElement('div');
+        loadingDialog.className = 'preset-dialog';
+        loadingDialog.innerHTML = `
+            <div class="preset-dialog-content" style="text-align:center;">
+                <h3>Calibrating</h3>
+                <p class="info-text">The motor is rotating to find the Hall effect sensor magnet. This may take up to a minute.</p>
+                <div class="ring-spinner" style="margin:16px auto;"></div>
+            </div>
+        `;
+        document.body.appendChild(loadingDialog);
+
+        // Listen for the motor position notification that signals calibration is done
+        const originalHandler = this.bluetooth.onMotorPositionUpdate;
+        const calibrationPromise = new Promise((resolve) => {
+            const timeout = setTimeout(() => resolve('timeout'), 90000); // 90s timeout
+            this.bluetooth.onMotorPositionUpdate = (dataView) => {
+                clearTimeout(timeout);
+                const degrees = dataView.getUint16(0, true);
+                if (degrees === 0xFFFF) {
+                    console.log('Calibration failed - Hall sensor not found');
+                    resolve('failed');
+                    return;
+                }
+                console.log('Calibration complete, position:', degrees + '°');
+                this.motorAngle = degrees;
+                this.updateMotorPointer(degrees);
+                this.updateCurrentPosMarker(degrees);
+                document.getElementById('motorValue').textContent = degrees + '°';
+                document.getElementById('currentPosition').textContent = degrees + '°';
+                resolve('success');
+            };
+        });
+
         try {
             const data = new Uint16Array([MOTOR_CALIBRATE_COMMAND]);
             await this.bluetooth.writeCharacteristic('motorPosition', data);
             console.log('Motor calibration command sent');
+
+            const result = await calibrationPromise;
+            loadingDialog.remove();
+
+            if (result === 'success') {
+                Modal.success('Calibration complete! The motor found the magnet and set its zero position.', 'Calibration Done');
+            } else if (result === 'failed') {
+                Modal.error('Calibration failed. The Hall effect sensor was not detected. Check that the sensor is wired correctly and the magnet is installed.');
+            } else {
+                Modal.warning('Calibration timed out. The motor may still be searching. Check the serial monitor for details.');
+            }
         } catch (error) {
+            loadingDialog.remove();
             console.error('Failed to calibrate motor:', error);
-            Modal.error('Failed to calibrate motor');
+            Modal.error('Failed to start calibration');
+        } finally {
+            // Restore original handler
+            this.bluetooth.onMotorPositionUpdate = originalHandler;
         }
     }
 

@@ -92,8 +92,19 @@ export class UIController {
             
             const labelEl = document.getElementById('deviceNameLabel');
             if (labelEl && this.currentDeviceName) {
-                labelEl.textContent = this.currentDeviceName;
-                labelEl.classList.add('visible');
+                // Show name without "Moon Lamp - " prefix in the app (it's already in the title)
+                let displayName = this.currentDeviceName;
+                if (displayName.startsWith('Moon Lamp - ')) {
+                    displayName = displayName.substring('Moon Lamp - '.length);
+                } else if (displayName.startsWith('Moon Lamp ')) {
+                    displayName = displayName.substring('Moon Lamp '.length);
+                } else if (displayName === 'Moon Lamp') {
+                    displayName = '';
+                }
+                if (displayName) {
+                    labelEl.textContent = displayName;
+                    labelEl.classList.add('visible');
+                }
             }
         } catch (error) {
             console.error('Failed to read device name:', error);
@@ -108,15 +119,29 @@ export class UIController {
 
         try {
             const encoder = new TextEncoder();
-            const data = encoder.encode(newName.substring(0, 20));
+            const data = encoder.encode(newName.substring(0, 42));
             await this.bluetooth.writeCharacteristic('deviceName', data);
             this.currentDeviceName = newName;
             console.log('Device name set to:', newName);
             
             const labelEl = document.getElementById('deviceNameLabel');
             if (labelEl) {
-                labelEl.textContent = newName;
-                labelEl.classList.add('visible');
+                // Show name without "Moon Lamp - " prefix in the app
+                let displayName = newName;
+                if (displayName.startsWith('Moon Lamp - ')) {
+                    displayName = displayName.substring('Moon Lamp - '.length);
+                } else if (displayName.startsWith('Moon Lamp ')) {
+                    displayName = displayName.substring('Moon Lamp '.length);
+                } else if (displayName === 'Moon Lamp') {
+                    displayName = '';
+                }
+                if (displayName) {
+                    labelEl.textContent = displayName;
+                    labelEl.classList.add('visible');
+                } else {
+                    labelEl.textContent = '';
+                    labelEl.classList.remove('visible');
+                }
             }
             
             Modal.success('Name saved! Restart the lamp for the new Bluetooth name to take effect.', 'Name Updated');
@@ -128,12 +153,14 @@ export class UIController {
 
     showSettingsModal(isConnected) {
         const currentName = this.currentDeviceName || 'Moon Lamp';
-        const prefix = 'Moon Lamp';
+        const prefix = 'Moon Lamp - ';
         let suffix = '';
-        if (currentName.startsWith(prefix + ' ')) {
-            suffix = currentName.substring(prefix.length + 1);
-        } else if (currentName !== prefix) {
-            suffix = currentName.replace(prefix, '').trim();
+        if (currentName.startsWith(prefix)) {
+            suffix = currentName.substring(prefix.length);
+        } else if (currentName.startsWith('Moon Lamp ')) {
+            suffix = currentName.substring('Moon Lamp '.length);
+        } else if (currentName !== 'Moon Lamp') {
+            suffix = currentName.replace('Moon Lamp', '').replace(/^\s*-?\s*/, '');
         }
 
         const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
@@ -141,11 +168,11 @@ export class UIController {
         const renameSection = isConnected ? `
             <div class="settings-section">
                 <h3 class="settings-section-title">Lamp Name</h3>
-                <div class="form-row">
-                    <label style="min-width: auto; flex-shrink: 0;">Moon Lamp</label>
-                    <input type="text" id="deviceNameInput" value="${suffix}" maxlength="9" placeholder="(optional)" style="flex: 1; padding: 10px 14px; background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text); font-size: 0.95em;">
+                <div style="position: relative;">
+                    <input type="text" id="deviceNameInput" value="${suffix}" maxlength="30" placeholder="Name your lamp" style="width: 100%; padding: 10px 14px; padding-right: 50px; background: var(--surface); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text); font-size: 0.95em; box-sizing: border-box;">
+                    <span id="nameCharCount" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.75em; color: var(--text-secondary); pointer-events: none;">${suffix.length}/30</span>
                 </div>
-                <p class="info-text" style="margin-top: 6px; font-size: 0.8em;">Add a suffix to identify this lamp. Restart lamp after renaming.</p>
+                <p class="info-text" style="margin-top: 6px; font-size: 0.8em;">This name appears when searching for Bluetooth devices. Restart lamp after renaming.</p>
                 <div class="dialog-buttons" style="margin-top: 12px;">
                     <button class="btn" id="cancelRenameBtn">Cancel</button>
                     <button class="btn btn-primary" id="saveRenameBtn">Save Name</button>
@@ -190,12 +217,17 @@ export class UIController {
 
         if (isConnected) {
             const input = document.getElementById('deviceNameInput');
+            const charCount = document.getElementById('nameCharCount');
             input.focus();
             input.select();
 
+            input.addEventListener('input', () => {
+                charCount.textContent = `${input.value.length}/30`;
+            });
+
             const saveName = async () => {
-                const suffix = input.value.trim();
-                const fullName = suffix ? `Moon Lamp ${suffix}` : 'Moon Lamp';
+                const s = input.value.trim();
+                const fullName = s ? `Moon Lamp - ${s}` : 'Moon Lamp';
                 await this.setDeviceName(fullName);
                 dialog.remove();
             };

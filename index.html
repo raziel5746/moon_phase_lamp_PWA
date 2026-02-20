@@ -196,6 +196,14 @@
                                 </svg>
                             </button>
                             <div class="motor-settings-menu" id="motorSettingsMenu">
+                                <button class="menu-item" id="updateEveryBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    Update every
+                                </button>
                                 <button class="menu-item" id="calibrateBtn">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -230,27 +238,11 @@
                                 title="Set to Real Moon Position">
                                 <!-- Injected at runtime by motor-controller.js via moonIconSvg() from utils.js -->
                             </button>
+                            <span class="auto-tracking-label" id="autoTrackingLabel"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Auto Tracking Settings -->
-                <div class="auto-tracking-section">
-                    <div class="tracking-interval">
-                        <input type="checkbox" id="autoTrackingToggle" class="tracking-checkbox" checked>
-                        <label for="trackingInterval">Update every:</label>
-                        <select id="trackingInterval">
-                            <option value="5">5 minutes</option>
-                            <option value="15">15 minutes</option>
-                            <option value="30">30 minutes</option>
-                            <option value="60" selected>1 hour</option>
-                            <option value="120">2 hours</option>
-                            <option value="360">6 hours</option>
-                            <option value="720">12 hours</option>
-                            <option value="1440">24 hours</option>
-                        </select>
-                    </div>
-                </div>
             </div>
             <div class="motor-presets-card">
                 <div class="motor-preset-scroll">

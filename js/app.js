@@ -77,8 +77,7 @@ class MoonLamp {
             const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
             this.updateBrightnessSlider(currentBrightness);
             // If auto-tracking is enabled, immediately sync to current moon position
-            const autoTrackingToggle = document.getElementById('autoTrackingToggle');
-            if (autoTrackingToggle && autoTrackingToggle.checked) {
+            if (this.motorController.autoTrackingEnabled) {
                 await this.motorController.setRealMoonPosition();
             }
         } catch (error) {
@@ -254,29 +253,26 @@ class MoonLamp {
             this.motorController.calibrateMotor();
         });
 
-        document.getElementById('realMoonBtn').addEventListener('click', () => {
+        const realMoonBtn = document.getElementById('realMoonBtn');
+        let realMoonHoldTimer = null;
+        realMoonBtn.addEventListener('click', () => {
             this.motorController.setRealMoonPosition();
         });
+        realMoonBtn.addEventListener('mousedown', () => {
+            realMoonHoldTimer = setTimeout(() => this.motorController.showAutoTrackingModal(), 600);
+        });
+        realMoonBtn.addEventListener('mouseup', () => clearTimeout(realMoonHoldTimer));
+        realMoonBtn.addEventListener('mouseleave', () => clearTimeout(realMoonHoldTimer));
+        realMoonBtn.addEventListener('touchstart', () => {
+            realMoonHoldTimer = setTimeout(() => this.motorController.showAutoTrackingModal(), 600);
+        }, { passive: true });
+        realMoonBtn.addEventListener('touchend', () => clearTimeout(realMoonHoldTimer));
+        realMoonBtn.addEventListener('touchmove', () => clearTimeout(realMoonHoldTimer), { passive: true });
 
-        // Auto tracking controls
-        const autoTrackingToggle = document.getElementById('autoTrackingToggle');
-        const trackingInterval = document.getElementById('trackingInterval');
-
-        if (autoTrackingToggle) {
-            autoTrackingToggle.addEventListener('change', () => {
-                const enabled = autoTrackingToggle.checked;
-                const interval = parseInt(trackingInterval?.value || '60');
-                this.motorController.setAutoTracking(enabled, interval);
-            });
-        }
-
-        if (trackingInterval) {
-            trackingInterval.addEventListener('change', () => {
-                const enabled = autoTrackingToggle?.checked || false;
-                const interval = parseInt(trackingInterval.value);
-                this.motorController.setAutoTracking(enabled, interval);
-            });
-        }
+        document.getElementById('updateEveryBtn').addEventListener('click', () => {
+            motorSettingsMenu.classList.remove('show');
+            this.motorController.showAutoTrackingModal();
+        });
 
         // Automations
         const addAutomationBtn = document.getElementById('addAutomationBtn');

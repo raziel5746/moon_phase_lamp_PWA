@@ -9,6 +9,8 @@ export class MotorController {
         this.motorAngle = 0;
         this.pendingMotorAngle = undefined;
         this.moonPositionAngle = 0;
+        this.autoTrackingEnabled = true;
+        this.autoTrackingInterval = 60;
 
         // Handle motor position notifications (e.g., after calibration)
         this.bluetooth.onMotorPositionUpdate = (dataView) => {
@@ -432,17 +434,19 @@ export class MotorController {
             const enabled = value.getUint8(0) !== 0;
             const intervalMinutes = value.getUint16(1, true);
             console.log('Auto tracking:', enabled ? 'ON' : 'OFF', 'interval:', intervalMinutes, 'min');
-
-            const toggle = document.getElementById('autoTrackingToggle');
-            const select = document.getElementById('trackingInterval');
-            if (toggle) toggle.checked = enabled;
-            if (select) select.value = intervalMinutes.toString();
+            this.autoTrackingEnabled = enabled;
+            this.autoTrackingInterval = intervalMinutes;
+            this.updateAutoTrackingLabel();
         } catch (error) {
             console.error('Failed to read auto tracking:', error);
         }
     }
 
     async setAutoTracking(enabled, intervalMinutes) {
+        this.autoTrackingEnabled = enabled;
+        this.autoTrackingInterval = intervalMinutes;
+        this.updateAutoTrackingLabel();
+
         if (!this.bluetooth.hasCharacteristic('autoTracking')) {
             console.warn('Auto tracking characteristic not available');
             return;
@@ -459,6 +463,57 @@ export class MotorController {
         } catch (error) {
             console.error('Failed to set auto tracking:', error);
         }
+    }
+
+    _formatInterval(minutes) {
+        if (minutes % 60 === 0) return `${minutes / 60} h`;
+        return `${minutes} m`;
+    }
+
+    updateAutoTrackingLabel() {
+        const label = document.getElementById('autoTrackingLabel');
+        if (!label) return;
+        label.textContent = this.autoTrackingEnabled ? this._formatInterval(this.autoTrackingInterval) : '';
+    }
+
+    showAutoTrackingModal() {
+        const dialog = document.createElement('div');
+        dialog.className = 'preset-dialog';
+        dialog.innerHTML = `
+            <div class="preset-dialog-content">
+                <h3>Auto Tracking</h3>
+                <div class="tracking-interval">
+                    <input type="checkbox" id="modalAutoTrackingToggle" class="tracking-checkbox" ${this.autoTrackingEnabled ? 'checked' : ''}>
+                    <label for="modalTrackingInterval">Update every:</label>
+                    <select id="modalTrackingInterval">
+                        <option value="5">5 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="120">2 hours</option>
+                        <option value="360">6 hours</option>
+                        <option value="720">12 hours</option>
+                        <option value="1440">24 hours</option>
+                    </select>
+                </div>
+                <div class="dialog-buttons">
+                    <button class="btn btn-secondary" id="cancelAutoTrackingBtn">Cancel</button>
+                    <button class="btn btn-primary" id="saveAutoTrackingBtn">Save</button>
+                </div>
+            </div>`;
+        document.body.appendChild(dialog);
+
+        document.getElementById('modalTrackingInterval').value = this.autoTrackingInterval.toString();
+
+        document.getElementById('cancelAutoTrackingBtn').addEventListener('click', () => dialog.remove());
+        dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });
+
+        document.getElementById('saveAutoTrackingBtn').addEventListener('click', () => {
+            const enabled = document.getElementById('modalAutoTrackingToggle').checked;
+            const interval = parseInt(document.getElementById('modalTrackingInterval').value);
+            this.setAutoTracking(enabled, interval);
+            dialog.remove();
+        });
     }
 
     // Speed icons: 1, 2, or 3 triangles

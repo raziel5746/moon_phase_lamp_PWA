@@ -7,6 +7,7 @@ import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 import { Modal } from './modal.js';
 import { moonIconSvg } from './utils.js';
+import { MotorPresetsController } from './motor-presets.js';
 
 // Fix for Chrome Android PWA viewport height bug
 // Chrome miscalculates viewport height on reload in standalone mode
@@ -25,6 +26,7 @@ class MoonLamp {
         this.motorController = new MotorController(this.bluetooth);
         this.presetsController = new PresetsController(this.bluetooth, this.ledController);
         this.automationsController = new AutomationsController(this.bluetooth, this.presetsController);
+        this.motorPresetsController = new MotorPresetsController(this.motorController);
         this.uiController = new UIController(this.bluetooth);
 
         // Set up callbacks
@@ -48,6 +50,7 @@ class MoonLamp {
         this.uiController.updateConnectionStatus('disconnected');
         this.presetsController.renderPresets();
         this.motorController.initSpeedUI();
+        this.motorPresetsController.renderPresets();
         requestAnimationFrame(() => this.updateBrightnessSlider(50));
         await this.uiController.loadAppVersion();
         this.uiController.registerServiceWorker();

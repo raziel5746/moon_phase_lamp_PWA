@@ -24,7 +24,7 @@ export class UIController {
 
     updateConnectionStatus(state) {
         const statusDot = document.getElementById('statusDot');
-        statusDot.classList.remove('connected', 'connecting');
+        statusDot.classList.remove('connected', 'connecting', 'disconnecting');
         const deviceLabel = document.getElementById('deviceNameLabel');
 
         switch (state) {
@@ -34,6 +34,10 @@ export class UIController {
                 break;
             case 'connecting':
                 statusDot.classList.add('connecting');
+                if (deviceLabel) deviceLabel.classList.remove('clickable');
+                break;
+            case 'disconnecting':
+                statusDot.classList.add('disconnecting');
                 if (deviceLabel) deviceLabel.classList.remove('clickable');
                 break;
             default:

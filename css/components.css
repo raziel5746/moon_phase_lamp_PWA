@@ -32,6 +32,11 @@
     background: var(--success);
 }
 
+.status-dot.disconnecting {
+    background: var(--danger);
+    animation: pulse 1s ease-in-out infinite;
+}
+
 @keyframes pulse {
     0%, 100% {
         opacity: 1;

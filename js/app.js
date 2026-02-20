@@ -29,6 +29,7 @@ class MoonLamp {
         // Set up callbacks
         this.bluetooth.onConnectionChange = (state) => this._handleConnectionChange(state);
         this.bluetooth.onLEDStateUpdate = (value) => this._handleLEDStateUpdate(value);
+        this.bluetooth.onReconnected = () => this._handleReconnected();
 
         this.init();
     }
@@ -49,6 +50,26 @@ class MoonLamp {
 
     _handleConnectionChange(state) {
         this.uiController.updateConnectionStatus(state);
+    }
+
+    async _handleReconnected() {
+        try {
+            if (this.bluetooth.hasCharacteristic('timeSync')) {
+                await this.bluetooth.syncTime();
+            }
+            await this.ledController.readLEDState();
+            await this.motorController.readMotorPosition();
+            await this.motorController.readAutoTracking();
+            await this.motorController.readMotorSpeed();
+            await this.automationsController.readAutomations();
+            await this.presetsController.readCustomPresets();
+            await this.uiController.readDeviceName();
+            this.presetsController.updatePresetFeedback(this.ledController.ledStates);
+            const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
+            this.updateBrightnessSlider(currentBrightness);
+        } catch (error) {
+            console.error('Failed to read state after reconnect:', error);
+        }
     }
 
     _handleLEDStateUpdate(value) {
@@ -81,6 +102,8 @@ class MoonLamp {
             if (this.bluetooth.isConnected) {
                 const confirmed = await Modal.confirm('Disconnect from Moon Lamp?', 'Disconnect');
                 if (confirmed) {
+                    this.uiController.updateConnectionStatus('disconnecting');
+                    // Handle case where auto-reconnect started while modal was open
                     this.bluetooth.disconnect();
                 }
             } else {

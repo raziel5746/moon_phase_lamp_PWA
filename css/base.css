@@ -31,6 +31,10 @@ html {
     --glass-border: rgba(255, 255, 255, 0.07);
     --surface: #161d2e;
     --surface-raised: #1c2438;
+    --dial-target: #22c55e;
+    --dial-current: #3b82f6;
+    --accent-bg: rgba(232, 184, 75, 0.15);
+    --hover-border: rgba(255, 255, 255, 0.15);
 }
 
 [data-theme="light"] {
@@ -54,6 +58,10 @@ html {
     --glass-border: rgba(0, 0, 0, 0.08);
     --surface: #e8ebf4;
     --surface-raised: #dde1ee;
+    --dial-target: #16a34a;
+    --dial-current: #2563eb;
+    --accent-bg: rgba(180, 130, 30, 0.18);
+    --hover-border: rgba(0, 0, 0, 0.2);
 }
 
 body {
@@ -156,7 +164,6 @@ header {
     font-weight: 600;
     letter-spacing: 0.03em;
     cursor: pointer;
-    transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
 .update-btn:hover {
@@ -181,7 +188,6 @@ header {
     font-weight: 600;
     letter-spacing: 0.03em;
     cursor: pointer;
-    transition: background 0.15s ease;
 }
 
 .install-btn:hover {

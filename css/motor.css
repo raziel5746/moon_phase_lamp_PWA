@@ -23,7 +23,7 @@
 }
 
 .moon-btn:hover {
-    background: rgba(232, 184, 75, 0.15);
+    background: var(--accent-bg);
     border-color: var(--accent);
     border-width: 2px;
 }
@@ -58,6 +58,7 @@
 #motorPointer {
     transform-origin: 125px 125px;
     will-change: transform;
+    stroke: var(--dial-target);
 }
 
 #motorPointer.animating {
@@ -67,6 +68,7 @@
 #currentPosMarker {
     transition: transform 0.3s ease;
     transform-origin: 125px 125px;
+    stroke: var(--dial-current);
 }
 
 .motor-values {
@@ -81,13 +83,13 @@
 .current-pos-value {
     font-size: 2em;
     font-weight: 700;
-    color: #3b82f6;
+    color: var(--dial-current);
 }
 
 .motor-value {
     font-size: 2em;
     font-weight: 700;
-    color: #22c55e;
+    color: var(--dial-target);
 }
 
 .motor-settings-container {
@@ -103,7 +105,7 @@
 }
 
 .settings-btn:hover {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--hover-border);
     color: var(--text);
     background: var(--surface-raised);
 }
@@ -144,7 +146,6 @@
     color: var(--text);
     font-size: 0.95em;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
     white-space: nowrap;
     -webkit-tap-highlight-color: transparent;
 }
@@ -227,7 +228,7 @@
 }
 
 .speed-toggle-btn:hover {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--hover-border);
     color: var(--text);
     background: var(--surface-raised);
 }

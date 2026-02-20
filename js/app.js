@@ -56,8 +56,8 @@ class MoonLamp {
     }
 
     setupEventListeners() {
-        // Rename lamp by clicking on title (only when connected)
-        document.querySelector('.app-title h1').addEventListener('click', () => {
+        // Rename lamp by clicking on device name label (only when connected)
+        document.getElementById('deviceNameLabel').addEventListener('click', () => {
             if (this.bluetooth.isConnected && this.bluetooth.hasCharacteristic('deviceName')) {
                 this.uiController.showRenameDialog();
             }

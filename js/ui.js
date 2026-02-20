@@ -24,21 +24,24 @@ export class UIController {
 
     updateConnectionStatus(state) {
         const statusDot = document.getElementById('statusDot');
-        const appTitle = document.querySelector('.app-title');
-
         statusDot.classList.remove('connected', 'connecting');
+        const deviceLabel = document.getElementById('deviceNameLabel');
 
         switch (state) {
             case 'connected':
                 statusDot.classList.add('connected');
-                appTitle.classList.add('clickable');
+                if (deviceLabel) deviceLabel.classList.add('clickable');
                 break;
             case 'connecting':
                 statusDot.classList.add('connecting');
-                appTitle.classList.remove('clickable');
+                if (deviceLabel) deviceLabel.classList.remove('clickable');
                 break;
             default:
-                appTitle.classList.remove('clickable');
+                if (deviceLabel) {
+                    deviceLabel.classList.remove('clickable');
+                    deviceLabel.textContent = '';
+                    deviceLabel.classList.remove('visible');
+                }
         }
     }
 
@@ -61,9 +64,14 @@ export class UIController {
         // This ensures we show the version of the actual code running
         const embeddedVersion = '__VERSION__';
         
-        if (embeddedVersion.includes('__')) {
-            // Development mode - version not replaced
+        const isDev = embeddedVersion.includes('__');
+        if (isDev) {
             versionEl.textContent = 'dev';
+            const labelEl = document.getElementById('deviceNameLabel');
+            if (labelEl) {
+                labelEl.textContent = 'placeholder';
+                labelEl.classList.add('visible', 'dev-placeholder');
+            }
         } else {
             versionEl.textContent = `v${embeddedVersion}`;
         }
@@ -82,9 +90,10 @@ export class UIController {
             this.currentDeviceName = decoder.decode(value);
             console.log('Device name:', this.currentDeviceName);
             
-            const titleEl = document.querySelector('.app-title h1');
-            if (titleEl && this.currentDeviceName) {
-                titleEl.textContent = '🌙 ' + this.currentDeviceName;
+            const labelEl = document.getElementById('deviceNameLabel');
+            if (labelEl && this.currentDeviceName) {
+                labelEl.textContent = this.currentDeviceName;
+                labelEl.classList.add('visible');
             }
         } catch (error) {
             console.error('Failed to read device name:', error);
@@ -104,9 +113,10 @@ export class UIController {
             this.currentDeviceName = newName;
             console.log('Device name set to:', newName);
             
-            const titleEl = document.querySelector('.app-title h1');
-            if (titleEl) {
-                titleEl.textContent = '🌙 ' + newName;
+            const labelEl = document.getElementById('deviceNameLabel');
+            if (labelEl) {
+                labelEl.textContent = newName;
+                labelEl.classList.add('visible');
             }
             
             Modal.success('Name saved! Restart the lamp for the new Bluetooth name to take effect.', 'Name Updated');

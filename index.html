@@ -162,9 +162,6 @@
                 <div class="card motor-card">
                     <div class="motor-header">
                         <h2>Motor Control</h2>
-                        <button class="square-btn speed-toggle-btn" id="speedToggleBtn" title="Motor speed">
-                            <span id="speedToggleIcon">▶</span>
-                        </button>
                     </div>
                     <div class="motor-dial-container">
                         <svg id="motorDial" viewBox="0 0 250 250">
@@ -184,7 +181,13 @@
                             <circle cx="125" cy="125" r="12" style="fill: var(--background)" />
                             <g id="dialMoonPhase"></g>
                         </svg>
-                        <div class="motor-values">
+                        <div class="motor-angle-display">
+                            <div class="current-pos-value"><span id="currentPosition">0°</span></div>
+                            <div class="motor-value"><span id="motorValue">0°</span></div>
+                        </div>
+                    </div>
+                    <div class="motor-buttons-container">
+                        <div class="motor-left-buttons">
                             <div class="motor-settings-container">
                                 <button class="square-btn settings-btn" id="motorSettingsBtn" title="Motor settings">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -192,53 +195,53 @@
                                         <circle cx="12" cy="12" r="3"></circle>
                                         <path
                                             d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                                    </path>
-                                </svg>
-                            </button>
-                            <div class="motor-settings-menu" id="motorSettingsMenu">
-                                <button class="menu-item" id="updateEveryBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                        </path>
                                     </svg>
-                                    Update every
                                 </button>
-                                <button class="menu-item" id="calibrateBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="22" y1="12" x2="18" y2="12"></line>
-                                        <line x1="6" y1="12" x2="2" y2="12"></line>
-                                        <line x1="12" y1="6" x2="12" y2="2"></line>
-                                        <line x1="12" y1="22" x2="12" y2="18"></line>
-                                    </svg>
-                                    Calibrate
-                                </button>
-                                <button class="menu-item" id="zeroBtn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                                    </svg>
-                                    Zero
-                                </button>
+                                <div class="motor-settings-menu" id="motorSettingsMenu">
+                                    <button class="menu-item" id="updateEveryBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        Update every
+                                    </button>
+                                    <button class="menu-item" id="calibrateBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                                        </svg>
+                                        Calibrate
+                                    </button>
+                                    <button class="menu-item" id="zeroBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                                        </svg>
+                                        Zero
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="current-pos-value">
-                            <span id="currentPosition">0°</span>
-                        </div>
-                        <div class="motor-value">
-                            <span id="motorValue">0°</span>
+                            <button class="square-btn speed-toggle-btn" id="speedToggleBtn" title="Motor speed">
+                                <span id="speedToggleIcon">▶</span>
+                            </button>
                         </div>
                         <div class="moon-btn-container">
-                            <span class="moon-angle-label" id="moonAngle">--°</span>
-                            <button class="square-btn moon-btn" id="realMoonBtn"
-                                title="Set to Real Moon Position">
-                                <!-- Injected at runtime by motor-controller.js via moonIconSvg() from utils.js -->
-                            </button>
                             <span class="auto-tracking-label" id="autoTrackingLabel"></span>
+                            <div class="moon-btn-row">
+                                <span class="moon-angle-label" id="moonAngle">--°</span>
+                                <button class="square-btn moon-btn" id="realMoonBtn"
+                                    title="Set to Real Moon Position">
+                                    <!-- Injected at runtime by motor-controller.js via moonIconSvg() from utils.js -->
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -249,7 +252,6 @@
                     <div class="motor-preset-list" id="motorPresetList"></div>
                 </div>
             </div>
-        </div>
         </div>
 
         <!-- Automations Tab -->

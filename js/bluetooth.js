@@ -32,6 +32,7 @@ export class BluetoothManager {
         this.onConnectionChange = null;
         this.onLEDStateUpdate = null;
         this.onReconnected = null;
+        this.onRetryAttempt = null;
     }
 
     get isConnected() {
@@ -213,6 +214,9 @@ export class BluetoothManager {
                     this._notifyConnectionChange('disconnected');
                     console.log('Connection aborted by user');
                     return;
+                }
+                if (this.onRetryAttempt && !this.abortConnection) {
+                    this.onRetryAttempt(attempt);
                 }
                 if (attempt < maxRetries) {
                     // Escalating delays — Windows BLE stack needs 10s+ to recover after degradation

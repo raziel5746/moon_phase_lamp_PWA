@@ -8,6 +8,7 @@ export class UIController {
         this.currentDeviceName = null;
         this.waitingServiceWorker = null;
         this.deferredInstallPrompt = null;
+        this._failedAttempts = 0;
         
         // Capture the install prompt event
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -31,6 +32,7 @@ export class UIController {
         switch (state) {
             case 'connected':
                 statusDot.classList.add('connected');
+                this.resetRetryDots();
                 if (deviceLabel) deviceLabel.classList.add('clickable');
                 break;
             case 'connecting':
@@ -47,6 +49,24 @@ export class UIController {
                     deviceLabel.textContent = '';
                     deviceLabel.classList.remove('visible');
                 }
+        }
+    }
+
+    resetRetryDots() {
+        this._failedAttempts = 0;
+        const statusDot = document.getElementById('statusDot');
+        if (statusDot) {
+            statusDot.querySelectorAll('.status-retry-dot').forEach(d => d.remove());
+        }
+    }
+
+    addRetryDot() {
+        this._failedAttempts++;
+        const statusDot = document.getElementById('statusDot');
+        if (statusDot) {
+            const dot = document.createElement('span');
+            dot.className = 'status-retry-dot';
+            statusDot.appendChild(dot);
         }
     }
 

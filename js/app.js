@@ -31,6 +31,7 @@ class MoonLamp {
         this.bluetooth.onConnectionChange = (state) => this._handleConnectionChange(state);
         this.bluetooth.onLEDStateUpdate = (value) => this._handleLEDStateUpdate(value);
         this.bluetooth.onReconnected = () => this._handleReconnected();
+        this.bluetooth.onRetryAttempt = () => this.uiController.addRetryDot();
 
         this.init();
     }
@@ -83,7 +84,7 @@ class MoonLamp {
 
     setupEventListeners() {
         // Settings modal via title click (always available)
-        document.querySelector('.app-title h1').addEventListener('click', () => {
+        document.querySelector('.app-title').addEventListener('click', () => {
             this.uiController.showSettingsModal(this.bluetooth.isConnected);
         });
 
@@ -286,6 +287,7 @@ class MoonLamp {
     }
 
     async connect() {
+        this.uiController.resetRetryDots();
         try {
             const connected = await this.bluetooth.connect();
             if (connected) {

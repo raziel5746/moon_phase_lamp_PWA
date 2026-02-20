@@ -10,16 +10,22 @@
   "orientation": "portrait",
   "icons": [
     {
+      "src": "/moon_phase_lamp_PWA/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "/moon_phase_lamp_PWA/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
       "src": "/moon_phase_lamp_PWA/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ],
   "categories": ["utilities", "lifestyle"],

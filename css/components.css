@@ -20,6 +20,20 @@
     height: 6px;
     border-radius: 3px;
     background: var(--danger);
+    display: flex;
+    align-items: center;
+    padding: 0 2px;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.status-retry-dot {
+    width: 4px;
+    min-width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(180, 30, 30, 0.85);
+    flex-shrink: 0;
 }
 
 .status-dot.connecting {

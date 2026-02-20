@@ -11,16 +11,28 @@
 }
 
 .moon-btn-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: center;
 }
 
-.moon-btn-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.moon-btn-container .moon-angle-label {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.moon-btn-container .auto-tracking-label {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: center;
+}
+
+.moon-btn-container .moon-btn {
+    grid-column: 2;
+    grid-row: 2;
 }
 
 .moon-btn {
@@ -49,8 +61,7 @@
     flex-direction: column;
     align-items: center;
     position: relative;
-    flex: 1;
-    min-height: 0;
+    flex: 1 0 auto;
 }
 
 #motorDial {

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Color Test - Light Theme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3d4f7c;
+            --primary-light: #5a6fa0;
+            --secondary: #6b7a99;
+            --background: #f0f2f7;
+            --background-gradient: linear-gradient(180deg, #f0f2f7 0%, #e8ebf4 100%);
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --text: #1a2035;
+            --text-secondary: #5a6580;
+            --glass-bg: rgba(0, 0, 0, 0.02);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --surface: #e8ebf4;
+            --surface-raised: #dde1ee;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            background-image: var(--background-gradient);
+            color: var(--text);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        h1 { font-size: 1.4em; margin-bottom: 24px; color: var(--text); }
+        h2 { font-size: 1.1em; margin-bottom: 16px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+        h3 { font-size: 0.95em; margin-bottom: 8px; color: var(--text-secondary); font-weight: 500; }
+
+        .section {
+            max-width: 900px;
+            margin: 0 auto 40px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .grid.dial-grid {
+            grid-template-columns: 1fr 1fr;
+            max-width: 900px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .color-label {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            font-family: monospace;
+        }
+
+        .color-name {
+            font-size: 0.85em;
+            font-weight: 500;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        svg.dial {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+
+        .moon-btn-demo {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            background: var(--surface);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border: 2px solid transparent;
+        }
+
+        .moon-btn-demo:hover {
+            background: var(--hover-bg);
+        }
+
+        .moon-angle-demo {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .moon-state-label {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            min-height: 1.2em;
+        }
+
+        .motor-value-demo {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .current-badge { color: #c9922a; }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--glass-border);
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h1>Light Theme Color Test</h1>
+
+        <h2>Dial Needle — Green Options</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 16px;">
+            Each dial shows a different green for the target needle. The blue needle stays at <code>#2563eb</code>.
+        </p>
+        <div class="grid dial-grid" id="dialGrid"></div>
+
+        <hr class="divider">
+
+        <h2>Moon Button — Accent Color Options</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 16px;">
+            Each card shows the moon icon, border, angle label, and hover background with a different accent gold.
+        </p>
+        <div class="grid" id="moonGrid"></div>
+    </div>
+
+    <script>
+        const greenOptions = [
+            { color: '#16a34a', name: 'Current (dark green)', note: 'Current light theme' },
+            { color: '#22c55e', name: 'Bright green', note: 'Same as dark theme' },
+            { color: '#059669', name: 'Emerald', note: 'Recommended' },
+            { color: '#15803d', name: 'Forest green', note: '' },
+            { color: '#10b981', name: 'Light emerald', note: '' },
+            { color: '#34d399', name: 'Mint', note: '' },
+        ];
+
+        const accentOptions = [
+            { color: '#c9922a', name: 'Current (dark gold)', bg: 'rgba(180, 130, 30, 0.18)', note: 'Current light theme' },
+            { color: '#d97706', name: 'Amber', bg: 'rgba(217, 119, 6, 0.15)', note: 'Recommended' },
+            { color: '#ca8a04', name: 'Golden yellow', bg: 'rgba(202, 138, 4, 0.15)', note: '' },
+            { color: '#b8860b', name: 'DarkGoldenrod', bg: 'rgba(184, 134, 11, 0.15)', note: '' },
+            { color: '#e8b84b', name: 'Original dark theme gold', bg: 'rgba(232, 184, 75, 0.15)', note: 'Same as dark theme' },
+            { color: '#f59e0b', name: 'Bright amber', bg: 'rgba(245, 158, 11, 0.15)', note: '' },
+            { color: '#ffd700', name: 'Gold (dial moon marker)', bg: 'rgba(255, 215, 0, 0.18)', note: 'Dial marker color' },
+        ];
+
+        const dialGrid = document.getElementById('dialGrid');
+        const blue = '#2563eb';
+
+        // Generate degree markers SVG (same as real app's createMotorDial)
+        function generateMarkers() {
+            let svg = '';
+            for (let i = 0; i < 12; i++) {
+                const angle = i * 30;
+                const rad = (angle - 90) * Math.PI / 180;
+                const x1 = 125 + 90 * Math.cos(rad);
+                const y1 = 125 + 90 * Math.sin(rad);
+                const x2 = 125 + 100 * Math.cos(rad);
+                const y2 = 125 + 100 * Math.sin(rad);
+                svg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#666" stroke-width="2"/>`;
+
+                const textX = 125 + 75 * Math.cos(rad);
+                const textY = 125 + 75 * Math.sin(rad);
+                svg += `<text x="${textX.toFixed(1)}" y="${textY.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="12">${angle}°</text>`;
+            }
+            return svg;
+        }
+
+        const markers = generateMarkers();
+
+        // Needle angles (in degrees, 0=top)
+        const targetAngle = 135;
+        const currentAngle = 80;
+        const targetRad = (targetAngle - 90) * Math.PI / 180;
+        const currentRad = (currentAngle - 90) * Math.PI / 180;
+        const tx = 125 + 90 * Math.cos(targetRad);
+        const ty = 125 + 90 * Math.sin(targetRad);
+        const cx = 125 + 90 * Math.cos(currentRad);
+        const cy = 125 + 90 * Math.sin(currentRad);
+
+        greenOptions.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <svg class="dial" viewBox="0 0 250 250">
+                    <circle cx="125" cy="125" r="100" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3"/>
+                    <circle cx="125" cy="125" r="85" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1" stroke-dasharray="4 4"/>
+                    ${markers}
+                    <!-- Blue needle (current pos) -->
+                    <line x1="125" y1="125" x2="${cx.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${blue}" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+                    <!-- Green needle (target) -->
+                    <line x1="125" y1="125" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" stroke="${opt.color}" stroke-width="5" stroke-linecap="round"/>
+                    <circle cx="125" cy="125" r="14" fill="${opt.color}"/>
+                    <circle cx="125" cy="125" r="7" fill="#f0f2f7"/>
+                </svg>
+                <div class="motor-value-demo" style="color: ${opt.color}">${targetAngle}°</div>
+                <div class="color-name">${opt.name}${opt.note ? ` <span style="color:var(--primary);font-weight:600;">(${opt.note})</span>` : ''}</div>
+                <div class="color-label">${opt.color}</div>
+            `;
+            dialGrid.appendChild(card);
+        });
+
+        const moonGrid = document.getElementById('moonGrid');
+
+        accentOptions.forEach(opt => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.setProperty('--hover-bg', opt.bg);
+            card.innerHTML = `
+                <div class="moon-angle-demo" style="color: ${opt.color}">142°</div>
+                <div class="moon-btn-demo" style="border: 2px solid ${opt.color}; color: ${opt.color};" data-accent="${opt.color}" data-bg="${opt.bg}">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </div>
+                <div class="color-name" style="margin-top: 6px;">${opt.name}${opt.note ? ` <span style="color:var(--primary);font-weight:600;">(${opt.note})</span>` : ''}</div>
+                <div class="color-label">${opt.color}</div>
+            `;
+            moonGrid.appendChild(card);
+        });
+
+    </script>
+</body>
+</html>

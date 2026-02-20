@@ -1,6 +1,7 @@
 // Motor Controller
 import { MOTOR_ZERO_COMMAND, MOTOR_CALIBRATE_COMMAND } from './constants.js';
 import { Modal } from './modal.js';
+import { MOON_ICON_PATH_SVG, moonIconSvg } from './utils.js';
 
 export class MotorController {
     constructor(bluetooth) {
@@ -23,6 +24,10 @@ export class MotorController {
 
     createMotorDial() {
         const markersGroup = document.getElementById('degreeMarkers');
+
+        // Inject moon icon into the moon button
+        const realMoonBtn = document.getElementById('realMoonBtn');
+        if (realMoonBtn) realMoonBtn.innerHTML = moonIconSvg(32);
 
         // Add degree markers every 30 degrees
         for (let i = 0; i < 12; i++) {
@@ -90,7 +95,7 @@ export class MotorController {
         // Using a simple crescent path centered at 0,0 scaled to r=7
         // Same crescent path as moon button: M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z
         // Centered at 0,0 by translating -12,-12 (half of 24 viewBox), scaled to 0.65
-        moonIcon.setAttribute('d', 'M9,0.79A9,9,0,1,1,-0.79,-9 7,7,0,0,0,9,0.79Z');
+        moonIcon.setAttribute('d', MOON_ICON_PATH_SVG);
         moonIcon.setAttribute('fill', '#ffd700');
         moonIcon.setAttribute('transform', `translate(${iconCx},${iconCy})`);
         moonIcon.setAttribute('id', 'moonIcon');

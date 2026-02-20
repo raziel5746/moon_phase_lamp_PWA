@@ -6,6 +6,7 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 import { Modal } from './modal.js';
+import { moonIconSvg } from './utils.js';
 
 // Fix for Chrome Android PWA viewport height bug
 // Chrome miscalculates viewport height on reload in standalone mode
@@ -38,6 +39,9 @@ class MoonLamp {
         this.uiController.applyStoredTheme();
         this.setupEventListeners();
         this.ledController.createLEDRing();
+
+        const titleIcon = document.getElementById('titleMoonIcon');
+        if (titleIcon) titleIcon.innerHTML = moonIconSvg(40);
         this.motorController.createMotorDial();
         this.motorController.setupDialInteraction();
         this.uiController.updateConnectionStatus('disconnected');

@@ -22,6 +22,10 @@
     color: var(--accent);
 }
 
+[data-theme="light"] .moon-btn {
+    background: #ffffff;
+}
+
 .moon-btn:hover {
     background: var(--accent-bg);
     border-color: var(--accent);
@@ -53,6 +57,20 @@
 
 #motorDial circle {
     transition: stroke 0.3s ease;
+}
+
+/* Override inline SVG fill on center circle */
+#motorDial circle[r="14"] {
+    fill: var(--dial-target);
+}
+
+/* Moon marker and icon in dial — match the accent color per theme */
+#moonMarker {
+    stroke: var(--accent) !important;
+}
+
+#moonIcon {
+    fill: var(--accent) !important;
 }
 
 #motorPointer {

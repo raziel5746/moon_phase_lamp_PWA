@@ -1,5 +1,18 @@
 // Utility functions
 
+// Moon icon — crescent path in a 24x24 viewBox
+export const MOON_ICON_PATH = 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z';
+
+// Moon icon path pre-scaled for SVG coordinate space (centered at 0,0, radius ~9)
+// Used when embedding directly into an SVG element via createElementNS
+export const MOON_ICON_PATH_SVG = 'M9,0.79A9,9,0,1,1,-0.79,-9 7,7,0,0,0,9,0.79Z';
+
+// Returns a full <svg> string for use in HTML templates
+// size: number (px), extraStyle: optional inline style string
+export function moonIconSvg(size = 24, extraStyle = '') {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none"${extraStyle ? ` style="${extraStyle}"` : ''}><path d="${MOON_ICON_PATH}"/></svg>`;
+}
+
 export function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {

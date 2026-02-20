@@ -67,9 +67,10 @@
     left: 0;
     height: 100%;
     width: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    background: var(--primary);
     border-radius: 15px 0 0 15px;
     transition: width 0.05s ease-out;
+    opacity: 0.35;
 }
 
 .brightness-slider-value {
@@ -94,53 +95,33 @@
 
 .preset-btn,
 .brightness-btn {
-    padding: 16px 12px;
-    background: var(--glass-bg);
+    padding: 14px 10px;
+    background: var(--surface);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background 0.15s ease, border-color 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    color: var(--text);
-    backdrop-filter: blur(10px);
+    gap: 8px;
+    color: var(--text-secondary);
     position: relative;
     overflow: hidden;
 }
 
-.preset-btn::before,
-.brightness-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.preset-btn:hover::before,
-.brightness-btn:hover::before {
-    opacity: 1;
-}
-
 .preset-btn:hover,
 .brightness-btn:hover {
-    border-color: var(--primary);
+    background: var(--surface-raised);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text);
 }
 
 .preset-btn.active,
 .brightness-btn.active {
     border-color: var(--accent);
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    box-shadow: 
-        0 4px 15px rgba(99, 102, 241, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: var(--surface-raised);
+    color: var(--accent);
 }
 
 .preset-btn span,
@@ -153,18 +134,13 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.3),
-        inset 0 2px 4px rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s ease;
 }
 
 .preset-btn:hover .preset-color {
-    transform: scale(1.1);
-    box-shadow: 
-        0 6px 20px rgba(0, 0, 0, 0.4),
-        0 0 20px currentColor;
+    transform: scale(1.08);
 }
 
 /* Custom Presets */
@@ -238,8 +214,7 @@
 
 .preset-btn.selected {
     border-color: var(--accent);
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    box-shadow: 0 0 20px var(--accent-glow);
+    background: var(--surface-raised);
 }
 
 .add-preset-btn {
@@ -288,9 +263,9 @@
 }
 
 .automation-brightness-btns .brightness-select-btn.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
+    background: var(--surface-raised);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .brightness-row {

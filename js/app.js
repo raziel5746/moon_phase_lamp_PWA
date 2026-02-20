@@ -97,7 +97,7 @@ class MoonLamp {
         // Tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const tabName = this.uiController.switchTab(e.target.dataset.tab);
+                const tabName = this.uiController.switchTab(e.currentTarget.dataset.tab);
                 if (tabName === 'custom') {
                     requestAnimationFrame(() => this.ledController.updateLEDLayout());
                 }

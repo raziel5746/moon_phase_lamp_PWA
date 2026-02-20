@@ -4,26 +4,18 @@
         padding: 12px;
     }
 
-    body::before {
-        opacity: 0.4;
-    }
-
     h1 {
         font-size: 1.5em;
     }
 
     .card {
-        padding: 18px;
-        border-radius: 16px;
-    }
-
-    .tabs {
-        padding: 4px;
+        padding: 16px;
+        border-radius: 12px;
     }
 
     .tab-btn {
-        padding: 18px 12px;
-        font-size: 0.85em;
+        padding: 8px 6px 10px;
+        font-size: 0.68em;
     }
 
     .led-ring {
@@ -79,14 +71,14 @@
     }
 
     .card {
-        padding: 14px;
-        border-radius: 14px;
+        padding: 12px 14px;
+        border-radius: 10px;
         margin-bottom: 12px;
     }
 
     .tab-btn {
-        padding: 16px 8px;
-        font-size: 0.8em;
+        padding: 7px 4px 9px;
+        font-size: 0.65em;
     }
 
     .led-ring {
@@ -130,8 +122,8 @@
     }
 
     h2 {
-        font-size: 1.1em;
-        margin-bottom: 14px;
+        font-size: 0.95em;
+        margin-bottom: 12px;
     }
 
     .brightness-grid .brightness-btn {

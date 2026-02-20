@@ -20,6 +20,7 @@ export class BluetoothManager {
         this.service = null;
         this.characteristics = {};
         this.isConnecting = false;
+        this.abortConnection = false;
         this.onConnectionChange = null;
         this.onLEDStateUpdate = null;
     }
@@ -50,6 +51,7 @@ export class BluetoothManager {
 
         try {
             this.isConnecting = true;
+            this.abortConnection = false;
             this._notifyConnectionChange('connecting');
             console.log('Requesting Bluetooth Device...');
 
@@ -201,6 +203,13 @@ export class BluetoothManager {
                 lastError = error;
                 console.log(`Attempt ${attempt} failed:`, error.message);
 
+                if (this.abortConnection) {
+                    this.isConnecting = false;
+                    this.abortConnection = false;
+                    this._notifyConnectionChange('disconnected');
+                    console.log('Connection aborted by user');
+                    return;
+                }
                 if (attempt < maxRetries) {
                     // Exponential backoff: 2s, 4s, 8s...
                     const delay = baseDelay * Math.pow(2, attempt - 1);
@@ -217,8 +226,8 @@ export class BluetoothManager {
 
     _handleDisconnect() {
         // Don't clear state if we're in the middle of a connection attempt
-        // The retry logic will handle reconnection
-        if (this.isConnecting) {
+        // The retry logic will handle reconnection (unless aborted)
+        if (this.isConnecting && !this.abortConnection) {
             console.log('Disconnect during connection attempt - will retry');
             return;
         }
@@ -233,6 +242,14 @@ export class BluetoothManager {
         if (this.onConnectionChange) {
             this.onConnectionChange(state);
         }
+    }
+
+    abort() {
+        this.abortConnection = true;
+        if (this.device) {
+            try { this.device.gatt.disconnect(); } catch (e) {}
+        }
+        console.log('Aborting connection...');
     }
 
     async disconnect() {

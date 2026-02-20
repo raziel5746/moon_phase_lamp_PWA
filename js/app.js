@@ -72,7 +72,11 @@ class MoonLamp {
         // Bluetooth connection via status badge
         document.getElementById('connectionStatus').addEventListener('click', async () => {
             if (this.bluetooth.isConnecting) {
-                return; // Ignore clicks while connection is in progress
+                const confirmed = await Modal.confirm('Cancel connection attempt?', 'Cancel');
+                if (confirmed) {
+                    this.bluetooth.abort();
+                }
+                return;
             }
             if (this.bluetooth.isConnected) {
                 const confirmed = await Modal.confirm('Disconnect from Moon Lamp?', 'Disconnect');

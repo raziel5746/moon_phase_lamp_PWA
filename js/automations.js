@@ -206,13 +206,24 @@ export class AutomationsController {
                     <label>Time:</label>
                     <input type="time" id="addAutomationTime" value="07:00">
                 </div>
-                <div class="form-row">
+                <div class="form-row" style="position:relative;">
                     <label>Preset:</label>
-                    <select id="addAutomationPreset">
-                        ${presets.map((p, i) => 
-                            `<option value="${i}">${p.name}</option>`
-                        ).join('')}
-                    </select>
+                    <div class="preset-form-swatch" id="addPresetSwatch"></div>
+                    <div class="preset-custom-select">
+                        <div class="preset-select-trigger" id="addPresetTrigger">
+                            <span class="trigger-name"></span>
+                            <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
+                        <div class="preset-select-dropdown" id="addPresetDropdown">
+                            ${presets.map((p, i) => `
+                                <div class="preset-select-option" data-index="${i}">
+                                    <div class="option-swatch" style="background:rgb(${p.r},${p.g},${p.b})"></div>
+                                    <span>${p.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <input type="hidden" id="addAutomationPreset" value="0">
                 </div>
                 <div class="form-row brightness-row">
                     <label>Brightness:</label>
@@ -244,6 +255,7 @@ export class AutomationsController {
             'autoAddBrightnessSlider', 'autoAddBrightnessSliderFill', 'autoAddBrightnessSliderValue',
             'addAutomationBrightness', 75
         );
+        this._setupPresetCustomSelect(dialog, presets, 'addPresetSwatch', 'addPresetTrigger', 'addPresetDropdown', 'addAutomationPreset', 0);
 
         document.getElementById('cancelAddBtn').addEventListener('click', () => {
             dialog.remove();
@@ -284,13 +296,24 @@ export class AutomationsController {
                     <label>Time:</label>
                     <input type="time" id="editAutomationTime" value="${timeStr}">
                 </div>
-                <div class="form-row">
+                <div class="form-row" style="position:relative;">
                     <label>Preset:</label>
-                    <select id="editAutomationPreset">
-                        ${presets.map((p, i) => 
-                            `<option value="${i}" ${i === auto.presetId ? 'selected' : ''}>${p.name}</option>`
-                        ).join('')}
-                    </select>
+                    <div class="preset-form-swatch" id="editPresetSwatch"></div>
+                    <div class="preset-custom-select">
+                        <div class="preset-select-trigger" id="editPresetTrigger">
+                            <span class="trigger-name"></span>
+                            <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
+                        <div class="preset-select-dropdown" id="editPresetDropdown">
+                            ${presets.map((p, i) => `
+                                <div class="preset-select-option" data-index="${i}">
+                                    <div class="option-swatch" style="background:rgb(${p.r},${p.g},${p.b})"></div>
+                                    <span>${p.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <input type="hidden" id="editAutomationPreset" value="${auto.presetId}">
                 </div>
                 <div class="form-row brightness-row">
                     <label>Brightness:</label>
@@ -322,6 +345,7 @@ export class AutomationsController {
             'autoEditBrightnessSlider', 'autoEditBrightnessSliderFill', 'autoEditBrightnessSliderValue',
             'editAutomationBrightness', brightnessPercent
         );
+        this._setupPresetCustomSelect(dialog, presets, 'editPresetSwatch', 'editPresetTrigger', 'editPresetDropdown', 'editAutomationPreset', auto.presetId ?? 0);
 
         document.getElementById('cancelEditBtn').addEventListener('click', () => {
             dialog.remove();
@@ -343,6 +367,48 @@ export class AutomationsController {
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) dialog.remove();
         });
+    }
+
+    _setupPresetCustomSelect(dialog, presets, swatchId, triggerId, dropdownId, hiddenId, initialIndex) {
+        const swatch = document.getElementById(swatchId);
+        const trigger = document.getElementById(triggerId);
+        const dropdown = document.getElementById(dropdownId);
+        const hidden = document.getElementById(hiddenId);
+
+        const selectPreset = (idx) => {
+            const p = presets[idx];
+            const rgb = `rgb(${p.r},${p.g},${p.b})`;
+            swatch.style.background = rgb;
+            trigger.querySelector('.trigger-name').textContent = p.name;
+            hidden.value = idx;
+            dropdown.querySelectorAll('.preset-select-option').forEach(o =>
+                o.classList.toggle('selected', parseInt(o.dataset.index) === idx));
+        };
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const opening = !dropdown.classList.contains('open');
+            dropdown.classList.toggle('open', opening);
+            trigger.classList.toggle('open', opening);
+        });
+
+        dropdown.querySelectorAll('.preset-select-option').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectPreset(parseInt(opt.dataset.index));
+                dropdown.classList.remove('open');
+                trigger.classList.remove('open');
+            });
+        });
+
+        dialog.addEventListener('click', (e) => {
+            if (!e.target.closest('.preset-custom-select')) {
+                dropdown.classList.remove('open');
+                trigger.classList.remove('open');
+            }
+        });
+
+        selectPreset(Math.max(0, Math.min(initialIndex, presets.length - 1)));
     }
 
     _setupAutomationBrightnessSlider(dialog, sliderId, fillId, valueId, hiddenInputId, initialValue) {

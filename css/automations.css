@@ -78,3 +78,112 @@
     font-size: 1.1em;
     color: var(--text);
 }
+
+/* Preset swatch preview in automation dialog form rows */
+.preset-form-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+    position: absolute;
+    left: 55px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Custom preset select dropdown */
+.preset-custom-select {
+    flex: 1;
+    position: relative;
+}
+
+.preset-select-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.95em;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.preset-select-trigger:hover {
+    border-color: var(--primary);
+}
+
+.trigger-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid white;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.trigger-name {
+    flex: 1;
+}
+
+.trigger-chevron {
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: transform 0.2s ease;
+}
+
+.preset-select-trigger.open .trigger-chevron {
+    transform: rotate(180deg);
+}
+
+.preset-select-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    z-index: 100;
+    overflow-y: auto;
+    max-height: 180px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.preset-select-dropdown.open {
+    display: block;
+}
+
+.preset-select-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 0.9em;
+}
+
+.preset-select-option:hover {
+    background: var(--surface);
+}
+
+.preset-select-option.selected {
+    background: var(--accent-bg);
+}
+
+.option-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid white;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}

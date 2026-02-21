@@ -247,7 +247,7 @@
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 8px;
-    color: var(--text);
+    color: var(--text-secondary);
     font-size: 0.85em;
     cursor: pointer;
     text-align: center;

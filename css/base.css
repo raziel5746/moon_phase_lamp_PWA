@@ -35,8 +35,8 @@ html {
     --dial-current: #3b82f6;
     --accent-bg: rgba(232, 184, 75, 0.15);
     --hover-border: rgba(255, 255, 255, 0.15);
-    --connect-pulse-from: #60a5fa;
-    --connect-pulse-to: #2563eb;
+    --connect-pulse-from: #4b9dff;
+    --connect-pulse-to: #4873ed;
     --slider-text: #fff;
 }
 
@@ -53,12 +53,12 @@ html {
     --text-secondary: #5a6580;
     --accent: #f59e0b;
     --accent-glow: rgba(245, 158, 11, 0.2);
-    --success: #16a34a;
+    --success: #4bc54d;
     --success-glow: rgba(22, 163, 74, 0.2);
-    --danger: #ef4444;
+    --danger: #f15151;
     --danger-glow: rgba(239, 68, 68, 0.2);
-    --connect-pulse-from: #5193e0;
-    --connect-pulse-to: #1d4ed8;
+    --connect-pulse-from: #4b9dff;
+    --connect-pulse-to: #4873ed;
     --glass-bg: rgba(0, 0, 0, 0.02);
     --glass-border: rgba(0, 0, 0, 0.08);
     --surface: #e8ebf4;

@@ -256,8 +256,12 @@ export class UIController {
         if (isConnected) {
             const input = document.getElementById('deviceNameInput');
             const charCount = document.getElementById('nameCharCount');
-            input.focus();
-            input.select();
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                (navigator.maxTouchPoints > 1 && window.innerWidth < 768);
+            if (!isMobile) {
+                input.focus();
+                input.select();
+            }
 
             input.addEventListener('input', () => {
                 charCount.textContent = `${input.value.length}/30`;

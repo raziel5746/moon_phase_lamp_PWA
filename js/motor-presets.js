@@ -201,6 +201,8 @@ export class MotorPresetsController {
             preview.innerHTML = moonAngleSvg(a, 80);
         });
 
+        this._setupMoonDragInteraction(preview, angleInput);
+
         document.getElementById('cancelMotorPresetBtn').addEventListener('click', () => dialog.remove());
 
         document.getElementById('saveMotorPresetBtn').addEventListener('click', () => {
@@ -256,6 +258,8 @@ export class MotorPresetsController {
             preview.innerHTML = moonAngleSvg(a, 80);
         });
 
+        this._setupMoonDragInteraction(preview, angleInput);
+
         document.getElementById('cancelEditPresetBtn').addEventListener('click', () => dialog.remove());
 
         document.getElementById('saveEditPresetBtn').addEventListener('click', () => {
@@ -268,5 +272,52 @@ export class MotorPresetsController {
         });
 
         dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });
+    }
+
+    _setupMoonDragInteraction(previewEl, angleInput) {
+        previewEl.style.cursor = 'ew-resize';
+        previewEl.style.touchAction = 'none';
+        previewEl.style.userSelect = 'none';
+        const disableChildPointers = () => {
+            const svg = previewEl.querySelector('svg');
+            if (svg) svg.style.pointerEvents = 'none';
+        };
+        disableChildPointers();
+
+        let isDragging = false;
+        let lastX = 0;
+
+        const getAngle = () => ((parseInt(angleInput.value) || 0) + 360) % 360;
+
+        const setAngle = (a) => {
+            const clamped = ((Math.round(a) % 360) + 360) % 360;
+            angleInput.value = clamped;
+            previewEl.innerHTML = moonAngleSvg(clamped, 80);
+            disableChildPointers();
+        };
+
+        const onStart = (e) => {
+            isDragging = true;
+            lastX = e.touches ? e.touches[0].clientX : e.clientX;
+            e.preventDefault();
+        };
+
+        const onMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const deltaX = clientX - lastX;
+            lastX = clientX;
+            setAngle(getAngle() - deltaX);
+        };
+
+        const onEnd = () => { isDragging = false; };
+
+        previewEl.addEventListener('mousedown', onStart);
+        previewEl.addEventListener('touchstart', onStart, { passive: false });
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
     }
 }

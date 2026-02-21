@@ -96,6 +96,11 @@ export class BluetoothManager {
                 return false;
             }
 
+            if (this.abortConnection || error.message.includes('aborted')) {
+                console.log('Connection aborted');
+                return false;
+            }
+
             throw error;
         }
     }
@@ -209,13 +214,10 @@ export class BluetoothManager {
                 try { this.device.gatt.disconnect(); } catch (e) {}
 
                 if (this.abortConnection) {
-                    this.isConnecting = false;
-                    this.abortConnection = false;
-                    this._notifyConnectionChange('disconnected');
                     console.log('Connection aborted by user');
-                    return;
+                    throw new Error('Connection aborted');
                 }
-                if (this.onRetryAttempt && !this.abortConnection) {
+                if (this.onRetryAttempt) {
                     this.onRetryAttempt(attempt);
                 }
                 if (attempt < maxRetries) {
@@ -225,8 +227,20 @@ export class BluetoothManager {
                         : [3000, 5000, 8000, 15000];
                     const delay = delays[Math.min(attempt - 1, delays.length - 1)];
                     console.log(`Retrying in ${delay / 1000}s... (${maxRetries - attempt} tries left)`);
-                    this._notifyConnectionChange('connecting');
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    if (!this.abortConnection) {
+                        this._notifyConnectionChange('connecting');
+                    }
+                    await new Promise(resolve => {
+                        const timer = setTimeout(resolve, delay);
+                        const check = setInterval(() => {
+                            if (this.abortConnection) {
+                                clearTimeout(timer);
+                                clearInterval(check);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                    if (this.abortConnection) throw new Error('Connection aborted');
                 } else {
                     this.isConnecting = false;
                     throw lastError;
@@ -265,7 +279,7 @@ export class BluetoothManager {
     }
 
     async _autoReconnect() {
-        if (!this.device || this.isConnecting) return;
+        if (!this.device || this.isConnecting || this.abortConnection || this._intentionalDisconnect) return;
 
         try {
             this.isConnecting = true;
@@ -295,10 +309,15 @@ export class BluetoothManager {
     abort() {
         this._intentionalDisconnect = true;
         this.abortConnection = true;
+        this.isConnecting = false;
         this._clearQueue();
+        this.characteristics = {};
+        this.server = null;
+        this.service = null;
         if (this.device) {
             try { this.device.gatt.disconnect(); } catch (e) {}
         }
+        this._notifyConnectionChange('disconnected');
         console.log('Aborting connection...');
     }
 

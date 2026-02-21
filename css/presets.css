@@ -70,7 +70,7 @@
     background: var(--primary);
     border-radius: 15px 0 0 15px;
     transition: width 0.05s ease-out;
-    opacity: 0.35;
+    opacity: 0.5;
 }
 
 .brightness-slider-value {
@@ -80,8 +80,7 @@
     transform: translateY(-50%);
     font-size: 0.9em;
     font-weight: 600;
-    color: white;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    color: var(--slider-text);
     pointer-events: none;
     white-space: nowrap;
 }
@@ -259,9 +258,9 @@
 }
 
 .automation-brightness-btns .brightness-select-btn.active {
-    background: var(--surface-raised);
+    background: var(--accent-bg);
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--text);
 }
 
 .brightness-row {
@@ -272,3 +271,13 @@
 .brightness-row label {
     margin-bottom: 8px;
 }
+
+.brightness-row .brightness-slider {
+    height: 36px;
+    border-radius: 8px;
+}
+
+.brightness-row .brightness-slider-fill {
+    border-radius: 7px 0 0 7px;
+}
+

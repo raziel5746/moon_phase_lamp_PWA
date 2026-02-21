@@ -112,12 +112,24 @@
     stroke: var(--dial-current);
 }
 
-.motor-angle-display {
+.motor-header-angles-anchor {
+    flex: 1;
+    height: 0;
+    overflow: visible;
+    position: relative;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
+}
+
+.motor-angle-display {
+    position: absolute;
+    top: 0;
+    transform: translateY(-50%);
+    display: flex;
     align-items: center;
     gap: 25px;
-    width: 100%;
+    pointer-events: none;
+    margin-right: -5px;
 }
 
 .current-pos-value {
@@ -126,6 +138,7 @@
     font-size: 2em;
     font-weight: 700;
     color: var(--dial-current);
+    opacity: 0.7;
 }
 
 .motor-value {

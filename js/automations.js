@@ -223,6 +223,12 @@ export class AutomationsController {
                         <button type="button" class="brightness-select-btn active" data-brightness="75">75%</button>
                         <button type="button" class="brightness-select-btn" data-brightness="100">100%</button>
                     </div>
+                    <div class="brightness-slider-container" style="width:100%;margin-top:8px;">
+                        <div class="brightness-slider" id="autoAddBrightnessSlider">
+                            <div class="brightness-slider-fill" id="autoAddBrightnessSliderFill"></div>
+                            <span class="brightness-slider-value" id="autoAddBrightnessSliderValue">75%</span>
+                        </div>
+                    </div>
                     <input type="hidden" id="addAutomationBrightness" value="75">
                 </div>
                 <div class="dialog-buttons">
@@ -233,13 +239,11 @@ export class AutomationsController {
         `;
         document.body.appendChild(dialog);
 
-        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                dialog.querySelectorAll('.brightness-select-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById('addAutomationBrightness').value = btn.dataset.brightness;
-            });
-        });
+        this._setupAutomationBrightnessSlider(
+            dialog,
+            'autoAddBrightnessSlider', 'autoAddBrightnessSliderFill', 'autoAddBrightnessSliderValue',
+            'addAutomationBrightness', 75
+        );
 
         document.getElementById('cancelAddBtn').addEventListener('click', () => {
             dialog.remove();
@@ -270,10 +274,6 @@ export class AutomationsController {
         const presets = this.presetsController.presets;
         const timeStr = formatTime(auto.hour, auto.minute);
         const brightnessPercent = brightnessToUI(auto.brightness);
-        const brightnessLevels = [0, 25, 50, 75, 100];
-        const closestBrightness = brightnessLevels.reduce((prev, curr) => 
-            Math.abs(curr - brightnessPercent) < Math.abs(prev - brightnessPercent) ? curr : prev
-        );
         
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
@@ -295,13 +295,19 @@ export class AutomationsController {
                 <div class="form-row brightness-row">
                     <label>Brightness:</label>
                     <div class="automation-brightness-btns">
-                        <button type="button" class="brightness-select-btn ${closestBrightness === 0 ? 'active' : ''}" data-brightness="0">0%</button>
-                        <button type="button" class="brightness-select-btn ${closestBrightness === 25 ? 'active' : ''}" data-brightness="25">25%</button>
-                        <button type="button" class="brightness-select-btn ${closestBrightness === 50 ? 'active' : ''}" data-brightness="50">50%</button>
-                        <button type="button" class="brightness-select-btn ${closestBrightness === 75 ? 'active' : ''}" data-brightness="75">75%</button>
-                        <button type="button" class="brightness-select-btn ${closestBrightness === 100 ? 'active' : ''}" data-brightness="100">100%</button>
+                        <button type="button" class="brightness-select-btn ${brightnessPercent === 0 ? 'active' : ''}" data-brightness="0">0%</button>
+                        <button type="button" class="brightness-select-btn ${brightnessPercent === 25 ? 'active' : ''}" data-brightness="25">25%</button>
+                        <button type="button" class="brightness-select-btn ${brightnessPercent === 50 ? 'active' : ''}" data-brightness="50">50%</button>
+                        <button type="button" class="brightness-select-btn ${brightnessPercent === 75 ? 'active' : ''}" data-brightness="75">75%</button>
+                        <button type="button" class="brightness-select-btn ${brightnessPercent === 100 ? 'active' : ''}" data-brightness="100">100%</button>
                     </div>
-                    <input type="hidden" id="editAutomationBrightness" value="${closestBrightness}">
+                    <div class="brightness-slider-container" style="width:100%;margin-top:8px;">
+                        <div class="brightness-slider" id="autoEditBrightnessSlider">
+                            <div class="brightness-slider-fill" id="autoEditBrightnessSliderFill"></div>
+                            <span class="brightness-slider-value" id="autoEditBrightnessSliderValue">${brightnessPercent}%</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="editAutomationBrightness" value="${brightnessPercent}">
                 </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelEditBtn">Cancel</button>
@@ -311,13 +317,11 @@ export class AutomationsController {
         `;
         document.body.appendChild(dialog);
 
-        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                dialog.querySelectorAll('.brightness-select-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById('editAutomationBrightness').value = btn.dataset.brightness;
-            });
-        });
+        this._setupAutomationBrightnessSlider(
+            dialog,
+            'autoEditBrightnessSlider', 'autoEditBrightnessSliderFill', 'autoEditBrightnessSliderValue',
+            'editAutomationBrightness', brightnessPercent
+        );
 
         document.getElementById('cancelEditBtn').addEventListener('click', () => {
             dialog.remove();
@@ -339,5 +343,54 @@ export class AutomationsController {
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) dialog.remove();
         });
+    }
+
+    _setupAutomationBrightnessSlider(dialog, sliderId, fillId, valueId, hiddenInputId, initialValue) {
+        const slider = document.getElementById(sliderId);
+        const fill = document.getElementById(fillId);
+        const valueEl = document.getElementById(valueId);
+        const hiddenInput = document.getElementById(hiddenInputId);
+
+        const positionLabel = (percent) => {
+            const sliderWidth = slider.getBoundingClientRect().width;
+            if (!sliderWidth) return;
+            const labelWidth = valueEl.getBoundingClientRect().width || 44;
+            const fillEdge = (percent / 100) * sliderWidth;
+            const idealLeft = fillEdge - labelWidth - 32;
+            const clamped = Math.max(4, Math.min(idealLeft, sliderWidth - labelWidth - 4));
+            valueEl.style.left = clamped + 'px';
+            valueEl.style.transform = 'translateY(-50%)';
+        };
+
+        const updateSlider = (percent) => {
+            percent = Math.max(0, Math.min(100, Math.round(percent)));
+            fill.style.width = percent + '%';
+            valueEl.textContent = percent + '%';
+            hiddenInput.value = percent;
+            positionLabel(percent);
+            dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.brightness) === percent);
+            });
+        };
+
+        requestAnimationFrame(() => updateSlider(initialValue));
+
+        dialog.querySelectorAll('.brightness-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => updateSlider(parseInt(btn.dataset.brightness)));
+        });
+
+        let isDragging = false;
+        const calcPercent = (e) => {
+            const rect = slider.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            return ((clientX - rect.left) / rect.width) * 100;
+        };
+
+        slider.addEventListener('mousedown', (e) => { isDragging = true; updateSlider(calcPercent(e)); e.preventDefault(); });
+        slider.addEventListener('touchstart', (e) => { isDragging = true; updateSlider(calcPercent(e)); e.preventDefault(); }, { passive: false });
+        document.addEventListener('mousemove', (e) => { if (isDragging) updateSlider(calcPercent(e)); });
+        document.addEventListener('touchmove', (e) => { if (isDragging) { updateSlider(calcPercent(e)); e.preventDefault(); } }, { passive: false });
+        document.addEventListener('mouseup', () => { isDragging = false; });
+        document.addEventListener('touchend', () => { isDragging = false; });
     }
 }

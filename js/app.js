@@ -29,6 +29,7 @@ class MoonLamp {
         this.motorPresetsController = new MotorPresetsController(this.motorController);
         this.motorController.motorPresetsController = this.motorPresetsController;
         this.uiController = new UIController(this.bluetooth);
+        this._isReadingState = false;
 
         // Set up callbacks
         this.bluetooth.onConnectionChange = (state) => this._handleConnectionChange(state);
@@ -80,10 +81,8 @@ class MoonLamp {
             this.presetsController.updatePresetFeedback(this.ledController.ledStates);
             const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
             this.updateBrightnessSlider(currentBrightness);
-            // If auto-tracking is enabled, immediately sync to current moon position
-            if (this.motorController.autoTrackingEnabled) {
-                await this.motorController.setRealMoonPosition();
-            }
+            // Always recalculate moon angle on reconnect and apply to lamp
+            await this.motorController.setRealMoonPosition();
         } catch (error) {
             console.error('Failed to read state after reconnect:', error);
         }
@@ -109,10 +108,12 @@ class MoonLamp {
 
         // Bluetooth connection via status badge
         document.getElementById('connectionStatus').addEventListener('click', async () => {
-            if (this.bluetooth.isConnecting) {
+            if (this.bluetooth.isConnecting || this._isReadingState) {
                 const confirmed = await Modal.confirm('Cancel connection attempt?', 'Cancel');
                 if (confirmed) {
                     this.bluetooth.abort();
+                    this._isReadingState = false;
+                    this.uiController.updateConnectionStatus('disconnected');
                 }
                 return;
             }
@@ -155,6 +156,17 @@ class MoonLamp {
                 const tabName = this.uiController.switchTab(e.currentTarget.dataset.tab);
                 if (tabName === 'custom') {
                     requestAnimationFrame(() => this.ledController.updateLEDLayout());
+                }
+                if (tabName === 'presets') {
+                    requestAnimationFrame(() => {
+                        const slider = document.getElementById('brightnessSlider');
+                        const valueEl = document.getElementById('brightnessSliderValue');
+                        const fill = document.getElementById('brightnessSliderFill');
+                        if (slider && valueEl && fill) {
+                            const percent = parseInt(fill.style.width) || 50;
+                            this._positionSliderLabel(slider, valueEl, percent);
+                        }
+                    });
                 }
             });
         });
@@ -305,35 +317,45 @@ class MoonLamp {
         try {
             const connected = await this.bluetooth.connect();
             if (connected) {
-                // Sync time immediately on connection
-                if (this.bluetooth.hasCharacteristic('timeSync')) {
-                    await this.bluetooth.syncTime();
-                }
+                // Flag so the abort button works during post-connection reads
+                this._isReadingState = true;
+                try {
+                    // Sync time immediately on connection
+                    if (this.bluetooth.hasCharacteristic('timeSync')) {
+                        await this.bluetooth.syncTime();
+                    }
+                    if (this.bluetooth.abortConnection) return;
 
-                // Read initial state
-                await this.ledController.readLEDState();
-                await this.motorController.readMotorPosition();
-                await this.motorController.readAutoTracking();
-                await this.motorController.readMotorSpeed();
-                await this.automationsController.readAutomations();
-                await this.presetsController.readCustomPresets();
-                await this.uiController.readDeviceName();
+                    // Read initial state
+                    await this.ledController.readLEDState();
+                    await this.motorController.readMotorPosition();
+                    await this.motorController.readAutoTracking();
+                    await this.motorController.readMotorSpeed();
+                    await this.automationsController.readAutomations();
+                    await this.presetsController.readCustomPresets();
+                    await this.uiController.readDeviceName();
+                    if (this.bluetooth.abortConnection) return;
 
-                // If auto-tracking is enabled, immediately sync to current moon position
-                const autoTrackingToggle = document.getElementById('autoTrackingToggle');
-                if (autoTrackingToggle && autoTrackingToggle.checked) {
+                    // Always recalculate moon angle on connection and apply to lamp
                     await this.motorController.setRealMoonPosition();
+
+                    // Update preset feedback after reading LED state
+                    this.presetsController.updatePresetFeedback(this.ledController.ledStates);
+
+                    // Update brightness slider with current brightness
+                    const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
+                    this.updateBrightnessSlider(currentBrightness);
+                } catch (readError) {
+                    // Suppress errors if connection was aborted during reads
+                    if (!this.bluetooth.abortConnection) throw readError;
+                } finally {
+                    this._isReadingState = false;
                 }
-
-                // Update preset feedback after reading LED state
-                this.presetsController.updatePresetFeedback(this.ledController.ledStates);
-
-                // Update brightness slider with current brightness
-                const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
-                this.updateBrightnessSlider(currentBrightness);
             }
         } catch (error) {
-            Modal.error('Failed to connect: ' + error.message, 'Connection Error');
+            if (!this.bluetooth.abortConnection) {
+                Modal.error('Failed to connect: ' + error.message, 'Connection Error');
+            }
         }
     }
 

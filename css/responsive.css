@@ -58,6 +58,9 @@
         gap: 12px;
     }
 
+    .motor-angle-display {
+        margin-right: -15px;
+    }
 }
 
 /* Extra small — 360px and below (e.g. Galaxy A series, older iPhones) */
@@ -130,6 +133,10 @@
         padding: 10px 2px;
         font-size: 0.75em;
         min-width: 0;
+    }
+
+    .motor-angle-display {
+        margin-right: -25px;
     }
 
     .connection-status {

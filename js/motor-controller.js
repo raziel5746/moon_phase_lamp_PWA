@@ -308,7 +308,9 @@ export class MotorController {
 
     async setMotorPosition(position) {
         if (!this.bluetooth.hasCharacteristic('motorPosition')) {
-            Modal.warning('Not connected to lamp');
+            if (!this.bluetooth.abortConnection) {
+                Modal.warning('Not connected to lamp');
+            }
             return;
         }
 

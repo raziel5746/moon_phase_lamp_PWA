@@ -15,6 +15,6 @@ npm-debug.log*
 # Dependencies (if you add any)
 node_modules/
 
-*.md
+/docs
 
 /OLD

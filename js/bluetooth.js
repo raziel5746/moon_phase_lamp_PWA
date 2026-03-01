@@ -40,6 +40,11 @@ export class BluetoothManager {
     }
 
     async connect() {
+        const t0 = performance.now();
+        const log = (msg) => console.log(`[BLE ${(performance.now() - t0).toFixed(0)}ms] ${msg}`);
+        
+        log('connect() called');
+        
         // Check if Web Bluetooth API is supported
         if (!navigator.bluetooth) {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -64,8 +69,9 @@ export class BluetoothManager {
             this.abortConnection = false;
             this._intentionalDisconnect = false;
             this._notifyConnectionChange('connecting');
-            console.log('Requesting Bluetooth Device...');
+            log('Requesting Bluetooth Device...');
 
+            log('Opening device picker...');
             this.device = await navigator.bluetooth.requestDevice({
                 filters: [
                     { namePrefix: 'Moon Lamp' },
@@ -73,6 +79,7 @@ export class BluetoothManager {
                 ],
                 optionalServices: [LAMP_SERVICE_UUID]
             });
+            log(`Device selected: ${this.device.name} (id: ${this.device.id})`);
 
             this.device.addEventListener('gattserverdisconnected', () => {
                 console.log('Device disconnected');
@@ -106,8 +113,12 @@ export class BluetoothManager {
     }
 
     async _connectToDevice() {
+        const t0 = performance.now();
+        const log = (msg) => console.log(`[BLE ${(performance.now() - t0).toFixed(0)}ms] ${msg}`);
+        
         const maxRetries = 5;
         const isAndroid = /Android/i.test(navigator.userAgent);
+        log(`Platform: ${isAndroid ? 'Android' : 'Other'}, UA: ${navigator.userAgent.substring(0, 50)}...`);
         let lastError;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -116,8 +127,8 @@ export class BluetoothManager {
                     throw new Error('Connection aborted');
                 }
 
-                console.log(`Connection attempt ${attempt}/${maxRetries}...`);
-                console.log('Connecting to GATT Server...');
+                log(`Connection attempt ${attempt}/${maxRetries}...`);
+                log('Connecting to GATT Server...');
 
                 const connectPromise = this.device.gatt.connect();
                 const timeout = attempt <= 2 ? 15000 : 10000;
@@ -126,23 +137,25 @@ export class BluetoothManager {
                 );
 
                 this.server = await Promise.race([connectPromise, timeoutPromise]);
+                log('GATT connect() resolved');
 
                 if (this.abortConnection) {
                     throw new Error('Connection aborted');
                 }
 
                 if (!this.server || !this.server.connected) {
+                    log('ERROR: GATT server not connected after connect()');
                     throw new Error('GATT server not connected after connect()');
                 }
 
-                console.log('Getting Service...');
+                log('GATT connected, getting service...');
                 const servicePromise = this.server.getPrimaryService(LAMP_SERVICE_UUID);
                 const serviceTimeout = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Service discovery timeout')), 10000)
                 );
                 this.service = await Promise.race([servicePromise, serviceTimeout]);
 
-                console.log('Getting Characteristics...');
+                log('Service found, getting characteristics...');
                 // Fetch characteristics sequentially to avoid overwhelming Android BLE stack
                 const charMap = [
                     ['ledState', LED_STATE_CHAR_UUID],
@@ -162,10 +175,10 @@ export class BluetoothManager {
                     const [key, uuid] = charMap[i];
                     try {
                         this.characteristics[key] = await this.service.getCharacteristic(uuid);
-                        console.log(`✓ ${key} characteristic found`);
+                        log(`✓ ${key}`);
                     } catch (e) {
                         this.characteristics[key] = null;
-                        console.log(`${key} characteristic not available`);
+                        log(`✗ ${key} not available`);
                     }
                     // Small delay between discoveries for Android BLE stack stability
                     if (i < charMap.length - 1) {
@@ -202,12 +215,13 @@ export class BluetoothManager {
 
                 this.isConnecting = false;
                 this._notifyConnectionChange('connected');
-                console.log('Connected successfully!');
+                log('✓ Connected successfully!');
                 return;
 
             } catch (error) {
                 lastError = error;
-                console.log(`Attempt ${attempt} failed:`, error.message);
+                log(`✗ Attempt ${attempt} failed: ${error.name} - ${error.message}`);
+                console.error('Full error:', error);
 
                 // Explicitly disconnect to clear zombie connections on ESP32
                 // (without this, the ESP32 stays in "connected" state and ignores new connections)

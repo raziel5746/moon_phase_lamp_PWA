@@ -234,25 +234,20 @@
                                         </svg>
                                         Update every
                                     </button>
-                                    <button class="menu-item" id="calibrateBtn">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="22" y1="12" x2="18" y2="12"></line>
-                                            <line x1="6" y1="12" x2="2" y2="12"></line>
-                                            <line x1="12" y1="6" x2="12" y2="2"></line>
-                                            <line x1="12" y1="22" x2="12" y2="18"></line>
-                                        </svg>
-                                        Calibrate
-                                    </button>
                                     <button class="menu-item" id="zeroBtn">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                                            <circle cx="12" cy="12" r="3"></circle>
                                         </svg>
-                                        Zero
+                                        Set as New Moon
+                                    </button>
+                                    <button class="menu-item" id="fullMoonBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10" fill="currentColor"></circle>
+                                        </svg>
+                                        Set as Full Moon
                                     </button>
                                     <button class="menu-item" id="resetPositionBtn">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -297,41 +292,6 @@
             </div>
         </div>
 
-        <!-- Calibration Tab (temporary - for LED ring offset calibration) -->
-        <div class="tab-content" id="calibration">
-            <div class="card">
-                <h2>LED Calibration</h2>
-                <p class="info-text">Use Reset Position to align motor with Hall sensor (0°), then light up individual LEDs to find which index is at position 0°.</p>
-                
-                <div class="calibration-section">
-                    <h3 style="font-size: 0.9em; margin-bottom: 12px; color: var(--text-secondary);">Test Individual LEDs</h3>
-                    <div class="led-test-grid" id="ledTestGrid">
-                        <button class="btn led-test-btn" data-led="0">LED 0</button>
-                        <button class="btn led-test-btn" data-led="1">LED 1</button>
-                        <button class="btn led-test-btn" data-led="2">LED 2</button>
-                        <button class="btn led-test-btn" data-led="3">LED 3</button>
-                        <button class="btn led-test-btn" data-led="4">LED 4</button>
-                        <button class="btn led-test-btn" data-led="5">LED 5</button>
-                        <button class="btn led-test-btn" data-led="6">LED 6</button>
-                        <button class="btn led-test-btn" data-led="7">LED 7</button>
-                    </div>
-                </div>
-
-                <div class="calibration-section" style="margin-top: 20px;">
-                    <h3 style="font-size: 0.9em; margin-bottom: 12px; color: var(--text-secondary);">Quick Actions</h3>
-                    <div class="calibration-actions">
-                        <button class="btn" id="calAllOnBtn">All LEDs ON</button>
-                        <button class="btn" id="calAllOffBtn">All LEDs OFF</button>
-                        <button class="btn btn-primary" id="calResetPositionBtn">Reset Position</button>
-                    </div>
-                </div>
-
-                <p class="info-text" style="margin-top: 16px; font-size: 0.8em;">
-                    Once you identify which LED is at the Hall sensor position (0°), that LED index becomes the LED_RING_OFFSET constant in firmware.
-                </p>
-            </div>
-        </div>
-
         <!-- Automations Tab -->
         <div class="tab-content" id="automations">
             <div class="card">
@@ -360,10 +320,6 @@
         <button class="tab-btn" data-tab="automations">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span>Schedule</span>
-        </button>
-        <button class="tab-btn" data-tab="calibration">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
-            <span>Calibrate</span>
         </button>
     </div>
 

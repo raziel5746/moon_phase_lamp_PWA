@@ -497,34 +497,6 @@
     margin-bottom: 0;
 }
 
-/* Calibration Tab */
-.led-test-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.led-test-btn {
-    padding: 12px 8px;
-    font-size: 0.85em;
-}
-
-.led-test-btn.active {
-    background: var(--primary);
-    color: white;
-}
-
-.calibration-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.calibration-actions .btn {
-    flex: 1;
-    min-width: 100px;
-}
-
 /* Settings Card */
 .settings-card {
     margin-top: 12px;

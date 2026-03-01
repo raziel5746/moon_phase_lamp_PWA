@@ -274,9 +274,9 @@ class MoonLamp {
             this.motorController.resetPosition();
         });
 
-        document.getElementById('calibrateBtn').addEventListener('click', () => {
+        document.getElementById('fullMoonBtn').addEventListener('click', () => {
             motorSettingsMenu.classList.remove('show');
-            this.motorController.calibrateMotor();
+            this.motorController.setMotorFullMoon();
         });
 
         const realMoonBtn = document.getElementById('realMoonBtn');
@@ -321,50 +321,6 @@ class MoonLamp {
             });
         }
 
-        // Calibration tab - LED test buttons
-        document.querySelectorAll('.led-test-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const ledIndex = parseInt(e.currentTarget.dataset.led);
-                // Toggle active state
-                const isActive = e.currentTarget.classList.toggle('active');
-                // Turn LED on or off (using hex color and brightness)
-                if (isActive) {
-                    await this.ledController.setIndividualLED(ledIndex, '#ffffff', 100);
-                } else {
-                    await this.ledController.setIndividualLED(ledIndex, '#000000', 0);
-                }
-            });
-        });
-
-        // Calibration tab - All LEDs ON
-        const calAllOnBtn = document.getElementById('calAllOnBtn');
-        if (calAllOnBtn) {
-            calAllOnBtn.addEventListener('click', async () => {
-                document.querySelectorAll('.led-test-btn').forEach(btn => btn.classList.add('active'));
-                for (let i = 0; i < 8; i++) {
-                    await this.ledController.setIndividualLED(i, '#ffffff', 100);
-                }
-            });
-        }
-
-        // Calibration tab - All LEDs OFF
-        const calAllOffBtn = document.getElementById('calAllOffBtn');
-        if (calAllOffBtn) {
-            calAllOffBtn.addEventListener('click', async () => {
-                document.querySelectorAll('.led-test-btn').forEach(btn => btn.classList.remove('active'));
-                for (let i = 0; i < 8; i++) {
-                    await this.ledController.setIndividualLED(i, '#000000', 0);
-                }
-            });
-        }
-
-        // Calibration tab - Reset Position
-        const calResetPositionBtn = document.getElementById('calResetPositionBtn');
-        if (calResetPositionBtn) {
-            calResetPositionBtn.addEventListener('click', () => {
-                this.motorController.resetPosition();
-            });
-        }
     }
 
     async connect() {

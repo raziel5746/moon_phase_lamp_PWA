@@ -25,8 +25,10 @@ export class AutomationsController {
                 const utcHour = value.getUint8(offset + 1);
                 const utcMinute = value.getUint8(offset + 2);
                 const { hour, minute } = getUtcToLocalTime(utcHour, utcMinute);
+                const enabledByte = value.getUint8(offset);
                 this.automations.push({
-                    enabled: value.getUint8(offset) !== 0,
+                    enabled: (enabledByte & 0x01) !== 0,
+                    fullLamp: ((enabledByte >> 1) & 0x01) !== 0,
                     hour,
                     minute,
                     hourUtc: utcHour,
@@ -45,14 +47,14 @@ export class AutomationsController {
         }
     }
 
-    async addAutomation(hour, minute, presetId, brightness, r = 0, g = 0, b = 0) {
+    async addAutomation(hour, minute, presetId, brightness, r = 0, g = 0, b = 0, fullLamp = false) {
         if (!this.bluetooth.hasCharacteristic('automations')) {
             console.warn('Automations characteristic not available');
             return;
         }
 
         try {
-            const data = new Uint8Array(8);
+            const data = new Uint8Array(9);
             data[0] = 0x01; // Add command
             const utc = getLocalToUtcTime(hour, minute);
             data[1] = utc.hour;
@@ -62,6 +64,7 @@ export class AutomationsController {
             data[5] = r;
             data[6] = g;
             data[7] = b;
+            data[8] = fullLamp ? 1 : 0;
 
             await this.bluetooth.writeCharacteristic('automations', data);
             console.log('Automation added:', hour + ':' + minute);
@@ -123,14 +126,14 @@ export class AutomationsController {
         }
     }
 
-    async updateAutomation(index, hour, minute, presetId, brightness) {
+    async updateAutomation(index, hour, minute, presetId, brightness, fullLamp = false) {
         if (!this.bluetooth.hasCharacteristic('automations')) {
             console.warn('Automations characteristic not available');
             return;
         }
 
         try {
-            const data = new Uint8Array(9);
+            const data = new Uint8Array(10);
             data[0] = 0x03; // Update command
             data[1] = index;
             const utc = getLocalToUtcTime(hour, minute);
@@ -141,6 +144,7 @@ export class AutomationsController {
             data[6] = 0;
             data[7] = 0;
             data[8] = 0;
+            data[9] = fullLamp ? 1 : 0;
 
             await this.bluetooth.writeCharacteristic('automations', data);
             console.log('Automation updated:', index);
@@ -177,7 +181,7 @@ export class AutomationsController {
                 <div class="automation-item ${auto.enabled ? '' : 'disabled'}" onclick="window.moonLamp.showEditAutomationDialog(${index})">
                     <div class="automation-info">
                         <span class="automation-time">${timeStr}</span>
-                        <span class="automation-preset">${presetName} @ ${brightnessToUI(auto.brightness)}%</span>
+                        <span class="automation-preset">${presetName} @ ${brightnessToUI(auto.brightness)}%${auto.fullLamp ? ' · Full' : ' · Phase'}</span>
                     </div>
                     <div class="automation-actions" onclick="event.stopPropagation()">
                         <label class="toggle-label small">
@@ -242,6 +246,13 @@ export class AutomationsController {
                     </div>
                     <input type="hidden" id="addAutomationBrightness" value="75">
                 </div>
+                <div class="form-row">
+                    <label class="toggle-label automation-full-lamp-label">
+                        <input type="checkbox" id="addFullLampToggle">
+                        <span>Full Lamp</span>
+                    </label>
+                    <span class="setting-description">When off, lamp uses Phase Mode (LEDs follow motor position)</span>
+                </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelAddBtn">Cancel</button>
                     <button class="btn btn-primary" id="confirmAddBtn">Add</button>
@@ -269,7 +280,8 @@ export class AutomationsController {
             
             if (time) {
                 const [hour, minute] = time.split(':').map(Number);
-                await this.addAutomation(hour, minute, preset, brightness);
+                const fullLamp = document.getElementById('addFullLampToggle').checked;
+                await this.addAutomation(hour, minute, preset, brightness, 0, 0, 0, fullLamp);
                 dialog.remove();
             }
         });
@@ -332,6 +344,13 @@ export class AutomationsController {
                     </div>
                     <input type="hidden" id="editAutomationBrightness" value="${brightnessPercent}">
                 </div>
+                <div class="form-row">
+                    <label class="toggle-label automation-full-lamp-label">
+                        <input type="checkbox" id="editFullLampToggle" ${auto.fullLamp ? 'checked' : ''}>
+                        <span>Full Lamp</span>
+                    </label>
+                    <span class="setting-description">When off, lamp uses Phase Mode (LEDs follow motor position)</span>
+                </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelEditBtn">Cancel</button>
                     <button class="btn btn-primary" id="saveEditBtn">Save</button>
@@ -359,7 +378,8 @@ export class AutomationsController {
             
             if (time) {
                 const [hour, minute] = time.split(':').map(Number);
-                await this.updateAutomation(index, hour, minute, preset, brightness);
+                const fullLamp = document.getElementById('editFullLampToggle').checked;
+                await this.updateAutomation(index, hour, minute, preset, brightness, fullLamp);
                 dialog.remove();
             }
         });

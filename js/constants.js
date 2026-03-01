@@ -17,6 +17,7 @@ export const FULL_MODE_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefd';
 export const MOTOR_ZERO_COMMAND = 361;
 export const MOTOR_CALIBRATE_COMMAND = 362;
 export const MOTOR_RESET_POSITION_COMMAND = 363;
+export const MOTOR_FULL_MOON_COMMAND = 364;
 
 // Default presets (shown even when disconnected)
 export const DEFAULT_PRESETS = [

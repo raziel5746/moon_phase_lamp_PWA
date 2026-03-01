@@ -475,15 +475,9 @@ export class PresetsController {
             if (btn) btn.classList.add('selected');
         }
 
-        // Convert brightness from 0-255 to percentage for button matching
-        const brightnessPercent = Math.round((brightness / 255) * 100);
-        // Find closest preset: 0, 25, 50, 75, 100
-        const presets = [0, 25, 50, 75, 100];
-        const closestPreset = presets.reduce((prev, curr) => 
-            Math.abs(curr - brightnessPercent) < Math.abs(prev - brightnessPercent) ? curr : prev
-        );
-        
-        const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${closestPreset}"]`);
+        // brightness is already 0-100 percentage (converted in handleLEDStateUpdate)
+        // Only highlight if it exactly matches a preset value
+        const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${brightness}"]`);
         if (brightnessBtn) {
             brightnessBtn.classList.add('active');
         }

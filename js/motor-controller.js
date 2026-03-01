@@ -1,5 +1,5 @@
 // Motor Controller
-import { MOTOR_ZERO_COMMAND, MOTOR_CALIBRATE_COMMAND, MOTOR_RESET_POSITION_COMMAND } from './constants.js';
+import { MOTOR_ZERO_COMMAND, MOTOR_CALIBRATE_COMMAND, MOTOR_RESET_POSITION_COMMAND, MOTOR_FULL_MOON_COMMAND } from './constants.js';
 import { Modal } from './modal.js';
 import { MOON_ICON_PATH_SVG, moonIconSvg } from './utils.js';
 
@@ -410,6 +410,28 @@ export class MotorController {
         } finally {
             // Restore original handler
             this.bluetooth.onMotorPositionUpdate = originalHandler;
+        }
+    }
+
+    async setMotorFullMoon() {
+        if (!this.bluetooth.hasCharacteristic('motorPosition')) {
+            Modal.warning('Not connected to lamp');
+            return;
+        }
+        try {
+            const data = new Uint16Array([MOTOR_FULL_MOON_COMMAND]);
+            console.log('Sending full moon command:', MOTOR_FULL_MOON_COMMAND);
+            await this.bluetooth.writeCharacteristic('motorPosition', data);
+            console.log('Motor full moon set command sent');
+
+            this.motorAngle = 180;
+            this.updateMotorPointer(180);
+            this.updateCurrentPosMarker(180);
+            document.getElementById('motorValue').textContent = '180°';
+            document.getElementById('currentPosition').textContent = '180°';
+        } catch (error) {
+            console.error('Failed to set motor full moon:', error);
+            Modal.error('Failed to set as full moon');
         }
     }
 

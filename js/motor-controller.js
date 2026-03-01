@@ -11,6 +11,8 @@ export class MotorController {
         this.moonPositionAngle = 0;
         this.autoTrackingEnabled = true;
         this.autoTrackingInterval = 60;
+        this._currentPosAccum = 0;
+        this.onAutoTrackingChange = null;
 
         // Handle motor position notifications (e.g., after calibration)
         this.bluetooth.onMotorPositionUpdate = (dataView) => {
@@ -264,9 +266,17 @@ export class MotorController {
 
     updateCurrentPosMarker(angle) {
         const marker = document.getElementById('currentPosMarker');
-        if (marker) {
-            marker.style.transform = `rotate(${angle}deg)`;
-        }
+        if (!marker) return;
+
+        const targetNorm = ((angle % 360) + 360) % 360;
+        const currentNorm = ((this._currentPosAccum % 360) + 360) % 360;
+        let delta = targetNorm - currentNorm;
+
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+
+        this._currentPosAccum += delta;
+        marker.style.transform = `rotate(${this._currentPosAccum}deg)`;
     }
 
     updateMoonMarker(degrees) {
@@ -528,6 +538,7 @@ export class MotorController {
             this.autoTrackingEnabled = enabled;
             this.autoTrackingInterval = intervalMinutes;
             this.updateAutoTrackingLabel();
+            if (this.onAutoTrackingChange) this.onAutoTrackingChange();
         } catch (error) {
             console.error('Failed to read auto tracking:', error);
         }
@@ -537,6 +548,7 @@ export class MotorController {
         this.autoTrackingEnabled = enabled;
         this.autoTrackingInterval = intervalMinutes;
         this.updateAutoTrackingLabel();
+        if (this.onAutoTrackingChange) this.onAutoTrackingChange();
 
         if (!this.bluetooth.hasCharacteristic('autoTracking')) {
             console.warn('Auto tracking characteristic not available');
@@ -564,7 +576,7 @@ export class MotorController {
     updateAutoTrackingLabel() {
         const label = document.getElementById('autoTrackingLabel');
         if (!label) return;
-        label.textContent = this.autoTrackingEnabled ? this._formatInterval(this.autoTrackingInterval) : '';
+        label.textContent = this.autoTrackingEnabled ? this._formatInterval(this.autoTrackingInterval) : '\u00A0';
     }
 
     showAutoTrackingModal() {

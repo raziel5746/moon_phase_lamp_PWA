@@ -6,7 +6,7 @@ import { PresetsController } from './presets.js';
 import { AutomationsController } from './automations.js';
 import { UIController } from './ui.js';
 import { Modal } from './modal.js';
-import { moonIconSvg } from './utils.js';
+import { moonIconSvg, MOON_ICON_PATH, MOON_FULL_PATH } from './utils.js';
 import { MotorPresetsController } from './motor-presets.js';
 import { SettingsController } from './settings-controller.js';
 import { AuthController } from './auth.js';
@@ -57,6 +57,9 @@ class MoonLamp {
 
         const titleIcon = document.getElementById('titleMoonIcon');
         if (titleIcon) titleIcon.innerHTML = moonIconSvg(40);
+        this._updateTitleMoonIcon();
+        this.settingsController.onFullModeChange = () => this._updateTitleMoonIcon();
+        this.motorController.onAutoTrackingChange = () => this._updateTitleMoonIcon();
         this.motorController.createMotorDial();
         this.motorController.setupDialInteraction();
         this.uiController.updateConnectionStatus('disconnected');
@@ -66,6 +69,16 @@ class MoonLamp {
         requestAnimationFrame(() => this.updateBrightnessSlider(50));
         await this.uiController.loadAppVersion();
         this.uiController.registerServiceWorker();
+    }
+
+    _updateTitleMoonIcon() {
+        const titleIcon = document.getElementById('titleMoonIcon');
+        if (!titleIcon) return;
+        const pathEl = titleIcon.querySelector('svg path');
+        if (pathEl) {
+            pathEl.setAttribute('d', this.settingsController.fullModeEnabled ? MOON_FULL_PATH : MOON_ICON_PATH);
+        }
+        titleIcon.style.color = this.motorController.autoTrackingEnabled ? 'var(--accent)' : '';
     }
 
     _handleConnectionChange(state) {
@@ -111,7 +124,7 @@ class MoonLamp {
         // Settings controller (Full Mode toggle)
         this.settingsController.setupEventListeners();
 
-        // Settings modal via title click / long-press to toggle Lamp Mode
+        // Settings modal via title click / long-press to toggle auto-tracking
         const appTitle = document.querySelector('.app-title');
         let titleHoldTimer = null;
         let titleWasHeld = false;
@@ -120,9 +133,10 @@ class MoonLamp {
             titleWasHeld = false;
             titleHoldTimer = setTimeout(() => {
                 titleWasHeld = true;
-                if (this.bluetooth.isConnected) {
-                    this.settingsController.toggleFullMode();
-                }
+                this.motorController.setAutoTracking(
+                    !this.motorController.autoTrackingEnabled,
+                    this.motorController.autoTrackingInterval
+                );
             }, 600);
         };
 
@@ -155,8 +169,29 @@ class MoonLamp {
             }
         });
 
-        // Bluetooth connection via status badge
-        document.getElementById('connectionStatus').addEventListener('click', async () => {
+        // Bluetooth connection via status badge (tap = connect/disconnect, hold = toggle Lamp Mode)
+        const connBtn = document.getElementById('connectionStatus');
+        let connHoldTimer = null;
+        let connHeldTriggered = false;
+
+        const startConnHold = () => {
+            connHeldTriggered = false;
+            connHoldTimer = setTimeout(() => {
+                connHeldTriggered = true;
+                this.settingsController.toggleFullMode();
+            }, 600);
+        };
+        const cancelConnHold = () => { clearTimeout(connHoldTimer); };
+
+        connBtn.addEventListener('touchstart', startConnHold, { passive: true });
+        connBtn.addEventListener('touchend', cancelConnHold, { passive: true });
+        connBtn.addEventListener('touchmove', cancelConnHold, { passive: true });
+        connBtn.addEventListener('mousedown', startConnHold);
+        connBtn.addEventListener('mouseup', cancelConnHold);
+        connBtn.addEventListener('mouseleave', cancelConnHold);
+
+        connBtn.addEventListener('click', async () => {
+            if (connHeldTriggered) return;
             if (this.bluetooth.isConnecting || this._isReadingState) {
                 const confirmed = await Modal.confirm('Cancel connection attempt?', 'Cancel');
                 if (confirmed) {
@@ -200,8 +235,31 @@ class MoonLamp {
         // Tabs
         const tabOrder = ['presets', 'motor', 'automations'];
 
+        // Hold Presets tab to toggle theme
+        let presetsHoldTimer = null;
+        let presetsHeldTriggered = false;
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.dataset.tab === 'presets') {
+                const startPresetsHold = () => {
+                    presetsHeldTriggered = false;
+                    presetsHoldTimer = setTimeout(() => {
+                        presetsHeldTriggered = true;
+                        this.uiController.toggleTheme();
+                    }, 600);
+                };
+                const cancelPresetsHold = () => { clearTimeout(presetsHoldTimer); };
+
+                btn.addEventListener('touchstart', startPresetsHold, { passive: true });
+                btn.addEventListener('touchend', cancelPresetsHold, { passive: true });
+                btn.addEventListener('touchmove', cancelPresetsHold, { passive: true });
+                btn.addEventListener('mousedown', startPresetsHold);
+                btn.addEventListener('mouseup', cancelPresetsHold);
+                btn.addEventListener('mouseleave', cancelPresetsHold);
+            }
+
             btn.addEventListener('click', (e) => {
+                if (e.currentTarget.dataset.tab === 'presets' && presetsHeldTriggered) return;
                 const tabName = this.uiController.switchTab(e.currentTarget.dataset.tab);
                 if (tabName === 'custom') {
                     requestAnimationFrame(() => this.ledController.updateLEDLayout());

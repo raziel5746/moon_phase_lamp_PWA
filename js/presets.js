@@ -323,6 +323,9 @@ export class PresetsController {
 
         const currentHex = `#${preset.r.toString(16).padStart(2, '0')}${preset.g.toString(16).padStart(2, '0')}${preset.b.toString(16).padStart(2, '0')}`;
 
+        // Save original LED states for restore on cancel
+        const originalStates = this.ledController.ledStates.map(s => ({ ...s }));
+
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
         dialog.innerHTML = `
@@ -354,8 +357,34 @@ export class PresetsController {
             ]
         });
 
+        // Live preview: send color to lamp when user releases finger/mouse
+        const sendPreview = async (color) => {
+            if (!this.bluetooth.hasCharacteristic('ledCustom')) return;
+            const brightness = originalStates[0]?.brightness ?? 75;
+            const mappedBrightness = Math.round(brightness * 255 / 100);
+            // Index 0xFF = set all LEDs at once (single BLE write)
+            const data = new Uint8Array([0xFF, color.red, color.green, color.blue, mappedBrightness]);
+            await this.bluetooth.writeCharacteristic('ledCustom', data);
+        };
+
+        colorPicker.on('input:end', (color) => {
+            sendPreview(color);
+        });
+
+        // Restore original color on cancel
+        const restoreOriginal = async () => {
+            if (!this.bluetooth.hasCharacteristic('ledCustom')) return;
+            for (let i = 0; i < 8; i++) {
+                const s = originalStates[i];
+                const mappedBrightness = Math.round(s.brightness * 255 / 100);
+                const data = new Uint8Array([i, s.r, s.g, s.b, mappedBrightness]);
+                await this.bluetooth.writeCharacteristic('ledCustom', data);
+            }
+        };
+
         document.getElementById('cancelEditPresetBtn').addEventListener('click', () => {
             dialog.remove();
+            restoreOriginal();
         });
 
         document.getElementById('saveEditPresetBtn').addEventListener('click', () => {
@@ -371,7 +400,10 @@ export class PresetsController {
         });
 
         dialog.addEventListener('click', (e) => {
-            if (e.target === dialog) dialog.remove();
+            if (e.target === dialog) {
+                dialog.remove();
+                restoreOriginal();
+            }
         });
     }
 

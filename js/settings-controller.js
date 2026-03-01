@@ -4,7 +4,7 @@ import { Modal } from './modal.js';
 export class SettingsController {
     constructor(bluetooth) {
         this.bluetooth = bluetooth;
-        this.fullModeEnabled = true;  // Default to Full Mode
+        this.fullModeEnabled = false;  // Default OFF until read from device
         this.onFullModeChange = null;  // Callback when fullMode changes
         this.authController = null;   // Set by app.js
         this.securityEnabled = true;  // Default to security ON
@@ -21,6 +21,9 @@ export class SettingsController {
             this.fullModeEnabled = value.getUint8(0) !== 0;
             console.log('[Settings] Full Mode read:', this.fullModeEnabled ? 'ON' : 'OFF');
             this.updateUI();
+            if (this.onFullModeChange) {
+                this.onFullModeChange(this.fullModeEnabled);
+            }
             return this.fullModeEnabled;
         } catch (error) {
             console.error('[Settings] Failed to read Full Mode:', error);
@@ -29,22 +32,20 @@ export class SettingsController {
     }
 
     async setFullMode(enabled) {
+        this.fullModeEnabled = enabled;
+        this.updateUI();
+        if (this.onFullModeChange) {
+            this.onFullModeChange(enabled);
+        }
+
         if (!this.bluetooth.hasCharacteristic('fullMode')) {
-            Modal.warning('Not connected to lamp');
             return false;
         }
 
         try {
             const data = new Uint8Array([enabled ? 1 : 0]);
             await this.bluetooth.writeCharacteristic('fullMode', data);
-            this.fullModeEnabled = enabled;
             console.log('[Settings] Full Mode set:', enabled ? 'ON' : 'OFF');
-            this.updateUI();
-            
-            if (this.onFullModeChange) {
-                this.onFullModeChange(enabled);
-            }
-            
             return true;
         } catch (error) {
             console.error('[Settings] Failed to set Full Mode:', error);

@@ -3,6 +3,9 @@
 // Moon icon — crescent path in a 24x24 viewBox
 export const MOON_ICON_PATH = 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z';
 
+// Full moon (filled disk) path in a 24x24 viewBox
+export const MOON_FULL_PATH = 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z';
+
 // Moon icon path pre-scaled for SVG coordinate space (centered at 0,0, radius ~9)
 // Used when embedding directly into an SVG element via createElementNS
 export const MOON_ICON_PATH_SVG = 'M9,0.79A9,9,0,1,1,-0.79,-9 7,7,0,0,0,9,0.79Z';

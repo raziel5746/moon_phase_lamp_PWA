@@ -1,5 +1,5 @@
 // Motor Controller
-import { MOTOR_ZERO_COMMAND, MOTOR_CALIBRATE_COMMAND } from './constants.js';
+import { MOTOR_ZERO_COMMAND, MOTOR_CALIBRATE_COMMAND, MOTOR_RESET_POSITION_COMMAND } from './constants.js';
 import { Modal } from './modal.js';
 import { MOON_ICON_PATH_SVG, moonIconSvg } from './utils.js';
 
@@ -409,6 +409,70 @@ export class MotorController {
             Modal.error('Failed to start calibration');
         } finally {
             // Restore original handler
+            this.bluetooth.onMotorPositionUpdate = originalHandler;
+        }
+    }
+
+    async resetPosition() {
+        if (!this.bluetooth.hasCharacteristic('motorPosition')) {
+            Modal.warning('Not connected to lamp');
+            return;
+        }
+
+        // Show a persistent loading indicator
+        const loadingDialog = document.createElement('div');
+        loadingDialog.className = 'preset-dialog';
+        loadingDialog.innerHTML = `
+            <div class="preset-dialog-content" style="text-align:center;">
+                <h3>Reset Position</h3>
+                <p class="info-text">Finding Hall sensor and setting position to 0°. This may take up to a minute.</p>
+                <div class="ring-spinner" style="margin:16px auto;"></div>
+            </div>
+        `;
+        document.body.appendChild(loadingDialog);
+
+        // Listen for the motor position notification that signals reset is done
+        const originalHandler = this.bluetooth.onMotorPositionUpdate;
+        const resetPromise = new Promise((resolve) => {
+            const timeout = setTimeout(() => resolve('timeout'), 90000);
+            this.bluetooth.onMotorPositionUpdate = (dataView) => {
+                clearTimeout(timeout);
+                const degrees = dataView.getUint16(0, true);
+                if (degrees === 0xFFFF) {
+                    console.log('Reset position failed - Hall sensor not found');
+                    resolve('failed');
+                    return;
+                }
+                console.log('Reset position complete, position:', degrees + '°');
+                this.motorAngle = degrees;
+                this.updateMotorPointer(degrees);
+                this.updateCurrentPosMarker(degrees);
+                document.getElementById('motorValue').textContent = degrees + '°';
+                document.getElementById('currentPosition').textContent = degrees + '°';
+                resolve('success');
+            };
+        });
+
+        try {
+            const data = new Uint16Array([MOTOR_RESET_POSITION_COMMAND]);
+            await this.bluetooth.writeCharacteristic('motorPosition', data);
+            console.log('Reset position command sent');
+
+            const result = await resetPromise;
+            loadingDialog.remove();
+
+            if (result === 'success') {
+                Modal.success('Position reset! The motor is now at the Hall sensor position (0°).', 'Reset Complete');
+            } else if (result === 'failed') {
+                Modal.error('Reset failed. The Hall effect sensor was not detected.');
+            } else {
+                Modal.warning('Reset timed out. Check the serial monitor for details.');
+            }
+        } catch (error) {
+            loadingDialog.remove();
+            console.error('Failed to reset position:', error);
+            Modal.error('Failed to reset position');
+        } finally {
             this.bluetooth.onMotorPositionUpdate = originalHandler;
         }
     }

@@ -422,8 +422,18 @@ export class PresetsController {
     }
 
     updatePresetFeedback(ledStates) {
-        const firstLed = ledStates[0];
-        const allSame = ledStates.every(led =>
+        // Filter to only lit LEDs (brightness > 0) for Phase Mode support
+        const litLeds = ledStates.filter(led => led.brightness > 0);
+        
+        // If no LEDs are lit, clear all feedback
+        if (litLeds.length === 0) {
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active', 'selected'));
+            document.querySelectorAll('.brightness-btn').forEach(btn => btn.classList.remove('active'));
+            return;
+        }
+        
+        const firstLed = litLeds[0];
+        const allSame = litLeds.every(led =>
             led.r === firstLed.r &&
             led.g === firstLed.g &&
             led.b === firstLed.b &&
@@ -465,7 +475,15 @@ export class PresetsController {
             if (btn) btn.classList.add('selected');
         }
 
-        const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${brightness}"]`);
+        // Convert brightness from 0-255 to percentage for button matching
+        const brightnessPercent = Math.round((brightness / 255) * 100);
+        // Find closest preset: 0, 25, 50, 75, 100
+        const presets = [0, 25, 50, 75, 100];
+        const closestPreset = presets.reduce((prev, curr) => 
+            Math.abs(curr - brightnessPercent) < Math.abs(prev - brightnessPercent) ? curr : prev
+        );
+        
+        const brightnessBtn = document.querySelector(`.brightness-btn[data-brightness="${closestPreset}"]`);
         if (brightnessBtn) {
             brightnessBtn.classList.add('active');
         }

@@ -8,6 +8,7 @@ import { UIController } from './ui.js';
 import { Modal } from './modal.js';
 import { moonIconSvg } from './utils.js';
 import { MotorPresetsController } from './motor-presets.js';
+import { SettingsController } from './settings-controller.js';
 
 // Fix for Chrome Android PWA viewport height bug
 // Chrome miscalculates viewport height on reload in standalone mode
@@ -28,6 +29,7 @@ class MoonLamp {
         this.automationsController = new AutomationsController(this.bluetooth, this.presetsController);
         this.motorPresetsController = new MotorPresetsController(this.motorController);
         this.motorController.motorPresetsController = this.motorPresetsController;
+        this.settingsController = new SettingsController(this.bluetooth);
         this.uiController = new UIController(this.bluetooth);
         this._isReadingState = false;
 
@@ -94,6 +96,9 @@ class MoonLamp {
     }
 
     setupEventListeners() {
+        // Settings controller (Full Mode toggle)
+        this.settingsController.setupEventListeners();
+
         // Settings modal via title click (always available)
         document.querySelector('.app-title').addEventListener('click', () => {
             this.uiController.showSettingsModal(this.bluetooth.isConnected);
@@ -264,6 +269,11 @@ class MoonLamp {
             this.motorController.setMotorZero();
         });
 
+        document.getElementById('resetPositionBtn').addEventListener('click', () => {
+            motorSettingsMenu.classList.remove('show');
+            this.motorController.resetPosition();
+        });
+
         document.getElementById('calibrateBtn').addEventListener('click', () => {
             motorSettingsMenu.classList.remove('show');
             this.motorController.calibrateMotor();
@@ -310,6 +320,51 @@ class MoonLamp {
                 this.motorController.cycleMotorSpeed();
             });
         }
+
+        // Calibration tab - LED test buttons
+        document.querySelectorAll('.led-test-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const ledIndex = parseInt(e.currentTarget.dataset.led);
+                // Toggle active state
+                const isActive = e.currentTarget.classList.toggle('active');
+                // Turn LED on or off (using hex color and brightness)
+                if (isActive) {
+                    await this.ledController.setIndividualLED(ledIndex, '#ffffff', 100);
+                } else {
+                    await this.ledController.setIndividualLED(ledIndex, '#000000', 0);
+                }
+            });
+        });
+
+        // Calibration tab - All LEDs ON
+        const calAllOnBtn = document.getElementById('calAllOnBtn');
+        if (calAllOnBtn) {
+            calAllOnBtn.addEventListener('click', async () => {
+                document.querySelectorAll('.led-test-btn').forEach(btn => btn.classList.add('active'));
+                for (let i = 0; i < 8; i++) {
+                    await this.ledController.setIndividualLED(i, '#ffffff', 100);
+                }
+            });
+        }
+
+        // Calibration tab - All LEDs OFF
+        const calAllOffBtn = document.getElementById('calAllOffBtn');
+        if (calAllOffBtn) {
+            calAllOffBtn.addEventListener('click', async () => {
+                document.querySelectorAll('.led-test-btn').forEach(btn => btn.classList.remove('active'));
+                for (let i = 0; i < 8; i++) {
+                    await this.ledController.setIndividualLED(i, '#000000', 0);
+                }
+            });
+        }
+
+        // Calibration tab - Reset Position
+        const calResetPositionBtn = document.getElementById('calResetPositionBtn');
+        if (calResetPositionBtn) {
+            calResetPositionBtn.addEventListener('click', () => {
+                this.motorController.resetPosition();
+            });
+        }
     }
 
     async connect() {
@@ -334,6 +389,7 @@ class MoonLamp {
                     await this.automationsController.readAutomations();
                     await this.presetsController.readCustomPresets();
                     await this.uiController.readDeviceName();
+                    await this.settingsController.readFullMode();
                     if (this.bluetooth.abortConnection) return;
 
                     // Always recalculate moon angle on connection and apply to lamp

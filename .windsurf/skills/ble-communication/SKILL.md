@@ -21,6 +21,7 @@ All UUIDs are defined in `js/constants.js`. Always import from there — never h
 | Custom Presets       | `...cdefa`  | Read + Write | — |
 | Device Name          | `...cdefb`  | Read + Write | — |
 | Motor Speed          | `...cdefc`  | Write     | Fast (no-response) |
+| Full Mode            | `...cdefd`  | Read + Write + Notify | — |
 
 ## BluetoothManager API (`js/bluetooth.js`)
 ```js
@@ -33,7 +34,7 @@ bluetooth.hasCharacteristic(name)      // Check before reading/writing
 ```
 
 Characteristic name strings (key used in `this.characteristics` map):
-`ledState`, `colorPreset`, `brightness`, `ledCustom`, `motorPosition`, `timeSync`, `autoTracking`, `automations`, `customPresets`, `deviceName`, `motorSpeed`
+`ledState`, `colorPreset`, `brightness`, `ledCustom`, `motorPosition`, `timeSync`, `autoTracking`, `automations`, `customPresets`, `deviceName`, `motorSpeed`, `fullMode`
 
 ## GATT Queue
 All GATT operations go through `_gattQueue` to serialize BLE calls (BLE GATT is single-threaded). Use `bluetooth.writeCharacteristic()` — never call `characteristic.writeValue()` directly.

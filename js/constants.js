@@ -11,10 +11,12 @@ export const AUTOMATIONS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdef8';
 export const CUSTOM_PRESETS_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefa';
 export const DEVICE_NAME_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefb';
 export const MOTOR_SPEED_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefc';
+export const FULL_MODE_CHAR_UUID = '12345678-1234-5678-1234-56789abcdefd';
 
 // Motor commands
 export const MOTOR_ZERO_COMMAND = 361;
 export const MOTOR_CALIBRATE_COMMAND = 362;
+export const MOTOR_RESET_POSITION_COMMAND = 363;
 
 // Default presets (shown even when disconnected)
 export const DEFAULT_PRESETS = [

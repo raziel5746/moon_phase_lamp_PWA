@@ -10,7 +10,8 @@ import {
     AUTOMATIONS_CHAR_UUID,
     CUSTOM_PRESETS_CHAR_UUID,
     DEVICE_NAME_CHAR_UUID,
-    MOTOR_SPEED_CHAR_UUID
+    MOTOR_SPEED_CHAR_UUID,
+    FULL_MODE_CHAR_UUID
 } from './constants.js';
 
 // Characteristics safe for write-without-response (fire-and-forget, no confirmation needed)
@@ -168,7 +169,8 @@ export class BluetoothManager {
                     ['automations', AUTOMATIONS_CHAR_UUID],
                     ['customPresets', CUSTOM_PRESETS_CHAR_UUID],
                     ['deviceName', DEVICE_NAME_CHAR_UUID],
-                    ['motorSpeed', MOTOR_SPEED_CHAR_UUID]
+                    ['motorSpeed', MOTOR_SPEED_CHAR_UUID],
+                    ['fullMode', FULL_MODE_CHAR_UUID]
                 ];
 
                 for (let i = 0; i < charMap.length; i++) {

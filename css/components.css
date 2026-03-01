@@ -250,7 +250,7 @@
     margin-bottom: 12px;
 }
 
-.form-row label {
+.form-row label:not(.toggle-switch) {
     min-width: 80px;
     color: var(--text-secondary);
     font-size: 0.9em;
@@ -499,7 +499,14 @@
 
 /* Settings Card */
 .settings-card {
-    margin-top: 12px;
+    margin-top: 0;
+    padding: 12px 16px;
+}
+
+.mode-label {
+    font-weight: 500;
+    font-size: 0.95em;
+    color: var(--text);
 }
 
 .settings-row {
@@ -527,12 +534,12 @@
     line-height: 1.4;
 }
 
-/* Toggle Switch */
+/* Toggle Switch — Compact Accent Pill (Design B) */
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 48px;
-    height: 26px;
+    width: 40px;
+    height: 22px;
     flex-shrink: 0;
 }
 
@@ -550,29 +557,29 @@
     right: 0;
     bottom: 0;
     background-color: var(--surface);
-    border: 1px solid var(--border);
-    transition: 0.2s;
-    border-radius: 26px;
+    border: 1.5px solid var(--glass-border);
+    transition: 0.25s;
+    border-radius: 22px;
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 20px;
-    width: 20px;
+    height: 16px;
+    width: 16px;
     left: 2px;
-    bottom: 2px;
+    top: 2px;
     background-color: var(--text-secondary);
-    transition: 0.2s;
+    transition: 0.25s;
     border-radius: 50%;
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background-color: var(--primary);
-    border-color: var(--primary);
+    background-color: var(--accent);
+    border-color: var(--accent);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
-    transform: translateX(22px);
+    transform: translateX(18px);
     background-color: white;
 }

@@ -173,20 +173,25 @@ export class AutomationsController {
         
         container.innerHTML = sortedAutomations.map(({ auto, index }) => {
             const timeStr = formatTime(auto.hour, auto.minute);
-            const presetName = presets && presets[auto.presetId] 
-                ? presets[auto.presetId].name 
+            const preset = presets && presets[auto.presetId] ? presets[auto.presetId] : null;
+            const presetName = preset 
+                ? preset.name 
                 : (auto.presetId < presetNames.length ? presetNames[auto.presetId] : 'Custom');
+            const presetColor = preset 
+                ? `rgb(${preset.r},${preset.g},${preset.b})` 
+                : (auto.presetId < presetNames.length ? this._getDefaultPresetColor(auto.presetId) : '#888');
             
             return `
                 <div class="automation-item ${auto.enabled ? '' : 'disabled'}" onclick="window.moonLamp.showEditAutomationDialog(${index})">
                     <div class="automation-info">
                         <span class="automation-time">${timeStr}</span>
-                        <span class="automation-preset">${presetName} @ ${brightnessToUI(auto.brightness)}%${auto.fullLamp ? ' · Full' : ' · Phase'}</span>
+                        <span class="automation-preset"><span class="automation-preset-swatch" style="background:${presetColor}"></span>${presetName} @ ${brightnessToUI(auto.brightness)}%${auto.fullLamp ? ' <svg class="automation-lamp-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>' : ''}</span>
                     </div>
                     <div class="automation-actions" onclick="event.stopPropagation()">
-                        <label class="toggle-label small">
+                        <label class="toggle-switch">
                             <input type="checkbox" ${auto.enabled ? 'checked' : ''} 
                                    onchange="window.moonLamp.toggleAutomation(${index}, this.checked)">
+                            <span class="toggle-slider"></span>
                         </label>
                         <button class="btn-icon delete-btn" onclick="window.moonLamp.removeAutomation(${index})">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -246,12 +251,12 @@ export class AutomationsController {
                     </div>
                     <input type="hidden" id="addAutomationBrightness" value="75">
                 </div>
-                <div class="form-row">
-                    <label class="toggle-label automation-full-lamp-label">
+                <div class="form-row automation-mode-row">
+                    <span class="automation-mode-label">Lamp Mode</span>
+                    <label class="toggle-switch">
                         <input type="checkbox" id="addFullLampToggle">
-                        <span>Full Lamp</span>
+                        <span class="toggle-slider"></span>
                     </label>
-                    <span class="setting-description">When off, lamp uses Phase Mode (LEDs follow motor position)</span>
                 </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelAddBtn">Cancel</button>
@@ -344,12 +349,12 @@ export class AutomationsController {
                     </div>
                     <input type="hidden" id="editAutomationBrightness" value="${brightnessPercent}">
                 </div>
-                <div class="form-row">
-                    <label class="toggle-label automation-full-lamp-label">
+                <div class="form-row automation-mode-row">
+                    <span class="automation-mode-label">Lamp Mode</span>
+                    <label class="toggle-switch">
                         <input type="checkbox" id="editFullLampToggle" ${auto.fullLamp ? 'checked' : ''}>
-                        <span>Full Lamp</span>
+                        <span class="toggle-slider"></span>
                     </label>
-                    <span class="setting-description">When off, lamp uses Phase Mode (LEDs follow motor position)</span>
                 </div>
                 <div class="dialog-buttons">
                     <button class="btn" id="cancelEditBtn">Cancel</button>
@@ -478,5 +483,16 @@ export class AutomationsController {
         document.addEventListener('touchmove', (e) => { if (isDragging) { updateSlider(calcPercent(e)); e.preventDefault(); } }, { passive: false });
         document.addEventListener('mouseup', () => { isDragging = false; });
         document.addEventListener('touchend', () => { isDragging = false; });
+    }
+
+    _getDefaultPresetColor(presetId) {
+        const colors = [
+            'rgb(255,220,150)', // Warm White
+            'rgb(255,100,0)',   // Sunset
+            'rgb(0,100,255)',   // Ocean Blue
+            'rgb(255,0,100)',   // Pink Dream
+            'rgb(100,255,100)'  // Forest Green
+        ];
+        return colors[presetId] || '#888';
     }
 }

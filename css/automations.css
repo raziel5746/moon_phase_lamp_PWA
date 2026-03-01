@@ -57,6 +57,28 @@
 .automation-preset {
     font-size: 0.85em;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.automation-preset-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.5px solid var(--glass-border);
+}
+
+[data-theme="light"] .automation-preset-swatch {
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.automation-lamp-icon {
+    vertical-align: middle;
+    margin-left: 2px;
+    opacity: 0.7;
+    color: var(--accent);
 }
 
 .automation-actions {
@@ -186,4 +208,16 @@
     border: 2px solid white;
     flex-shrink: 0;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.automation-mode-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.automation-mode-label {
+    font-size: 0.95em;
+    font-weight: 500;
+    color: var(--text);
 }

@@ -77,8 +77,8 @@ class MoonLamp {
             await this.motorController.readMotorPosition();
             await this.motorController.readAutoTracking();
             await this.motorController.readMotorSpeed();
-            await this.automationsController.readAutomations();
             await this.presetsController.readCustomPresets();
+            await this.automationsController.readAutomations();
             await this.uiController.readDeviceName();
             this.presetsController.updatePresetFeedback(this.ledController.ledStates);
             const currentBrightness = this.ledController.ledStates[0]?.brightness || 50;
@@ -99,8 +99,40 @@ class MoonLamp {
         // Settings controller (Full Mode toggle)
         this.settingsController.setupEventListeners();
 
-        // Settings modal via title click (always available)
-        document.querySelector('.app-title').addEventListener('click', () => {
+        // Settings modal via title click / long-press to toggle Lamp Mode
+        const appTitle = document.querySelector('.app-title');
+        let titleHoldTimer = null;
+        let titleWasHeld = false;
+
+        const startTitleHold = () => {
+            titleWasHeld = false;
+            titleHoldTimer = setTimeout(() => {
+                titleWasHeld = true;
+                if (this.bluetooth.isConnected) {
+                    this.settingsController.toggleFullMode();
+                }
+            }, 600);
+        };
+
+        const cancelTitleHold = () => {
+            if (titleHoldTimer) {
+                clearTimeout(titleHoldTimer);
+                titleHoldTimer = null;
+            }
+        };
+
+        appTitle.addEventListener('mousedown', startTitleHold);
+        appTitle.addEventListener('touchstart', (e) => { startTitleHold(); }, { passive: true });
+        appTitle.addEventListener('mouseup', cancelTitleHold);
+        appTitle.addEventListener('touchend', cancelTitleHold);
+        appTitle.addEventListener('mouseleave', cancelTitleHold);
+        appTitle.addEventListener('touchcancel', cancelTitleHold);
+
+        appTitle.addEventListener('click', (e) => {
+            if (titleWasHeld) {
+                titleWasHeld = false;
+                return;
+            }
             this.uiController.showSettingsModal(this.bluetooth.isConnected);
         });
 

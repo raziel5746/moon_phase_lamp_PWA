@@ -60,11 +60,6 @@ export class SettingsController {
         if (toggle) {
             toggle.checked = this.fullModeEnabled;
         }
-        
-        const label = document.getElementById('fullModeLabel');
-        if (label) {
-            label.textContent = this.fullModeEnabled ? 'Full Mode' : 'Phase Mode';
-        }
     }
 
     setupEventListeners() {

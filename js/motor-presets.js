@@ -2,35 +2,51 @@
 import { moonAngleSvg } from './utils.js';
 import { Modal } from './modal.js';
 
-const STORAGE_KEY = 'motorPositionPresets';
-
 const DEFAULT_MOTOR_PRESETS = [
-    { angle: 0,   name: 'New Moon' },
-    { angle: 90,  name: 'First Quarter' },
-    { angle: 180, name: 'Full Moon' },
-    { angle: 270, name: 'Last Quarter' },
+    { id: 0, angle: 0,   name: 'New Moon',       isDefault: true },
+    { id: 1, angle: 90,  name: 'First Quarter',  isDefault: true },
+    { id: 2, angle: 180, name: 'Full Moon',       isDefault: true },
+    { id: 3, angle: 270, name: 'Last Quarter',    isDefault: true },
 ];
 
 export class MotorPresetsController {
-    constructor(motorController) {
+    constructor(bluetooth, motorController) {
+        this.bluetooth = bluetooth;
         this.motorController = motorController;
-        this.presets = this._loadPresets();
+        this.presets = DEFAULT_MOTOR_PRESETS.map(p => ({ ...p }));
         this.deleteMode = false;
         this.holdTimer = null;
     }
 
-    _loadPresets() {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) return JSON.parse(stored);
-        } catch (e) { /* ignore */ }
-        return DEFAULT_MOTOR_PRESETS.map(p => ({ ...p }));
-    }
+    async readMotorPresets() {
+        if (!this.bluetooth.hasCharacteristic('motorPresets')) {
+            console.log('Motor presets characteristic not available');
+            return;
+        }
 
-    _savePresets() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.presets));
-        } catch (e) { /* ignore */ }
+            const value = await this.bluetooth.readCharacteristic('motorPresets');
+            const count = value.getUint8(0);
+            console.log('Motor presets count:', count);
+
+            this.presets = [];
+            let offset = 1;
+            for (let i = 0; i < count; i++) {
+                const id = value.getUint8(offset);
+                const angle = (value.getUint8(offset + 1) << 8) | value.getUint8(offset + 2);
+                const nameLen = value.getUint8(offset + 3);
+                let name = '';
+                for (let j = 0; j < nameLen; j++) {
+                    name += String.fromCharCode(value.getUint8(offset + 4 + j));
+                }
+                this.presets.push({ id, angle, name, isDefault: i < 4 });
+                offset += 4 + nameLen;
+            }
+
+            this.renderPresets();
+        } catch (error) {
+            console.error('Failed to read motor presets:', error);
+        }
     }
 
     renderPresets() {
@@ -40,14 +56,13 @@ export class MotorPresetsController {
         let html = this.presets.map((preset, index) => {
             const moonSvg = moonAngleSvg(preset.angle, 44);
             const label = preset.name || `${preset.angle}°`;
-            const isDefault = index < DEFAULT_MOTOR_PRESETS.length;
-            const canDelete = !isDefault || this.presets.length > 1;
+            const canDelete = !preset.isDefault;
             return `
                 <button class="motor-preset-btn${this.deleteMode && canDelete ? ' delete-mode' : ''}" data-index="${index}">
                     <div class="motor-preset-moon">${moonSvg}</div>
                     <span class="motor-preset-label">${label}</span>
                     <span class="motor-preset-angle">${preset.angle}°</span>
-                    ${this.deleteMode && canDelete ? `
+                    ${this.deleteMode && !preset.isDefault ? `
                         <div class="motor-preset-trash">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
@@ -57,12 +72,15 @@ export class MotorPresetsController {
                 </button>`;
         }).join('');
 
-        html += `
-            <button class="motor-preset-btn motor-preset-add${this.deleteMode ? ' motor-preset-add-disabled' : ''}" id="addMotorPresetBtn"${this.deleteMode ? ' disabled' : ''}>
-                <div class="motor-preset-moon">+</div>
-                <span class="motor-preset-label">Add Custom</span>
-                <span class="motor-preset-angle">&nbsp;</span>
-            </button>`;
+        const customCount = this.presets.filter(p => !p.isDefault).length;
+        if (customCount < 8 && !this.deleteMode) {
+            html += `
+                <button class="motor-preset-btn motor-preset-add" id="addMotorPresetBtn">
+                    <div class="motor-preset-moon">+</div>
+                    <span class="motor-preset-label">Add Custom</span>
+                    <span class="motor-preset-angle">&nbsp;</span>
+                </button>`;
+        }
 
         container.innerHTML = html;
         this._attachListeners(container);
@@ -149,14 +167,26 @@ export class MotorPresetsController {
 
     async _confirmDelete(index) {
         const preset = this.presets[index];
-        if (!preset) return;
+        if (!preset || preset.isDefault) return;
         const label = preset.name || `${preset.angle}°`;
         const confirmed = await Modal.confirm(`Delete "${label}" preset?`, 'Delete Preset');
         if (confirmed) {
-            this.presets.splice(index, 1);
-            this._savePresets();
-            if (this.presets.length === 0) this._exitDeleteMode();
-            else this.renderPresets();
+            if (this.bluetooth.hasCharacteristic('motorPresets')) {
+                try {
+                    const data = new Uint8Array(2);
+                    data[0] = 0x02; // Remove command
+                    data[1] = preset.id; // Stable ID
+                    await this.bluetooth.writeCharacteristic('motorPresets', data);
+                    console.log('Motor preset removed, id:', preset.id);
+                    await this.readMotorPresets();
+                } catch (error) {
+                    console.error('Failed to remove motor preset:', error);
+                }
+            } else {
+                this.presets.splice(index, 1);
+                this.renderPresets();
+            }
+            if (!this.presets.some(p => !p.isDefault)) this._exitDeleteMode();
         }
     }
 
@@ -205,13 +235,31 @@ export class MotorPresetsController {
 
         document.getElementById('cancelMotorPresetBtn').addEventListener('click', () => dialog.remove());
 
-        document.getElementById('saveMotorPresetBtn').addEventListener('click', () => {
+        document.getElementById('saveMotorPresetBtn').addEventListener('click', async () => {
             const angle = Math.min(360, Math.max(0, parseInt(angleInput.value) || 0));
-            const name = nameInput.value.trim();
-            this.presets.push({ angle, name: name || null });
-            this._savePresets();
-            this.renderPresets();
+            const name = nameInput.value.trim() || `${angle}°`;
             dialog.remove();
+
+            if (this.bluetooth.hasCharacteristic('motorPresets')) {
+                try {
+                    const nameBytes = new TextEncoder().encode(name.substring(0, 15));
+                    const data = new Uint8Array(4 + nameBytes.length);
+                    data[0] = 0x01; // Add command
+                    data[1] = (angle >> 8) & 0xFF;
+                    data[2] = angle & 0xFF;
+                    data[3] = nameBytes.length;
+                    data.set(nameBytes, 4);
+                    await this.bluetooth.writeCharacteristic('motorPresets', data);
+                    console.log('Motor preset added:', name);
+                    await this.readMotorPresets();
+                } catch (error) {
+                    console.error('Failed to add motor preset:', error);
+                    Modal.error('Failed to add preset: ' + error.message);
+                }
+            } else {
+                this.presets.push({ id: Date.now() & 0xFF, angle, name, isDefault: false });
+                this.renderPresets();
+            }
         });
 
         dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });
@@ -262,13 +310,31 @@ export class MotorPresetsController {
 
         document.getElementById('cancelEditPresetBtn').addEventListener('click', () => dialog.remove());
 
-        document.getElementById('saveEditPresetBtn').addEventListener('click', () => {
+        document.getElementById('saveEditPresetBtn').addEventListener('click', async () => {
             const angle = Math.min(360, Math.max(0, parseInt(angleInput.value) || 0));
-            const name = nameInput.value.trim();
-            this.presets[index] = { angle, name: name || null };
-            this._savePresets();
-            this.renderPresets();
+            const name = nameInput.value.trim() || `${angle}°`;
             dialog.remove();
+
+            if (this.bluetooth.hasCharacteristic('motorPresets')) {
+                try {
+                    const nameBytes = new TextEncoder().encode(name.substring(0, 15));
+                    const data = new Uint8Array(5 + nameBytes.length);
+                    data[0] = 0x03; // Update command
+                    data[1] = preset.id; // Stable ID
+                    data[2] = (angle >> 8) & 0xFF;
+                    data[3] = angle & 0xFF;
+                    data[4] = nameBytes.length;
+                    data.set(nameBytes, 5);
+                    await this.bluetooth.writeCharacteristic('motorPresets', data);
+                    console.log('Motor preset updated:', name);
+                    await this.readMotorPresets();
+                } catch (error) {
+                    console.error('Failed to update motor preset:', error);
+                }
+            } else {
+                this.presets[index] = { ...preset, angle, name };
+                this.renderPresets();
+            }
         });
 
         dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.remove(); });

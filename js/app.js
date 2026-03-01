@@ -27,7 +27,7 @@ class MoonLamp {
         this.motorController = new MotorController(this.bluetooth);
         this.presetsController = new PresetsController(this.bluetooth, this.ledController);
         this.automationsController = new AutomationsController(this.bluetooth, this.presetsController);
-        this.motorPresetsController = new MotorPresetsController(this.motorController);
+        this.motorPresetsController = new MotorPresetsController(this.bluetooth, this.motorController);
         this.motorController.motorPresetsController = this.motorPresetsController;
         this.settingsController = new SettingsController(this.bluetooth);
         this.uiController = new UIController(this.bluetooth);
@@ -78,6 +78,7 @@ class MoonLamp {
             await this.motorController.readAutoTracking();
             await this.motorController.readMotorSpeed();
             await this.presetsController.readCustomPresets();
+            await this.motorPresetsController.readMotorPresets();
             await this.automationsController.readAutomations();
             await this.uiController.readDeviceName();
             this.presetsController.updatePresetFeedback(this.ledController.ledStates);
@@ -376,6 +377,7 @@ class MoonLamp {
                     await this.motorController.readMotorSpeed();
                     await this.automationsController.readAutomations();
                     await this.presetsController.readCustomPresets();
+                    await this.motorPresetsController.readMotorPresets();
                     await this.uiController.readDeviceName();
                     await this.settingsController.readFullMode();
                     if (this.bluetooth.abortConnection) return;

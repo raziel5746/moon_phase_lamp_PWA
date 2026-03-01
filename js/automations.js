@@ -173,7 +173,7 @@ export class AutomationsController {
         
         container.innerHTML = sortedAutomations.map(({ auto, index }) => {
             const timeStr = formatTime(auto.hour, auto.minute);
-            const preset = presets && presets[auto.presetId] ? presets[auto.presetId] : null;
+            const preset = presets ? presets.find(p => p.id === auto.presetId) : null;
             const presetName = preset 
                 ? preset.name 
                 : (auto.presetId < presetNames.length ? presetNames[auto.presetId] : 'Custom');
@@ -224,15 +224,15 @@ export class AutomationsController {
                             <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                         <div class="preset-select-dropdown" id="addPresetDropdown">
-                            ${presets.map((p, i) => `
-                                <div class="preset-select-option" data-index="${i}">
+                            ${presets.map(p => `
+                                <div class="preset-select-option" data-id="${p.id}">
                                     <div class="option-swatch" style="background:rgb(${p.r},${p.g},${p.b})"></div>
                                     <span>${p.name}</span>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
-                    <input type="hidden" id="addAutomationPreset" value="0">
+                    <input type="hidden" id="addAutomationPreset" value="${presets[0]?.id ?? 0}">
                 </div>
                 <div class="form-row brightness-row">
                     <label>Brightness:</label>
@@ -322,8 +322,8 @@ export class AutomationsController {
                             <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                         <div class="preset-select-dropdown" id="editPresetDropdown">
-                            ${presets.map((p, i) => `
-                                <div class="preset-select-option" data-index="${i}">
+                            ${presets.map(p => `
+                                <div class="preset-select-option" data-id="${p.id}">
                                     <div class="option-swatch" style="background:rgb(${p.r},${p.g},${p.b})"></div>
                                     <span>${p.name}</span>
                                 </div>
@@ -394,20 +394,21 @@ export class AutomationsController {
         });
     }
 
-    _setupPresetCustomSelect(dialog, presets, swatchId, triggerId, dropdownId, hiddenId, initialIndex) {
+    _setupPresetCustomSelect(dialog, presets, swatchId, triggerId, dropdownId, hiddenId, initialPresetId) {
         const swatch = document.getElementById(swatchId);
         const trigger = document.getElementById(triggerId);
         const dropdown = document.getElementById(dropdownId);
         const hidden = document.getElementById(hiddenId);
 
-        const selectPreset = (idx) => {
-            const p = presets[idx];
+        const selectPresetById = (id) => {
+            const p = presets.find(pr => pr.id === id) || presets[0];
+            if (!p) return;
             const rgb = `rgb(${p.r},${p.g},${p.b})`;
             swatch.style.background = rgb;
             trigger.querySelector('.trigger-name').textContent = p.name;
-            hidden.value = idx;
+            hidden.value = p.id;
             dropdown.querySelectorAll('.preset-select-option').forEach(o =>
-                o.classList.toggle('selected', parseInt(o.dataset.index) === idx));
+                o.classList.toggle('selected', parseInt(o.dataset.id) === p.id));
         };
 
         trigger.addEventListener('click', (e) => {
@@ -420,7 +421,7 @@ export class AutomationsController {
         dropdown.querySelectorAll('.preset-select-option').forEach(opt => {
             opt.addEventListener('click', (e) => {
                 e.stopPropagation();
-                selectPreset(parseInt(opt.dataset.index));
+                selectPresetById(parseInt(opt.dataset.id));
                 dropdown.classList.remove('open');
                 trigger.classList.remove('open');
             });
@@ -433,7 +434,7 @@ export class AutomationsController {
             }
         });
 
-        selectPreset(Math.max(0, Math.min(initialIndex, presets.length - 1)));
+        selectPresetById(initialPresetId);
     }
 
     _setupAutomationBrightnessSlider(dialog, sliderId, fillId, valueId, hiddenInputId, initialValue) {

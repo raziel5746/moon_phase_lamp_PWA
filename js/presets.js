@@ -26,16 +26,17 @@ export class PresetsController {
             this.presets = [];
             let offset = 1;
             for (let i = 0; i < count; i++) {
-                const r = value.getUint8(offset);
-                const g = value.getUint8(offset + 1);
-                const b = value.getUint8(offset + 2);
-                const nameLen = value.getUint8(offset + 3);
+                const id = value.getUint8(offset);
+                const r = value.getUint8(offset + 1);
+                const g = value.getUint8(offset + 2);
+                const b = value.getUint8(offset + 3);
+                const nameLen = value.getUint8(offset + 4);
                 let name = '';
                 for (let j = 0; j < nameLen; j++) {
-                    name += String.fromCharCode(value.getUint8(offset + 4 + j));
+                    name += String.fromCharCode(value.getUint8(offset + 5 + j));
                 }
-                this.presets.push({ r, g, b, name, isCustom: i >= 5 });
-                offset += 4 + nameLen;
+                this.presets.push({ id, r, g, b, name, isCustom: i >= 5 });
+                offset += 5 + nameLen;
             }
 
             this.renderPresets();
@@ -79,7 +80,8 @@ export class PresetsController {
     }
 
     async removeCustomPreset(index) {
-        if (index < 5 || index >= this.presets.length) {
+        const preset = this.presets[index];
+        if (!preset || !preset.isCustom) {
             console.warn('Cannot remove: invalid index or default preset');
             return;
         }
@@ -95,10 +97,10 @@ export class PresetsController {
         try {
             const data = new Uint8Array(2);
             data[0] = 0x02; // Remove command
-            data[1] = index;
+            data[1] = preset.id; // Send stable ID, not array index
 
             await this.bluetooth.writeCharacteristic('customPresets', data);
-            console.log('Custom preset removed:', index);
+            console.log('Custom preset removed, id:', preset.id);
             
             await this.readCustomPresets();
         } catch (error) {
@@ -210,8 +212,9 @@ export class PresetsController {
             btn.classList.toggle('selected', btnPreset === preset);
         });
         
-        // Then send to device
-        await this.ledController.setColorPreset(preset);
+        // Send stable ID to device (not array index)
+        const presetId = this.presets[preset]?.id ?? preset;
+        await this.ledController.setColorPreset(presetId);
     }
 
     enablePresetDeleteMode() {
@@ -260,8 +263,8 @@ export class PresetsController {
         const select = document.getElementById('automationPreset');
         if (!select || !this.presets) return;
 
-        select.innerHTML = this.presets.map((preset, index) => 
-            `<option value="${index}">${preset.name}</option>`
+        select.innerHTML = this.presets.map(preset => 
+            `<option value="${preset.id}">${preset.name}</option>`
         ).join('');
     }
 
@@ -374,8 +377,10 @@ export class PresetsController {
 
     async updatePreset(index, r, g, b, name) {
         // Always update local state first
-        const wasCustom = this.presets[index]?.isCustom || false;
-        this.presets[index] = { r, g, b, name, isCustom: wasCustom };
+        const oldPreset = this.presets[index];
+        const wasCustom = oldPreset?.isCustom || false;
+        const presetId = oldPreset?.id ?? index;
+        this.presets[index] = { id: presetId, r, g, b, name, isCustom: wasCustom };
         console.log('Preset updated locally:', index, { r, g, b, name });
         
         // Re-render and keep selection
@@ -397,18 +402,18 @@ export class PresetsController {
         }
 
         try {
-            // Command 0x03 = Update preset
+            // Command 0x03 = Update preset by stable ID
             const nameBytes = new TextEncoder().encode(name.substring(0, 15));
             const data = new Uint8Array(6 + nameBytes.length);
             data[0] = 0x03; // Update command
-            data[1] = index;
+            data[1] = presetId; // Send stable ID, not array index
             data[2] = r;
             data[3] = g;
             data[4] = b;
             data[5] = nameBytes.length;
             data.set(nameBytes, 6);
 
-            console.log('Sending preset update command:', data);
+            console.log('Sending preset update command (id=%d):', presetId, data);
             await this.bluetooth.writeCharacteristic('customPresets', data);
             console.log('Preset updated on device:', name);
             

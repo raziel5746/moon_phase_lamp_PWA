@@ -6,6 +6,8 @@ export class SettingsController {
         this.bluetooth = bluetooth;
         this.fullModeEnabled = true;  // Default to Full Mode
         this.onFullModeChange = null;  // Callback when fullMode changes
+        this.authController = null;   // Set by app.js
+        this.securityEnabled = true;  // Default to security ON
     }
 
     async readFullMode() {
@@ -55,11 +57,38 @@ export class SettingsController {
         return await this.setFullMode(!this.fullModeEnabled);
     }
 
+    async readSecurityEnabled() {
+        if (!this.authController) return this.securityEnabled;
+        try {
+            this.securityEnabled = await this.authController.readSecurityEnabled();
+            this.updateSecurityUI();
+            return this.securityEnabled;
+        } catch (error) {
+            console.error('[Settings] Failed to read security state:', error);
+            return this.securityEnabled;
+        }
+    }
+
+    async setSecurityEnabled(enabled) {
+        if (!this.authController) return false;
+        const ok = await this.authController.setSecurityEnabled(enabled);
+        if (ok) {
+            this.securityEnabled = enabled;
+            this.updateSecurityUI();
+        }
+        return ok;
+    }
+
     updateUI() {
         const toggle = document.getElementById('fullModeToggle');
         if (toggle) {
             toggle.checked = this.fullModeEnabled;
         }
+        this.updateSecurityUI();
+    }
+
+    updateSecurityUI() {
+        // Security toggle is in the settings modal (ui.js) — nothing to update here
     }
 
     setupEventListeners() {

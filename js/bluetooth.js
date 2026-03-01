@@ -12,7 +12,8 @@ import {
     DEVICE_NAME_CHAR_UUID,
     MOTOR_SPEED_CHAR_UUID,
     FULL_MODE_CHAR_UUID,
-    MOTOR_PRESETS_CHAR_UUID
+    MOTOR_PRESETS_CHAR_UUID,
+    AUTH_CHAR_UUID
 } from './constants.js';
 
 // Characteristics safe for write-without-response (fire-and-forget, no confirmation needed)
@@ -33,6 +34,8 @@ export class BluetoothManager {
         this._gattBusy = false;
         this.onConnectionChange = null;
         this.onLEDStateUpdate = null;
+        this.onMotorPositionUpdate = null;
+        this.onAuthUpdate = null;
         this.onReconnected = null;
         this.onRetryAttempt = null;
     }
@@ -172,7 +175,8 @@ export class BluetoothManager {
                     ['deviceName', DEVICE_NAME_CHAR_UUID],
                     ['motorSpeed', MOTOR_SPEED_CHAR_UUID],
                     ['fullMode', FULL_MODE_CHAR_UUID],
-                    ['motorPresets', MOTOR_PRESETS_CHAR_UUID]
+                    ['motorPresets', MOTOR_PRESETS_CHAR_UUID],
+                    ['auth', AUTH_CHAR_UUID]
                 ];
 
                 for (let i = 0; i < charMap.length; i++) {
@@ -216,6 +220,19 @@ export class BluetoothManager {
                         this.onMotorPositionUpdate(e.target.value);
                     }
                 });
+
+                // Small delay between notification subscriptions for Android stability
+                await new Promise(r => setTimeout(r, 100));
+
+                // Subscribe to auth notifications
+                if (this.characteristics.auth) {
+                    await this.characteristics.auth.startNotifications();
+                    this.characteristics.auth.addEventListener('characteristicvaluechanged', (e) => {
+                        if (this.onAuthUpdate) {
+                            this.onAuthUpdate(e.target.value);
+                        }
+                    });
+                }
 
                 this.isConnecting = false;
                 this._notifyConnectionChange('connected');

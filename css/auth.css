@@ -1,0 +1,199 @@
+/* Auth Pairing Overlay */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: var(--background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.auth-overlay.visible {
+    opacity: 1;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.auth-header {
+    margin-bottom: 24px;
+}
+
+.auth-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: var(--surface-raised);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0;
+}
+
+.auth-instruction {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 24px;
+    min-height: 2.5em;
+    transition: color 0.2s ease;
+}
+
+.auth-status-error {
+    color: var(--danger);
+}
+
+.auth-status-info {
+    color: var(--text-secondary);
+}
+
+/* Sequence slots */
+.auth-slots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+
+.auth-slot {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid var(--glass-border);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.auth-slot.empty {
+    background: var(--surface);
+}
+
+.auth-slot:not(.empty) {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+/* Color buttons */
+.auth-colors {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.auth-color-btn {
+    aspect-ratio: 1;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    transition: transform 0.15s ease, border-color 0.2s ease, opacity 0.2s ease;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.auth-color-btn:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: scale(1.05);
+}
+
+.auth-color-btn:active {
+    transform: scale(0.95);
+}
+
+.auth-color-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.auth-color-label {
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.7);
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+/* White button needs dark text without text-shadow */
+.auth-color-btn[data-index="5"] .auth-color-label {
+    color: rgba(0, 0, 0, 0.6);
+    text-shadow: none;
+}
+
+/* Dark colors need light labels */
+.auth-color-btn[data-index="2"] .auth-color-label,
+.auth-color-btn[data-index="4"] .auth-color-label {
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Actions */
+.auth-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.auth-undo-btn {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 10px 32px;
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.auth-undo-btn:hover:not(:disabled) {
+    background: var(--surface-raised);
+    border-color: var(--hover-border);
+}
+
+.auth-undo-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.auth-undo-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 360px) {
+    .auth-container {
+        padding: 24px 16px;
+    }
+
+    .auth-slot {
+        width: 34px;
+        height: 34px;
+    }
+
+    .auth-colors {
+        gap: 8px;
+    }
+}

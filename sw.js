@@ -23,6 +23,7 @@ const filesToCache = [
   'css/automations.css',
   'css/responsive.css',
   'css/modal.css',
+  'css/auth.css',
   // JS modules
   'js/app.js',
   'js/constants.js',
@@ -34,6 +35,9 @@ const filesToCache = [
   'js/automations.js',
   'js/ui.js',
   'js/modal.js',
+  'js/auth.js',
+  'js/motor-presets.js',
+  'js/settings-controller.js',
 ];
 
 // Build full URLs based on detected base path

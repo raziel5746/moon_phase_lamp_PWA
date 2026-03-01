@@ -235,6 +235,19 @@ export class UIController {
                         <option value="automations"${currentDefault === 'automations' ? ' selected' : ''}>Schedule</option>
                     </select>
                 </div>
+                ${isConnected && this.settingsController ? `
+                <div class="settings-section">
+                    <h3 class="settings-section-title">Security</h3>
+                    <div class="settings-row" style="display:flex;align-items:center;justify-content:space-between;">
+                        <span style="color:var(--text);font-size:0.95em;">Pairing Security</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="securityToggle" ${this.settingsController.securityEnabled ? 'checked' : ''}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p class="info-text" style="margin-top:6px;font-size:0.8em;">When enabled, new devices must enter the color sequence shown on the lamp to connect.</p>
+                </div>
+                ` : ''}
                 ${renameSection}
             </div>
         `;
@@ -252,6 +265,13 @@ export class UIController {
         document.getElementById('cancelRenameBtn').addEventListener('click', () => {
             dialog.remove();
         });
+
+        const secToggle = document.getElementById('securityToggle');
+        if (secToggle && this.settingsController) {
+            secToggle.addEventListener('change', async (e) => {
+                await this.settingsController.setSecurityEnabled(e.target.checked);
+            });
+        }
 
         if (isConnected) {
             const input = document.getElementById('deviceNameInput');

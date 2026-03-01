@@ -9,6 +9,7 @@ import { Modal } from './modal.js';
 import { moonIconSvg } from './utils.js';
 import { MotorPresetsController } from './motor-presets.js';
 import { SettingsController } from './settings-controller.js';
+import { AuthController } from './auth.js';
 
 // Fix for Chrome Android PWA viewport height bug
 // Chrome miscalculates viewport height on reload in standalone mode
@@ -30,7 +31,10 @@ class MoonLamp {
         this.motorPresetsController = new MotorPresetsController(this.bluetooth, this.motorController);
         this.motorController.motorPresetsController = this.motorPresetsController;
         this.settingsController = new SettingsController(this.bluetooth);
+        this.authController = new AuthController(this.bluetooth);
+        this.settingsController.authController = this.authController;
         this.uiController = new UIController(this.bluetooth);
+        this.uiController.settingsController = this.settingsController;
         this._isReadingState = false;
 
         // Set up callbacks
@@ -70,6 +74,13 @@ class MoonLamp {
 
     async _handleReconnected() {
         try {
+            // Authenticate before reading state
+            const authOk = await this.authController.authenticate();
+            if (!authOk) {
+                console.warn('[App] Auth failed on reconnect — skipping state read');
+                return;
+            }
+
             if (this.bluetooth.hasCharacteristic('timeSync')) {
                 await this.bluetooth.syncTime();
             }
@@ -364,6 +375,13 @@ class MoonLamp {
                 // Flag so the abort button works during post-connection reads
                 this._isReadingState = true;
                 try {
+                    // Authenticate before reading state
+                    const authOk = await this.authController.authenticate();
+                    if (!authOk || this.bluetooth.abortConnection) {
+                        console.warn('[App] Auth failed — skipping state read');
+                        return;
+                    }
+
                     // Sync time immediately on connection
                     if (this.bluetooth.hasCharacteristic('timeSync')) {
                         await this.bluetooth.syncTime();
@@ -380,6 +398,7 @@ class MoonLamp {
                     await this.motorPresetsController.readMotorPresets();
                     await this.uiController.readDeviceName();
                     await this.settingsController.readFullMode();
+                    await this.settingsController.readSecurityEnabled();
                     if (this.bluetooth.abortConnection) return;
 
                     // Always recalculate moon angle on connection and apply to lamp

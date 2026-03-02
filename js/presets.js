@@ -338,6 +338,7 @@ export class PresetsController {
                     <input type="text" id="editPresetName" value="${preset.name}" placeholder="Color name" maxlength="15">
                 </div>
                 <div class="dialog-buttons">
+                    ${!preset.isCustom ? '<button class="btn btn-restore" id="restoreEditPresetBtn">Restore</button>' : ''}
                     <button class="btn" id="cancelEditPresetBtn">Cancel</button>
                     <button class="btn btn-primary" id="saveEditPresetBtn">Save</button>
                 </div>
@@ -392,6 +393,14 @@ export class PresetsController {
             this.updatePreset(presetIndex, color.red, color.green, color.blue, name)
                 .then(() => this.setColorPreset(presetIndex));
         });
+
+        const restoreBtn = document.getElementById('restoreEditPresetBtn');
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', () => {
+                dialog.remove();
+                this.restoreDefaultPreset(presetIndex);
+            });
+        }
 
         dialog.addEventListener('click', (e) => {
             if (e.target === dialog) {
@@ -452,6 +461,38 @@ export class PresetsController {
         }
     }
 
+    async restoreDefaultPreset(presetIndex) {
+        const preset = this.presets[presetIndex];
+        if (!preset || preset.isCustom) return;
+
+        // Find original values from DEFAULT_PRESETS
+        const original = DEFAULT_PRESETS.find(p => p.id === preset.id);
+        if (!original) return;
+
+        // Update local state immediately
+        this.presets[presetIndex] = { ...original };
+        this.renderPresets();
+        this.selectedPreset = presetIndex;
+        const selectedBtn = document.querySelector(`.preset-btn[data-preset="${presetIndex}"]`);
+        if (selectedBtn) selectedBtn.classList.add('selected');
+
+        if (!this.bluetooth.hasCharacteristic('customPresets')) return;
+
+        try {
+            const data = new Uint8Array(2);
+            data[0] = 0x04; // Restore default command
+            data[1] = preset.id;
+
+            await this.bluetooth.writeCharacteristic('customPresets', data);
+            console.log('Default preset restored, id:', preset.id);
+
+            await this.readCustomPresets();
+            await this.setColorPreset(presetIndex);
+        } catch (error) {
+            console.error('Failed to restore default preset:', error);
+        }
+    }
+
     updatePresetFeedback(ledStates) {
         // Filter to only lit LEDs (brightness > 0) for Phase Mode support
         const litLeds = ledStates.filter(led => led.brightness > 0);
@@ -488,11 +529,21 @@ export class PresetsController {
         let activePreset = -1;
 
         if (this.presets) {
-            for (let i = 0; i < this.presets.length; i++) {
-                const p = this.presets[i];
-                if (matches(p.r, p.g, p.b)) {
-                    activePreset = i;
-                    break;
+            // Prefer the currently-selected preset if its color still matches
+            if (this.selectedPreset !== undefined && this.selectedPreset >= 0 && this.selectedPreset < this.presets.length) {
+                const sp = this.presets[this.selectedPreset];
+                if (matches(sp.r, sp.g, sp.b)) {
+                    activePreset = this.selectedPreset;
+                }
+            }
+            // Otherwise find the first matching preset
+            if (activePreset === -1) {
+                for (let i = 0; i < this.presets.length; i++) {
+                    const p = this.presets[i];
+                    if (matches(p.r, p.g, p.b)) {
+                        activePreset = i;
+                        break;
+                    }
                 }
             }
         }

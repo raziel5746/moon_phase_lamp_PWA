@@ -127,6 +127,21 @@
     opacity: 0.9;
 }
 
+.btn-restore {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+}
+
+.btn-restore:hover {
+    background: var(--accent-glow);
+}
+
+.btn-restore:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
 .btn-secondary {
     background: var(--surface);
     color: var(--text);

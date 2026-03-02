@@ -323,8 +323,8 @@ export class PresetsController {
 
         const currentHex = `#${preset.r.toString(16).padStart(2, '0')}${preset.g.toString(16).padStart(2, '0')}${preset.b.toString(16).padStart(2, '0')}`;
 
-        // Save original LED states for restore on cancel
-        const originalStates = this.ledController.ledStates.map(s => ({ ...s }));
+        // Capture current brightness for live preview
+        const currentBrightness = this.ledController.ledStates[0]?.brightness ?? 75;
 
         const dialog = document.createElement('div');
         dialog.className = 'preset-dialog';
@@ -357,29 +357,23 @@ export class PresetsController {
             ]
         });
 
-        // Live preview: send color to lamp when user releases finger/mouse
-        const sendPreview = async (color) => {
+        // Helper: set all LEDs to a single color via ledCustom
+        const setAllLeds = async (r, g, b, brightness) => {
             if (!this.bluetooth.hasCharacteristic('ledCustom')) return;
-            const brightness = originalStates[0]?.brightness ?? 75;
-            const mappedBrightness = Math.round(brightness * 255 / 100);
-            // Index 0xFF = set all LEDs at once (single BLE write)
-            const data = new Uint8Array([0xFF, color.red, color.green, color.blue, mappedBrightness]);
+            const mapped = Math.round(brightness * 255 / 100);
+            // 0xFF = set all at once (firmware support required)
+            const data = new Uint8Array([0xFF, r, g, b, mapped]);
             await this.bluetooth.writeCharacteristic('ledCustom', data);
         };
 
+        // Live preview: send color to lamp when user releases finger/mouse
         colorPicker.on('input:end', (color) => {
-            sendPreview(color);
+            setAllLeds(color.red, color.green, color.blue, currentBrightness);
         });
 
-        // Restore original color on cancel
-        const restoreOriginal = async () => {
-            if (!this.bluetooth.hasCharacteristic('ledCustom')) return;
-            for (let i = 0; i < 8; i++) {
-                const s = originalStates[i];
-                const mappedBrightness = Math.round(s.brightness * 255 / 100);
-                const data = new Uint8Array([i, s.r, s.g, s.b, mappedBrightness]);
-                await this.bluetooth.writeCharacteristic('ledCustom', data);
-            }
+        // Restore original preset on cancel
+        const restoreOriginal = () => {
+            this.setColorPreset(presetIndex);
         };
 
         document.getElementById('cancelEditPresetBtn').addEventListener('click', () => {

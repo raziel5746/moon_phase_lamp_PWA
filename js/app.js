@@ -133,6 +133,7 @@ class MoonLamp {
             titleWasHeld = false;
             titleHoldTimer = setTimeout(() => {
                 titleWasHeld = true;
+                if (navigator.vibrate) navigator.vibrate(50);
                 this.motorController.setAutoTracking(
                     !this.motorController.autoTrackingEnabled,
                     this.motorController.autoTrackingInterval
@@ -178,6 +179,7 @@ class MoonLamp {
             connHeldTriggered = false;
             connHoldTimer = setTimeout(() => {
                 connHeldTriggered = true;
+                if (navigator.vibrate) navigator.vibrate(50);
                 this.settingsController.toggleFullMode();
             }, 600);
         };
@@ -245,6 +247,7 @@ class MoonLamp {
                     presetsHeldTriggered = false;
                     presetsHoldTimer = setTimeout(() => {
                         presetsHeldTriggered = true;
+                        if (navigator.vibrate) navigator.vibrate(50);
                         this.uiController.toggleTheme();
                     }, 600);
                 };

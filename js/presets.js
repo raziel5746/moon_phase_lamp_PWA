@@ -330,7 +330,10 @@ export class PresetsController {
         dialog.className = 'preset-dialog';
         dialog.innerHTML = `
             <div class="preset-dialog-content preset-dialog-wide">
-                <h3>Edit Preset</h3>
+                <div class="dialog-header">
+                    <h3>Edit Preset</h3>
+                    ${!preset.isCustom ? '<button class="btn btn-restore btn-restore-corner" id="restoreEditPresetBtn">Restore</button>' : ''}
+                </div>
                 <div class="color-picker-container">
                     <div id="iroColorPickerEdit"></div>
                 </div>
@@ -338,7 +341,6 @@ export class PresetsController {
                     <input type="text" id="editPresetName" value="${preset.name}" placeholder="Color name" maxlength="15">
                 </div>
                 <div class="dialog-buttons">
-                    ${!preset.isCustom ? '<button class="btn btn-restore" id="restoreEditPresetBtn">Restore</button>' : ''}
                     <button class="btn" id="cancelEditPresetBtn">Cancel</button>
                     <button class="btn btn-primary" id="saveEditPresetBtn">Save</button>
                 </div>
